@@ -1,0 +1,71 @@
+{# JSON-LD structured data.
+   - Homepage (no depth): WebSite + Organization
+   - Content pages (depth 1/2/3): Article + BreadcrumbList
+   - Always: Organization referenced by id #}
+
+{%- set orgId = site.url + "/#organization" -%}
+{%- set siteId = site.url + "/#website" -%}
+
+{# --- Organization (always emitted) --- #}
+{%- set orgLd = {
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  "@id": orgId,
+  "name": site.name,
+  "alternateName": site.shortName,
+  "url": site.url,
+  "description": site.description,
+  "logo": {
+    "@type": "ImageObject",
+    "url": site.url + "/assets/img/icon-512.png",
+    "width": 512,
+    "height": 512
+  }
+} -%}
+<script type="application/ld+json">{{ orgLd | jsonld | safe }}</script>
+
+{# --- WebSite (homepage only) --- #}
+{% if page.url == "/" %}
+{%- set siteLd = {
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  "@id": siteId,
+  "url": site.url,
+  "name": site.name,
+  "alternateName": site.shortName,
+  "description": site.description,
+  "inLanguage": "en-US",
+  "publisher": { "@id": orgId }
+} -%}
+<script type="application/ld+json">{{ siteLd | jsonld | safe }}</script>
+{% endif %}
+
+{# --- Content pages: Article + BreadcrumbList --- #}
+{% if depth %}
+{%- set breadcrumbLd = {
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": (page.url | breadcrumbItems(site.url, title, collections.contentPages))
+} -%}
+<script type="application/ld+json">{{ breadcrumbLd | jsonld | safe }}</script>
+
+{%- set articleLd = {
+  "@context": "https://schema.org",
+  "@type": "TechArticle",
+  "headline": title,
+  "name": title,
+  "description": metaDescription or site.description,
+  "url": site.url + page.url,
+  "inLanguage": "en-US",
+  "isPartOf": { "@id": siteId },
+  "publisher": { "@id": orgId },
+  "image": site.url + "/assets/img/og-image.png",
+  "datePublished": sourceMtime,
+  "dateModified": sourceMtime,
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": site.url + page.url
+  }
+} -%}
+<script type="application/ld+json">{{ articleLd | jsonld | safe }}</script>
+{% endif %}

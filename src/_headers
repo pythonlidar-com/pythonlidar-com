@@ -1,0 +1,28 @@
+# Default security headers for all routes
+/*
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  X-Frame-Options: DENY
+  Permissions-Policy: geolocation=(), camera=(), microphone=()
+
+# HTML: short cache so updates propagate; revalidate with origin
+/*.html
+  Cache-Control: public, max-age=0, must-revalidate
+/
+  Cache-Control: public, max-age=0, must-revalidate
+
+# Versioned/static assets: long cache (immutable build-time content)
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable
+
+# Icons / manifest: medium cache
+/favicon.ico
+  Cache-Control: public, max-age=86400
+/manifest.webmanifest
+  Cache-Control: public, max-age=86400, must-revalidate
+  Content-Type: application/manifest+json
+
+# Service worker must never be long-cached or users get stuck on old versions
+/sw.js
+  Cache-Control: public, max-age=0, must-revalidate
+  Service-Worker-Allowed: /

@@ -1,0 +1,28 @@
+<footer class="site-footer">
+  <div class="container site-footer__grid">
+    <div class="site-footer__brand">
+      <a class="brand" href="/" aria-label="{{ site.name }} — home">
+        {% include "partials/logo-inline.njk" %}
+        <span class="brand__text">{{ site.shortName }}</span>
+      </a>
+      <p>{{ site.description }}</p>
+    </div>
+
+    {% for section in site.sections %}
+      {% set topicsHere = collections.topics | childrenOf("/" + section.slug + "/") %}
+      <div>
+        <h2>{{ section.label }}</h2>
+        <ul>
+          <li><a href="/{{ section.slug }}/">Overview</a></li>
+          {% for t in topicsHere %}
+            <li><a href="{{ t.url }}">{{ t.data.title }}</a></li>
+          {% endfor %}
+        </ul>
+      </div>
+    {% endfor %}
+  </div>
+  <div class="container site-footer__meta">
+    <span>© {{ site.name }}</span>
+    <span>Built with 11ty · Optimized for offline use</span>
+  </div>
+</footer>

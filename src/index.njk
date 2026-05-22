@@ -1,0 +1,112 @@
+---
+layout: layouts/home.njk
+title: Python LiDAR & Point Cloud Workflows
+metaDescription: PDAL pipelines, ground filtering, DTM/DSM generation, batch automation, and QC for Python LiDAR workflows.
+permalink: /
+eleventyExcludeFromCollections: true
+---
+<section class="hero">
+  <div class="container">
+    <div class="hero__inner">
+      <div>
+        <span class="hero__eyebrow">
+          {% icon "spark", 16 %}
+          For LiDAR analysts, Python GIS devs, surveying teams
+        </span>
+        <h1>Python LiDAR &amp; Point&nbsp;Cloud Workflows</h1>
+        <p class="hero__lede">
+          Design and chain PDAL pipelines, classify ground returns, generate DTMs and DSMs,
+          and automate batch processing — backed by reproducible code patterns,
+          standards-compliant data handling, and production-grade QC.
+        </p>
+        <p class="hero__lede">
+          Two focused tracks: <strong>PDAL Pipelines</strong> for execution architecture, and
+          <strong>Point Cloud Standards</strong> for the binary, classification, and CRS
+          fundamentals every workflow depends on.
+        </p>
+        <div class="hero__cta">
+          <a class="cta cta--primary" href="/pdal-pipeline-architecture-execution/">
+            <span class="cta__icon">{% icon "layers", 20 %}</span>
+            Explore PDAL pipelines
+          </a>
+          <a class="cta" href="/point-cloud-data-standards-fundamentals/">
+            <span class="cta__icon">{% icon "grid", 20 %}</span>
+            Point cloud standards
+          </a>
+          <a class="cta" href="#what-youll-find">
+            <span class="cta__icon">{% icon "book", 20 %}</span>
+            What you'll find
+          </a>
+        </div>
+      </div>
+
+      <aside class="hero__panel" aria-label="Focus areas">
+        <h3>Focus areas</h3>
+        <ul>
+          <li>PDAL pipeline design</li>
+          <li>Ground filtering</li>
+          <li>Classification</li>
+          <li>DTM &amp; DSM generation</li>
+          <li>Batch automation</li>
+          <li>Cloud integration</li>
+          <li>Pipeline validation</li>
+          <li>QC &amp; metadata</li>
+        </ul>
+      </aside>
+    </div>
+  </div>
+</section>
+
+<section class="section" id="what-youll-find">
+  <div class="container">
+    <div class="section__head">
+      <h2>What you'll find here</h2>
+      <p>Two tracks of practical, code-first material aimed at production teams working with airborne, terrestrial, and mobile LiDAR.</p>
+    </div>
+
+    <div class="cards">
+      {% for section in site.sections %}
+        {%- set topicsHere = collections.topics | childrenOf("/" + section.slug + "/") -%}
+        <a class="card" href="/{{ section.slug }}/">
+          <span class="card__icon">{% sectionIcon section.slug, 28 %}</span>
+          <h3 class="card__title">{{ section.label }}</h3>
+          <p class="card__blurb">{{ section.blurb }}</p>
+          <div class="card__chips">
+            {% for t in topicsHere %}
+              <span class="chip">{{ t.data.title | truncate(34) }}</span>
+            {% endfor %}
+          </div>
+        </a>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+{% for section in site.sections %}
+  {%- set topicsHere = collections.topics | childrenOf("/" + section.slug + "/") -%}
+  <section class="section {% if loop.index is odd %}section--alt{% endif %}">
+    <div class="container">
+      <div class="section__head">
+        <h2>{{ section.label }}</h2>
+        <p>{{ section.blurb }}</p>
+      </div>
+      <div class="cards">
+        {% for t in topicsHere %}
+          {%- set tutsHere = collections.tutorials | childrenOf(t.url) -%}
+          <a class="card" href="{{ t.url }}">
+            <span class="card__icon">{% sectionIcon section.slug, 24 %}</span>
+            <h3 class="card__title">{{ t.data.title }}</h3>
+            <p class="card__blurb">{{ t.data.metaDescription | truncate(150) }}</p>
+            {% if tutsHere.length %}
+            <div class="card__chips">
+              {% for tut in tutsHere %}
+                <span class="chip">{{ tut.data.title | truncate(40) }}</span>
+              {% endfor %}
+            </div>
+            {% endif %}
+          </a>
+        {% endfor %}
+      </div>
+    </div>
+  </section>
+{% endfor %}

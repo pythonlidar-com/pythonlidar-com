@@ -1,0 +1,53 @@
+---
+layout: layouts/base.njk
+---
+{%- set categoryUrl = "/" + sectionSlug + "/" -%}
+{%- set category = collections.categories | byUrl(categoryUrl) -%}
+{# Build the topic URL by trimming the tutorial slug from page.url #}
+{%- set segs = page.url.split("/") -%}
+{%- set topicUrl = "/" + segs[1] + "/" + segs[2] + "/" -%}
+{%- set topic = collections.topics | byUrl(topicUrl) -%}
+{%- set siblingTutorials = collections.tutorials | childrenOf(topicUrl) -%}
+{%- set siblingTopics = collections.topics | childrenOf(categoryUrl) -%}
+
+<div class="container page">
+  <div class="layout-grid">
+    <div>
+      {% include "partials/breadcrumbs.njk" %}
+      <article class="article">
+        <h1>{{ title }}</h1>
+        {{ content | stripH1 | safe }}
+
+        <section class="related">
+          <h2>Related in {{ topic.data.title if topic else "this topic" }}</h2>
+          <div class="related__grid">
+            {% if topic %}
+              <a class="related__card" href="{{ topic.url }}">
+                <span class="related__card-title">↑ {{ topic.data.title }} overview</span>
+                <span class="related__card-blurb">{{ topic.data.metaDescription | truncate(140) }}</span>
+              </a>
+            {% endif %}
+            {% for s in siblingTutorials %}
+              {% if s.url != page.url %}
+                <a class="related__card" href="{{ s.url }}">
+                  <span class="related__card-title">{{ s.data.title }}</span>
+                  <span class="related__card-blurb">{{ s.data.metaDescription | truncate(140) }}</span>
+                </a>
+              {% endif %}
+            {% endfor %}
+          </div>
+        </section>
+      </article>
+    </div>
+
+    <aside class="side-rail" aria-label="Section navigation">
+      <h3>{{ category.data.title if category else "Section" }}</h3>
+      <ul>
+        <li><a href="{{ categoryUrl }}">Overview</a></li>
+        {% for s in siblingTopics %}
+          <li><a href="{{ s.url }}" {% if s.url == topicUrl %}aria-current="page"{% endif %}>{{ s.data.title }}</a></li>
+        {% endfor %}
+      </ul>
+    </aside>
+  </div>
+</div>

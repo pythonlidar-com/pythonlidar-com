@@ -1,0 +1,31 @@
+<header class="site-header">
+  <div class="container site-header__inner">
+    <a class="brand" href="/" aria-label="{{ site.name }} — home">
+      {% include "partials/logo-inline.njk" %}
+      <span class="brand__text">{{ site.shortName }}</span>
+    </a>
+
+    <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="primary-nav" aria-label="Toggle navigation">
+      <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+    </button>
+
+    <nav class="nav" id="primary-nav" aria-label="Primary">
+      <ul class="nav__list">
+        <li>
+          <a class="nav__link" href="/" {% if page.url == "/" %}aria-current="page"{% endif %}>
+            {% icon "home", 18 %}
+            <span>Home</span>
+          </a>
+        </li>
+        {% for section in site.sections %}
+        <li>
+          <a class="nav__link" href="/{{ section.slug }}/" {% if page.url.startsWith("/" + section.slug + "/") %}aria-current="page"{% endif %}>
+            {% sectionIcon section.slug, 20 %}
+            <span>{{ section.label }}</span>
+          </a>
+        </li>
+        {% endfor %}
+      </ul>
+    </nav>
+  </div>
+</header>

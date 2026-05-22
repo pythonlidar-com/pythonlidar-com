@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+
+  {%- set pageTitle = seoTitle or title -%}
+  {%- if page.url == "/" -%}
+    {%- set fullTitle = site.name -%}
+  {%- elif pageTitle.length > 50 -%}
+    {%- set fullTitle = pageTitle -%}
+  {%- else -%}
+    {%- set fullTitle = pageTitle + " — " + site.shortName -%}
+  {%- endif -%}
+  {%- set pageDesc = metaDescription or site.description -%}
+  {%- set pageUrl = site.url + page.url -%}
+
+  <title>{{ fullTitle }}</title>
+  <meta name="description" content="{{ pageDesc }}">
+  <meta name="robots" content="{% if noindex %}noindex, nofollow{% else %}index, follow, max-image-preview:large, max-snippet:-1{% endif %}">
+  <link rel="canonical" href="{{ pageUrl }}">
+
+  <!-- Theme + PWA -->
+  <meta name="theme-color" content="{{ site.themeColor }}">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="icon" type="image/svg+xml" href="/assets/img/favicon.svg">
+  <link rel="alternate icon" href="/favicon.ico">
+  <link rel="apple-touch-icon" href="/assets/img/apple-touch-icon.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="{{ site.shortName }}">
+
+  <!-- Open Graph -->
+  <meta property="og:type" content="{% if depth %}article{% else %}website{% endif %}">
+  <meta property="og:locale" content="en_US">
+  <meta property="og:site_name" content="{{ site.name }}">
+  <meta property="og:title" content="{{ pageTitle or site.name }}">
+  <meta property="og:description" content="{{ pageDesc }}">
+  <meta property="og:url" content="{{ pageUrl }}">
+  <meta property="og:image" content="{{ site.url }}/assets/img/og-image.png">
+  <meta property="og:image:width" content="512">
+  <meta property="og:image:height" content="512">
+  <meta property="og:image:alt" content="{{ site.shortName }} logo">
+
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="{{ pageTitle or site.name }}">
+  <meta name="twitter:description" content="{{ pageDesc }}">
+  <meta name="twitter:image" content="{{ site.url }}/assets/img/og-image.png">
+
+  <link rel="stylesheet" href="/assets/css/styles.css">
+
+  {% include "partials/jsonld.njk" %}
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+
+  {% include "partials/header.njk" %}
+
+  <main id="main">
+    {% block main %}{{ content | safe }}{% endblock %}
+  </main>
+
+  {% include "partials/footer.njk" %}
+
+  <script src="/assets/js/site.js" defer></script>
+  <script>
+    if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost" || location.hostname === "127.0.0.1")) {
+      window.addEventListener("load", function () {
+        navigator.serviceWorker.register("/sw.js").catch(function () {});
+      });
+    }
+  </script>
+</body>
+</html>
