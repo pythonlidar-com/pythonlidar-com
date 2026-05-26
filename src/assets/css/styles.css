@@ -219,6 +219,23 @@ main { flex: 1 1 auto; }
   justify-content: space-between;
   gap: 0.5rem;
 }
+.site-footer__meta-end {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.85rem;
+}
+.site-footer__icon-link {
+  display: inline-flex;
+  align-items: center;
+  color: var(--c-text-muted);
+  transition: color 0.15s ease, transform 0.15s ease;
+}
+.site-footer__icon-link:hover {
+  color: var(--c-primary);
+  transform: translateY(-1px);
+  text-decoration: none;
+}
+.site-footer__icon-link svg { display: block; }
 
 /* ---------- typography ---------- */
 
