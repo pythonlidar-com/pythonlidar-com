@@ -4,6 +4,8 @@ const markdownItAnchor = require("markdown-it-anchor");
 const markdownItAttrs = require("markdown-it-attrs");
 const markdownItTaskLists = require("markdown-it-task-lists");
 const path = require("path");
+const fs = require("fs");
+const crypto = require("crypto");
 
 // ---------- helpers ----------
 
@@ -158,6 +160,7 @@ module.exports = function (eleventyConfig) {
   eleventyConfig.addPassthroughCopy({ "src/favicon.ico": "favicon.ico" });
   eleventyConfig.addPassthroughCopy({ "src/robots.txt": "robots.txt" });
   eleventyConfig.addPassthroughCopy({ "src/_headers": "_headers" });
+  eleventyConfig.addPassthroughCopy({ "src/ebbf61361ed3cd6965f2a88f455aae21.txt": "ebbf61361ed3cd6965f2a88f455aae21.txt" });
 
   // Watch CSS/JS for rebuilds in dev.
   eleventyConfig.addWatchTarget("src/assets/");
@@ -264,6 +267,18 @@ module.exports = function (eleventyConfig) {
   // Safely JSON.stringify a value for embedding inside <script type="application/ld+json">.
   eleventyConfig.addFilter("jsonld", function (v) {
     return JSON.stringify(v).replace(/</g, "\\u003c");
+  });
+
+  // Append a short content hash as ?v=<hash> to bust long-lived immutable caches.
+  // Asset URLs like /assets/css/styles.css resolve to src/assets/css/styles.css on disk.
+  eleventyConfig.addFilter("assetHash", function (url) {
+    try {
+      const filePath = path.join(__dirname, "src", url.replace(/^\//, "").split("?")[0]);
+      const hash = crypto.createHash("md5").update(fs.readFileSync(filePath)).digest("hex").slice(0, 8);
+      return `${url}?v=${hash}`;
+    } catch {
+      return url;
+    }
   });
 
   // Section icon by category slug — used in nav + cards.
