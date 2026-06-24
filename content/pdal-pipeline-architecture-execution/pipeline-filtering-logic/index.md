@@ -78,46 +78,46 @@ This guide targets LiDAR analysts, Python GIS developers, and surveying teams wh
 
 ---
 
-<svg viewBox="0 0 820 220" role="img" aria-label="PDAL filtering pipeline data-flow diagram" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:820px;height:auto;display:block;margin:1.5rem auto;">
+<svg viewBox="0 0 920 230" role="img" aria-label="PDAL filtering pipeline data-flow diagram" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:920px;height:auto;display:block;margin:1.5rem auto;">
   <title>PDAL Filtering Pipeline Data Flow</title>
-  <desc>Diagram showing point data flowing from a LAS reader through range filter, crop filter, outlier filter, and dimension pruning before reaching a LAS writer.</desc>
+  <desc>Diagram showing point data flowing left to right from a LAS reader through a range filter, crop filter, outlier filter, and a second range filter before reaching a LAS writer. Each stage box shows the PDAL stage name and a short description of its role.</desc>
   <defs>
-    <marker id="arr" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+    <marker id="pfl-arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
       <path d="M0,0 L0,6 L8,3 Z" fill="currentColor" opacity="0.55"/>
     </marker>
   </defs>
-  <!-- Stage boxes -->
-  <rect x="10"  y="80" width="120" height="60" rx="8" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.8"/>
-  <text x="70"  y="106" text-anchor="middle" font-size="12" fill="currentColor" font-family="monospace">readers.las</text>
-  <text x="70"  y="122" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.65">(all dims)</text>
-  <rect x="165" y="80" width="130" height="60" rx="8" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.8"/>
-  <text x="230" y="106" text-anchor="middle" font-size="12" fill="currentColor" font-family="monospace">filters.range</text>
-  <text x="230" y="122" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.65">class + Z bounds</text>
-  <rect x="325" y="80" width="130" height="60" rx="8" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.8"/>
-  <text x="390" y="106" text-anchor="middle" font-size="12" fill="currentColor" font-family="monospace">filters.crop</text>
-  <text x="390" y="122" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.65">spatial bbox / polygon</text>
-  <rect x="485" y="80" width="140" height="60" rx="8" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.8"/>
-  <text x="555" y="106" text-anchor="middle" font-size="12" fill="currentColor" font-family="monospace">filters.outlier</text>
-  <text x="555" y="122" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.65">statistical / radius</text>
-  <rect x="655" y="80" width="120" height="60" rx="8" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.8"/>
-  <text x="715" y="106" text-anchor="middle" font-size="12" fill="currentColor" font-family="monospace">writers.las</text>
-  <text x="715" y="122" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.65">extra_dims=all</text>
+  <!-- Stage boxes — 5 stages across 920px viewBox -->
+  <rect x="8"   y="76" width="138" height="64" rx="8" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.8"/>
+  <text x="77"  y="104" text-anchor="middle" font-size="12" fill="currentColor" font-family="monospace">readers.las</text>
+  <text x="77"  y="121" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.65">(all dims)</text>
+  <rect x="178" y="76" width="148" height="64" rx="8" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.8"/>
+  <text x="252" y="104" text-anchor="middle" font-size="12" fill="currentColor" font-family="monospace">filters.range</text>
+  <text x="252" y="121" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.65">class + Z bounds</text>
+  <rect x="358" y="76" width="148" height="64" rx="8" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.8"/>
+  <text x="432" y="104" text-anchor="middle" font-size="12" fill="currentColor" font-family="monospace">filters.crop</text>
+  <text x="432" y="121" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.65">bbox / polygon</text>
+  <rect x="538" y="76" width="152" height="64" rx="8" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.8"/>
+  <text x="614" y="104" text-anchor="middle" font-size="12" fill="currentColor" font-family="monospace">filters.outlier</text>
+  <text x="614" y="121" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.65">statistical / radius</text>
+  <rect x="722" y="76" width="136" height="64" rx="8" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.8"/>
+  <text x="790" y="104" text-anchor="middle" font-size="12" fill="currentColor" font-family="monospace">writers.las</text>
+  <text x="790" y="121" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.65">extra_dims=all</text>
   <!-- Arrows -->
-  <line x1="130" y1="110" x2="163" y2="110" stroke="currentColor" stroke-width="1.5" opacity="0.55" marker-end="url(#arr)"/>
-  <line x1="295" y1="110" x2="323" y2="110" stroke="currentColor" stroke-width="1.5" opacity="0.55" marker-end="url(#arr)"/>
-  <line x1="455" y1="110" x2="483" y2="110" stroke="currentColor" stroke-width="1.5" opacity="0.55" marker-end="url(#arr)"/>
-  <line x1="625" y1="110" x2="653" y2="110" stroke="currentColor" stroke-width="1.5" opacity="0.55" marker-end="url(#arr)"/>
-  <!-- Labels above arrows -->
-  <text x="147" y="100" text-anchor="middle" font-size="9" fill="currentColor" opacity="0.5">buffer</text>
-  <text x="309" y="100" text-anchor="middle" font-size="9" fill="currentColor" opacity="0.5">reduced</text>
-  <text x="469" y="100" text-anchor="middle" font-size="9" fill="currentColor" opacity="0.5">cropped</text>
-  <text x="639" y="100" text-anchor="middle" font-size="9" fill="currentColor" opacity="0.5">cleaned</text>
+  <line x1="146" y1="108" x2="176" y2="108" stroke="currentColor" stroke-width="1.5" opacity="0.55" marker-end="url(#pfl-arrow)"/>
+  <line x1="326" y1="108" x2="356" y2="108" stroke="currentColor" stroke-width="1.5" opacity="0.55" marker-end="url(#pfl-arrow)"/>
+  <line x1="506" y1="108" x2="536" y2="108" stroke="currentColor" stroke-width="1.5" opacity="0.55" marker-end="url(#pfl-arrow)"/>
+  <line x1="690" y1="108" x2="720" y2="108" stroke="currentColor" stroke-width="1.5" opacity="0.55" marker-end="url(#pfl-arrow)"/>
+  <!-- Flow labels above arrows -->
+  <text x="161" y="100" text-anchor="middle" font-size="9" fill="currentColor" opacity="0.5">buffer</text>
+  <text x="341" y="100" text-anchor="middle" font-size="9" fill="currentColor" opacity="0.5">reduced</text>
+  <text x="521" y="100" text-anchor="middle" font-size="9" fill="currentColor" opacity="0.5">cropped</text>
+  <text x="705" y="100" text-anchor="middle" font-size="9" fill="currentColor" opacity="0.5">cleaned</text>
   <!-- Point count indicators below boxes -->
-  <text x="70"  y="165" text-anchor="middle" font-size="9" fill="currentColor" opacity="0.45">N points</text>
-  <text x="230" y="165" text-anchor="middle" font-size="9" fill="currentColor" opacity="0.45">class+Z subset</text>
-  <text x="390" y="165" text-anchor="middle" font-size="9" fill="currentColor" opacity="0.45">spatial subset</text>
-  <text x="555" y="165" text-anchor="middle" font-size="9" fill="currentColor" opacity="0.45">noise removed</text>
-  <text x="715" y="165" text-anchor="middle" font-size="9" fill="currentColor" opacity="0.45">final output</text>
+  <text x="77"  y="160" text-anchor="middle" font-size="9" fill="currentColor" opacity="0.45">N points</text>
+  <text x="252" y="160" text-anchor="middle" font-size="9" fill="currentColor" opacity="0.45">class + Z subset</text>
+  <text x="432" y="160" text-anchor="middle" font-size="9" fill="currentColor" opacity="0.45">spatial subset</text>
+  <text x="614" y="160" text-anchor="middle" font-size="9" fill="currentColor" opacity="0.45">noise flagged</text>
+  <text x="790" y="160" text-anchor="middle" font-size="9" fill="currentColor" opacity="0.45">final output</text>
 </svg>
 
 ## Prerequisites
@@ -275,7 +275,7 @@ if __name__ == "__main__":
 `filters.range` uses PDAL's compact interval notation `Dimension[min:max]`. Chaining `Classification[2:2]` and `Z[0.5:200.0]` in a single `limits` string is equivalent to a logical AND: both conditions must hold. Placing this stage first reduces the point count that all downstream stages must process, which is especially important before the O(n log n) neighbour search in `filters.outlier`. Running range filtering last would not only be slower but would produce incorrect statistical baselines.
 
 **Stage 2 — `filters.crop` (spatial subsetting)**
-`filters.crop` evaluates bounds in the *current* coordinate reference system of the buffer — after any upstream reprojection. The bounds string `([xmin,xmax],[ymin,ymax])` uses projected metre values here; mixing these with degree-based coordinates causes silent empty output. If your pipeline includes a [spatial reprojection](/pdal-pipeline-architecture-execution/spatial-reprojection/) stage, place `filters.crop` after it.
+`filters.crop` evaluates bounds in the *current* coordinate reference system of the buffer — after any upstream reprojection. The bounds string `([xmin,xmax],[ymin,ymax])` uses projected metre values here; mixing these with degree-based coordinates causes silent empty output. If your pipeline includes a [spatial reprojection](/pdal-pipeline-architecture-execution/spatial-reprojection/) stage, place `filters.crop` after it. For a systematic approach to diagnosing and fixing CRS conflicts before they reach the filter chain, see [fixing CRS mismatches in point clouds](/point-cloud-data-standards-fundamentals/coordinate-reference-systems/fixing-crs-mismatches-in-point-clouds/).
 
 **Stage 3 — `filters.outlier` (statistical noise removal)**
 `method=statistical` computes the mean Euclidean distance to each point's `mean_k` nearest neighbours, then computes the global mean and standard deviation of those distances. Any point whose mean neighbour distance exceeds `mean_k_mean + multiplier * stddev` is assigned `Classification = 7` (noise per [ASPRS classification codes](/point-cloud-data-standards-fundamentals/asprs-classification-codes/)). It does not delete points — it labels them, which is why the next stage is needed.
@@ -336,7 +336,7 @@ srs = meta.get("metadata", {}).get("readers.las", [{}])[0].get("spatialreference
 assert srs, "No CRS in output metadata — verify input file has spatial reference set"
 ```
 
-For pipeline structure validation before any point data is read, `pipeline.validate()` checks JSON syntax, stage compatibility, and dimension dependency graphs without loading the point cloud. Use it in CI/CD checks against pipeline configuration files before deploying to production.
+For pipeline structure validation before any point data is read, `pipeline.validate()` checks JSON syntax, stage compatibility, and dimension dependency graphs without loading the point cloud. Use it in CI/CD checks against pipeline configuration files before deploying to production. The dedicated [pipeline validation](/pdal-pipeline-architecture-execution/pipeline-validation/) guide covers the full validation lifecycle, including dry-run execution patterns and schema version gating.
 
 ## Performance Tuning
 

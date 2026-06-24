@@ -1,3 +1,73 @@
+---
+title: "PDAL Pipeline Validation: Catch Errors Before Processing Point Clouds"
+description: "A five-phase Python validation harness for PDAL pipelines — covering JSON schema checks, stage dependency resolution, filter parameter auditing, dry-run profiling, and output integrity verification."
+slug: "pipeline-validation"
+type: "cluster"
+breadcrumb: "Pipeline Validation"
+datePublished: "2024-03-15"
+dateModified: "2026-06-24"
+---
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Article",
+      "headline": "PDAL Pipeline Validation: Catch Errors Before Processing Point Clouds",
+      "description": "A five-phase Python validation harness for PDAL pipelines — covering JSON schema checks, stage dependency resolution, filter parameter auditing, dry-run profiling, and output integrity verification.",
+      "datePublished": "2024-03-15",
+      "dateModified": "2026-06-24",
+      "author": {"@type": "Organization", "name": "pythonlidar.com"}
+    },
+    {
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        {"@type": "ListItem", "position": 1, "name": "Home", "item": "/"},
+        {"@type": "ListItem", "position": 2, "name": "PDAL Pipeline Architecture & Execution", "item": "/pdal-pipeline-architecture-execution/"},
+        {"@type": "ListItem", "position": 3, "name": "Pipeline Validation", "item": "/pdal-pipeline-architecture-execution/pipeline-validation/"}
+      ]
+    },
+    {
+      "@type": "HowTo",
+      "name": "Validate a PDAL pipeline before production execution",
+      "step": [
+        {"@type": "HowToStep", "name": "Check JSON syntax and schema", "text": "Use jsonschema to validate the pipeline array structure and reject malformed stage type prefixes before any PDAL initialization."},
+        {"@type": "HowToStep", "name": "Resolve stage dependencies", "text": "Run pdal pipeline --validate --stdin to verify stage ordering and compatibility without reading point data."},
+        {"@type": "HowToStep", "name": "Audit filter parameters", "text": "Scan each filter stage for empty limits strings, invalid outlier methods, and out-of-range SMRF parameters."},
+        {"@type": "HowToStep", "name": "Profile a dry run", "text": "Execute the pipeline against a 1 M-point sample file while tracking memory delta with psutil to detect OOM risk before full-scale processing."},
+        {"@type": "HowToStep", "name": "Verify output integrity", "text": "Assert that the output point count falls within tolerance, all required dimensions are present, and CRS metadata survived the pipeline."}
+      ]
+    },
+    {
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "What does pdal pipeline --validate actually check?",
+          "acceptedAnswer": {"@type": "Answer", "text": "The --validate flag initializes PDAL's plugin registry and resolves stage dependencies in the pipeline graph without reading any point data. It catches stage ordering violations — such as applying a classification-dependent filter before a ground classification stage has run — and incompatible stage combinations, but it does not detect runtime memory exhaustion or empty output caused by overly aggressive filter bounds."}
+        },
+        {
+          "@type": "Question",
+          "name": "Why does filters.range silently drop all points instead of raising an error?",
+          "acceptedAnswer": {"@type": "Answer", "text": "PDAL treats an empty result as a valid pipeline outcome — no points matching the specified bounds is not an error from PDAL's perspective. This means a filters.range stage with an empty limits string or a Classification[2:2] constraint applied before ground classification has run will produce zero output with exit code 0. Explicit point-count assertions after pipeline.execute() are the only reliable way to catch this class of silent failure."}
+        },
+        {
+          "@type": "Question",
+          "name": "How large should the dry-run sample file be?",
+          "acceptedAnswer": {"@type": "Answer", "text": "500,000 to 1,000,000 points is the practical sweet spot. This range is large enough to reproduce the dimensional variety (mixed classifications, edge returns, noise points) present in a full production tile, while keeping dry-run execution under 30 seconds on typical hardware. Extract the sample from the actual target acquisition rather than a synthetic dataset to ensure the LAS point format, PDAL dimension set, and approximate point density match your production pipeline."}
+        },
+        {
+          "@type": "Question",
+          "name": "Should validation run on every pipeline execution or only on first use?",
+          "acceptedAnswer": {"@type": "Answer", "text": "Run the full five-phase harness whenever the pipeline JSON definition changes. In CI/CD, gate pull requests that modify pipeline files on a passing validation run. For production batch jobs, cache a SHA-256 hash of the validated pipeline JSON and skip re-validation if the hash matches. This avoids the 200–400 ms PDAL plugin registry startup cost on every tile while still catching changes introduced by configuration drift."}
+        }
+      ]
+    }
+  ]
+}
+</script>
+
 # Pipeline Validation in Python LiDAR & Point Cloud Workflows
 
 Unvalidated PDAL pipelines fail in ways that are difficult to trace: a typo like `"reader.las"` instead of `"readers.las"` produces a cryptic C++ exception, a `filters.range` stage referencing a dimension that does not yet exist silently drops every point, and an unbounded dry-run against a 50 GB regional tile exhausts available memory before a single result is written. Pipeline validation is the systematic process of catching these faults before they corrupt production deliverables. Within the broader [PDAL Pipeline Architecture & Execution](/pdal-pipeline-architecture-execution/) framework, validation is a mandatory quality gate that spans three distinct layers: static JSON structure, stage-level dependency resolution, and runtime resource profiling against a representative data sample.
@@ -20,52 +90,59 @@ A common pitfall is validating against synthetic test data that lacks the dimens
 
 ---
 
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 200" role="img" aria-label="PDAL pipeline validation stages: JSON syntax, stage dependencies, filter parameters, dry-run profiling, output integrity" style="width:100%;height:auto;display:block;margin:1.5rem 0">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 220" role="img" aria-label="Five-phase PDAL pipeline validation workflow diagram" style="width:100%;height:auto;display:block;margin:1.5rem 0">
   <title>PDAL Pipeline Validation Workflow</title>
-  <desc>Five sequential validation phases: JSON Syntax, Stage Dependencies, Filter Parameters, Dry-Run Profiling, Output Integrity. Each phase feeds into the next, with a failure path looping back to fix.</desc>
+  <desc>Five sequential validation phases arranged left to right: 1. JSON Syntax (jsonschema), 2. Stage Dependencies (pdal --validate), 3. Filter Parameters (range/outlier/smrf), 4. Dry-Run Profiling (psutil/sample), 5. Output Integrity (count/CRS/dims). Arrows connect each phase to the next. A dashed red arc below shows the FAIL path looping back to phase 1. A green PASS label appears after phase 5.</desc>
   <defs>
-    <marker id="arrowhead" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
-      <polygon points="0 0, 8 3, 0 6" fill="currentColor" opacity="0.55"/>
+    <marker id="pv-arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="currentColor" opacity="0.5"/>
     </marker>
   </defs>
-  <!-- Phase boxes -->
-  <rect x="8" y="60" width="118" height="56" rx="7" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.25"/>
-  <text x="67" y="82" text-anchor="middle" font-size="11" fill="currentColor" font-family="monospace" opacity="0.9">1. JSON</text>
-  <text x="67" y="97" text-anchor="middle" font-size="11" fill="currentColor" font-family="monospace" opacity="0.9">Syntax</text>
-  <text x="67" y="112" text-anchor="middle" font-size="9" fill="currentColor" opacity="0.55">jsonschema</text>
-  <rect x="148" y="60" width="118" height="56" rx="7" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.25"/>
-  <text x="207" y="82" text-anchor="middle" font-size="11" fill="currentColor" font-family="monospace" opacity="0.9">2. Stage</text>
-  <text x="207" y="97" text-anchor="middle" font-size="11" fill="currentColor" font-family="monospace" opacity="0.9">Dependencies</text>
-  <text x="207" y="112" text-anchor="middle" font-size="9" fill="currentColor" opacity="0.55">pdal --validate</text>
-  <rect x="288" y="60" width="118" height="56" rx="7" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.25"/>
-  <text x="347" y="82" text-anchor="middle" font-size="11" fill="currentColor" font-family="monospace" opacity="0.9">3. Filter</text>
-  <text x="347" y="97" text-anchor="middle" font-size="11" fill="currentColor" font-family="monospace" opacity="0.9">Parameters</text>
-  <text x="347" y="112" text-anchor="middle" font-size="9" fill="currentColor" opacity="0.55">range / outlier</text>
-  <rect x="428" y="60" width="118" height="56" rx="7" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.25"/>
-  <text x="487" y="82" text-anchor="middle" font-size="11" fill="currentColor" font-family="monospace" opacity="0.9">4. Dry-Run</text>
-  <text x="487" y="97" text-anchor="middle" font-size="11" fill="currentColor" font-family="monospace" opacity="0.9">Profiling</text>
-  <text x="487" y="112" text-anchor="middle" font-size="9" fill="currentColor" opacity="0.55">psutil / sample</text>
-  <rect x="568" y="60" width="142" height="56" rx="7" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.25"/>
-  <text x="639" y="82" text-anchor="middle" font-size="11" fill="currentColor" font-family="monospace" opacity="0.9">5. Output</text>
-  <text x="639" y="97" text-anchor="middle" font-size="11" fill="currentColor" font-family="monospace" opacity="0.9">Integrity</text>
-  <text x="639" y="112" text-anchor="middle" font-size="9" fill="currentColor" opacity="0.55">count / CRS / dims</text>
-  <!-- Arrows between boxes -->
-  <line x1="126" y1="86" x2="146" y2="86" stroke="currentColor" stroke-width="1.5" opacity="0.45" marker-end="url(#arrowhead)"/>
-  <line x1="266" y1="86" x2="286" y2="86" stroke="currentColor" stroke-width="1.5" opacity="0.45" marker-end="url(#arrowhead)"/>
-  <line x1="406" y1="86" x2="426" y2="86" stroke="currentColor" stroke-width="1.5" opacity="0.45" marker-end="url(#arrowhead)"/>
-  <line x1="546" y1="86" x2="566" y2="86" stroke="currentColor" stroke-width="1.5" opacity="0.45" marker-end="url(#arrowhead)"/>
-  <!-- FAIL arc below -->
-  <path d="M 639 112 Q 639 160 347 160 Q 55 160 67 112" fill="none" stroke="#b91c1c" stroke-width="1.3" stroke-dasharray="5 3"/>
-  <text x="347" y="178" text-anchor="middle" font-size="9" fill="#b91c1c">FAIL → fix and re-validate</text>
+  <!-- Phase 1 -->
+  <rect x="8" y="48" width="124" height="72" rx="8" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.3"/>
+  <text x="70" y="72" text-anchor="middle" font-size="12" fill="currentColor" font-weight="600" opacity="0.9">1. JSON</text>
+  <text x="70" y="88" text-anchor="middle" font-size="12" fill="currentColor" font-weight="600" opacity="0.9">Syntax</text>
+  <text x="70" y="108" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.55">jsonschema</text>
+  <!-- Arrow 1→2 -->
+  <line x1="132" y1="84" x2="152" y2="84" stroke="currentColor" stroke-width="1.5" opacity="0.45" marker-end="url(#pv-arrow)"/>
+  <!-- Phase 2 -->
+  <rect x="152" y="48" width="134" height="72" rx="8" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.3"/>
+  <text x="219" y="72" text-anchor="middle" font-size="12" fill="currentColor" font-weight="600" opacity="0.9">2. Stage</text>
+  <text x="219" y="88" text-anchor="middle" font-size="12" fill="currentColor" font-weight="600" opacity="0.9">Dependencies</text>
+  <text x="219" y="108" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.55">pdal --validate</text>
+  <!-- Arrow 2→3 -->
+  <line x1="286" y1="84" x2="306" y2="84" stroke="currentColor" stroke-width="1.5" opacity="0.45" marker-end="url(#pv-arrow)"/>
+  <!-- Phase 3 -->
+  <rect x="306" y="48" width="134" height="72" rx="8" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.3"/>
+  <text x="373" y="72" text-anchor="middle" font-size="12" fill="currentColor" font-weight="600" opacity="0.9">3. Filter</text>
+  <text x="373" y="88" text-anchor="middle" font-size="12" fill="currentColor" font-weight="600" opacity="0.9">Parameters</text>
+  <text x="373" y="108" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.55">range / outlier / smrf</text>
+  <!-- Arrow 3→4 -->
+  <line x1="440" y1="84" x2="460" y2="84" stroke="currentColor" stroke-width="1.5" opacity="0.45" marker-end="url(#pv-arrow)"/>
+  <!-- Phase 4 -->
+  <rect x="460" y="48" width="134" height="72" rx="8" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.3"/>
+  <text x="527" y="72" text-anchor="middle" font-size="12" fill="currentColor" font-weight="600" opacity="0.9">4. Dry-Run</text>
+  <text x="527" y="88" text-anchor="middle" font-size="12" fill="currentColor" font-weight="600" opacity="0.9">Profiling</text>
+  <text x="527" y="108" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.55">psutil / sample</text>
+  <!-- Arrow 4→5 -->
+  <line x1="594" y1="84" x2="614" y2="84" stroke="currentColor" stroke-width="1.5" opacity="0.45" marker-end="url(#pv-arrow)"/>
+  <!-- Phase 5 -->
+  <rect x="614" y="48" width="138" height="72" rx="8" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.3"/>
+  <text x="683" y="72" text-anchor="middle" font-size="12" fill="currentColor" font-weight="600" opacity="0.9">5. Output</text>
+  <text x="683" y="88" text-anchor="middle" font-size="12" fill="currentColor" font-weight="600" opacity="0.9">Integrity</text>
+  <text x="683" y="108" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.55">count / CRS / dims</text>
+  <!-- FAIL arc -->
+  <path d="M 683 120 Q 683 170 373 170 Q 63 170 70 120" fill="none" stroke="#b91c1c" stroke-width="1.4" stroke-dasharray="5 3" opacity="0.8"/>
+  <text x="373" y="192" text-anchor="middle" font-size="10" fill="#b91c1c" opacity="0.85">FAIL — fix and re-validate</text>
   <!-- PASS label -->
-  <text x="639" y="148" text-anchor="middle" font-size="10" fill="#15803d" opacity="0.9">PASS → promote</text>
+  <text x="683" y="155" text-anchor="middle" font-size="11" fill="#15803d" opacity="0.9">PASS — promote</text>
 </svg>
 
 ---
 
 ## Core Validation Workflow
 
-### Phase 1: JSON Schema and Syntax Verification
+### Phase 1 — JSON Schema and Syntax Verification
 
 PDAL pipelines are JSON arrays of stage objects. Syntax errors — trailing commas, invalid key names, incorrect stage name prefixes — cause immediate parsing failures that surface as opaque C++ exceptions with no line reference. Static validation catches these before any backend initialization.
 
@@ -112,7 +189,7 @@ def validate_json_syntax(pipeline_json: str) -> list[dict]:
 
 The `pattern` constraint `^(readers|filters|writers)\\.` rejects both `"reader.las"` and invented stage names, turning a runtime mystery into a clear schema error.
 
-### Phase 2: Stage Dependency and Compatibility Resolution
+### Phase 2 — Stage Dependency and Compatibility Resolution
 
 Each stage in a [PDAL stage chain](/pdal-pipeline-architecture-execution/pdal-stage-chaining/) consumes specific input dimensions and produces transformed outputs. Feeding a rasterized output into a point-cloud-only filter, or applying `filters.smrf` before `filters.reprojection` when the CRS uses geographic coordinates, breaks execution or produces geometrically distorted results.
 
@@ -142,11 +219,9 @@ def check_stage_compatibility(pipeline_json: str) -> dict:
 
 This check catches ordering violations such as applying a classification-dependent filter (`filters.range` on `Classification[2:2]`) before a ground classification stage has run, or chaining a `writers.gdal` rasterizer before a `filters.reprojection` that operates on point coordinates.
 
-### Phase 3: Filter Parameter Verification
+### Phase 3 — Filter Parameter Verification
 
-Filters modify point attributes, classify returns, or remove outliers. Validation must confirm that referenced dimensions exist in the input schema and that numeric thresholds fall within valid operational ranges. A `filters.range` stage with an empty `limits` string silently drops all points — no error, no warning, just zero output.
-
-The checks below address the two most commonly misconfigured filter stages:
+Filters modify point attributes, classify returns, or remove outliers. Validation must confirm that referenced dimensions exist in the input schema and that numeric thresholds fall within valid operational ranges. A `filters.range` stage with an empty `limits` string silently drops all points — no error, no warning, just zero output. The checks below address the most commonly misconfigured [pipeline filtering logic](/pdal-pipeline-architecture-execution/pipeline-filtering-logic/) stages:
 
 ```python
 def verify_filter_stages(pipeline_obj: list[dict]) -> list[str]:
@@ -202,9 +277,7 @@ def verify_filter_stages(pipeline_obj: list[dict]) -> list[str]:
     return warnings
 ```
 
-For detailed guidance on how [pipeline filtering logic](/pdal-pipeline-architecture-execution/pipeline-filtering-logic/) sequences these stages in production, including dimension propagation and predicate evaluation order, refer to the dedicated filtering workflow guide.
-
-### Phase 4: Dry-Run Execution and Resource Profiling
+### Phase 4 — Dry-Run Execution and Resource Profiling
 
 Static checks cannot catch runtime memory spikes or I/O bottlenecks. Execute the pipeline against a representative sample of your dataset — typically 500,000–1,000,000 points extracted from the target region — while profiling memory consumption. This reveals unbounded allocations, disk-swapping under heavy tiling, or thread contention before full-scale processing begins.
 
@@ -264,7 +337,7 @@ def profile_dry_run(
 
 Dry-run memory warnings are the primary signal that a pipeline needs [memory management](/pdal-pipeline-architecture-execution/memory-management/) intervention — specifically `filters.splitter`-based tiling, reduced `chunk_size` on readers, or selective dimension forwarding to reduce buffer width.
 
-### Phase 5: Output Integrity Verification
+### Phase 5 — Output Integrity Verification
 
 After a successful pipeline execution, verify that the output matches expected spatial and statistical baselines. A valid pipeline should maintain point count within tolerance unless explicit thinning filters are applied, preserve CRS metadata, and retain required dimensions (`X`, `Y`, `Z`, `Intensity`, `Classification`, `ReturnNumber`).
 
@@ -530,7 +603,7 @@ Fix: Enumerate only required output dimensions. Use `filters.ferry` to drop high
 
 **`AssertionError: No spatial reference detected in pipeline metadata`**
 Cause: A `writers.las` stage with `"forward": "none"` was used without an explicit `"a_srs"` parameter, causing the output file to lose its CRS record. Alternatively, an intermediate `filters.reprojection` that uses an invalid EPSG code silently drops the spatial reference.
-Fix: Always set `"forward": "header"` or specify `"a_srs": "EPSG:32618"` explicitly in the writer. Validate EPSG codes against the [EPSG registry](https://epsg.org/) and confirm with `pdal info --metadata output.laz | grep spatialreference`.
+Fix: Always set `"forward": "header"` or specify `"a_srs": "EPSG:32618"` explicitly in the writer. Validate EPSG codes against the EPSG registry and confirm with `pdal info --metadata output.laz | grep spatialreference`.
 
 **`jsonschema.ValidationError: 'reader.las' does not match '^(readers|filters|writers)\\.'`**
 Cause: Stage name fails the prefix pattern. This is the most common error caught by Phase 1.

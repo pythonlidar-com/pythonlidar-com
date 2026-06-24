@@ -32,11 +32,11 @@ dateModified: "2026-06-24"
       "@type": "HowTo",
       "name": "Reclassify LiDAR Point Clouds Using ASPRS Codes in Python",
       "step": [
-        {"@type": "HowToStep", "name": "Install dependencies", "text": "Install laspy[lazrs], numpy, and pyproj in Python 3.10+."},
-        {"@type": "HowToStep", "name": "Load and validate classification array", "text": "Open the LAS/LAZ file with laspy, read the classification array, and check for reserved or out-of-range codes."},
-        {"@type": "HowToStep", "name": "Apply reclassification logic", "text": "Use NumPy boolean masks to assign ASPRS standard codes or user-defined codes in the 64–255 range."},
+        {"@type": "HowToStep", "name": "Inspect the header", "text": "Open the LAS/LAZ file with laspy, read the header to confirm LAS version and point format before loading the full array."},
+        {"@type": "HowToStep", "name": "Load and validate classification array", "text": "Read the classification array via las.classification and check for reserved or out-of-range codes."},
+        {"@type": "HowToStep", "name": "Apply reclassification logic", "text": "Use NumPy boolean masks with np.copyto to assign ASPRS standard codes or user-defined codes in the 64–255 range."},
         {"@type": "HowToStep", "name": "Synchronize header metadata", "text": "Call las.update_header() to recalculate bounding box and point count before writing."},
-        {"@type": "HowToStep", "name": "Export and validate output", "text": "Write the file, then assert classification bounds, VLR count, and point totals match expectations."}
+        {"@type": "HowToStep", "name": "Export and validate output", "text": "Write the file, then assert classification bounds, header alignment, and point totals match expectations."}
       ]
     },
     {
@@ -74,71 +74,102 @@ dateModified: "2026-06-24"
 
 ASPRS Classification Codes define the semantic taxonomy that separates raw LiDAR returns into actionable categories: ground, vegetation, buildings, water, noise, and infrastructure. Every downstream workflow — terrain modeling, canopy height estimation, utility corridor analysis, or flood mapping — depends on these integer labels being correct and consistent. For LiDAR analysts, Python GIS developers, and infrastructure engineering teams, building reliable programmatic workflows around these codes is the prerequisite for scalable point cloud processing.
 
-This page is part of [Point Cloud Data Standards & Fundamentals](/point-cloud-data-standards-fundamentals/), which covers the file formats, metadata structures, and coordinate systems that underpin all Python LiDAR work. For a detailed history of each code's semantics across LAS versions, see [Understanding ASPRS Classification Codes](/point-cloud-data-standards-fundamentals/asprs-classification-codes/understanding-asprs-classification-codes/).
+This page is part of [Point Cloud Data Standards & Fundamentals](/point-cloud-data-standards-fundamentals/), which covers the file formats, [metadata structures](/point-cloud-data-standards-fundamentals/metadata-header-sync/), and coordinate systems that underpin all Python LiDAR work. For a detailed history of each code's semantics across LAS versions, see [Understanding ASPRS Classification Codes](/point-cloud-data-standards-fundamentals/asprs-classification-codes/understanding-asprs-classification-codes/).
 
 ---
 
 ## The ASPRS Classification System
 
-<svg viewBox="0 0 780 320" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="ASPRS classification code ranges diagram" style="width:100%;max-width:780px;display:block;margin:1.5rem auto;">
+<svg viewBox="0 0 760 330" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="ASPRS LAS 1.4 classification code ranges diagram" style="width:100%;max-width:760px;display:block;margin:1.5rem auto;">
   <title>ASPRS LAS 1.4 Classification Code Ranges</title>
-  <desc>Diagram showing the three classification code ranges in LAS 1.4: standard codes 0–18, reserved codes 19–63, and user-defined codes 64–255, each with representative examples.</desc>
-  <!-- Background -->
-  <rect width="780" height="320" rx="8" fill="none"/>
+  <desc>Diagram showing the three classification code ranges in LAS 1.4: standard codes 0–18 (used for ground, vegetation, buildings, water, noise, and infrastructure), reserved codes 19–63 (held for future ASPRS use), and user-defined codes 64–255 (for project-specific taxonomies). LAS 1.2 only supports a 5-bit field covering codes 0–31.</desc>
   <!-- Title -->
-  <text x="390" y="28" text-anchor="middle" font-family="system-ui,sans-serif" font-size="14" font-weight="600" fill="currentColor">LAS 1.4 Classification Field — 8-bit unsigned integer (0–255)</text>
-  <!-- Range bar -->
-  <rect x="30" y="48" width="720" height="36" rx="4" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.3"/>
-  <!-- Standard range 0-18: ~7% of 720 = 50px -->
-  <rect x="30" y="48" width="50" height="36" rx="4" fill="currentColor" opacity="0.18"/>
-  <text x="55" y="71" text-anchor="middle" font-family="system-ui,sans-serif" font-size="11" font-weight="600" fill="currentColor">0–18</text>
-  <!-- Reserved range 19-63: ~17.6% = 127px -->
-  <rect x="80" y="48" width="127" height="36" fill="currentColor" opacity="0.08"/>
-  <text x="143" y="71" text-anchor="middle" font-family="system-ui,sans-serif" font-size="11" fill="currentColor">19–63</text>
-  <!-- User-defined range 64-255: remaining 563px -->
-  <rect x="207" y="48" width="543" height="36" rx="4" fill="currentColor" opacity="0.05"/>
-  <text x="478" y="71" text-anchor="middle" font-family="system-ui,sans-serif" font-size="11" fill="currentColor">64–255</text>
-  <!-- Labels below bar -->
-  <text x="55" y="102" text-anchor="middle" font-family="system-ui,sans-serif" font-size="11" font-weight="700" fill="currentColor">Standard</text>
-  <text x="143" y="102" text-anchor="middle" font-family="system-ui,sans-serif" font-size="11" fill="currentColor" opacity="0.75">Reserved</text>
-  <text x="478" y="102" text-anchor="middle" font-family="system-ui,sans-serif" font-size="11" fill="currentColor" opacity="0.75">User-Defined</text>
-  <!-- Standard codes detail boxes -->
-  <!-- Ground 2 -->
-  <rect x="30" y="124" width="100" height="48" rx="4" fill="currentColor" opacity="0.12" stroke="currentColor" stroke-width="1" stroke-opacity="0.3"/>
-  <text x="80" y="143" text-anchor="middle" font-family="system-ui,sans-serif" font-size="12" font-weight="600" fill="currentColor">2</text>
-  <text x="80" y="160" text-anchor="middle" font-family="system-ui,sans-serif" font-size="10" fill="currentColor">Ground</text>
-  <!-- Vegetation 3-5 -->
-  <rect x="140" y="124" width="100" height="48" rx="4" fill="currentColor" opacity="0.12" stroke="currentColor" stroke-width="1" stroke-opacity="0.3"/>
-  <text x="190" y="143" text-anchor="middle" font-family="system-ui,sans-serif" font-size="12" font-weight="600" fill="currentColor">3–5</text>
-  <text x="190" y="160" text-anchor="middle" font-family="system-ui,sans-serif" font-size="10" fill="currentColor">Vegetation</text>
-  <!-- Building 6 -->
-  <rect x="250" y="124" width="100" height="48" rx="4" fill="currentColor" opacity="0.12" stroke="currentColor" stroke-width="1" stroke-opacity="0.3"/>
-  <text x="300" y="143" text-anchor="middle" font-family="system-ui,sans-serif" font-size="12" font-weight="600" fill="currentColor">6</text>
-  <text x="300" y="160" text-anchor="middle" font-family="system-ui,sans-serif" font-size="10" fill="currentColor">Building</text>
-  <!-- Noise 7/18 -->
-  <rect x="360" y="124" width="100" height="48" rx="4" fill="currentColor" opacity="0.12" stroke="currentColor" stroke-width="1" stroke-opacity="0.3"/>
-  <text x="410" y="143" text-anchor="middle" font-family="system-ui,sans-serif" font-size="12" font-weight="600" fill="currentColor">7 / 18</text>
-  <text x="410" y="160" text-anchor="middle" font-family="system-ui,sans-serif" font-size="10" fill="currentColor">Noise</text>
-  <!-- Utility 13-16 -->
-  <rect x="470" y="124" width="110" height="48" rx="4" fill="currentColor" opacity="0.12" stroke="currentColor" stroke-width="1" stroke-opacity="0.3"/>
-  <text x="525" y="143" text-anchor="middle" font-family="system-ui,sans-serif" font-size="12" font-weight="600" fill="currentColor">13–16</text>
-  <text x="525" y="160" text-anchor="middle" font-family="system-ui,sans-serif" font-size="10" fill="currentColor">Utility wires</text>
-  <!-- Water 9 -->
-  <rect x="590" y="124" width="100" height="48" rx="4" fill="currentColor" opacity="0.12" stroke="currentColor" stroke-width="1" stroke-opacity="0.3"/>
-  <text x="640" y="143" text-anchor="middle" font-family="system-ui,sans-serif" font-size="12" font-weight="600" fill="currentColor">9</text>
-  <text x="640" y="160" text-anchor="middle" font-family="system-ui,sans-serif" font-size="10" fill="currentColor">Water</text>
-  <!-- Workflow arrow row -->
-  <text x="30" y="216" font-family="system-ui,sans-serif" font-size="11" fill="currentColor" opacity="0.7">LAS 1.2 (legacy)</text>
-  <rect x="30" y="222" width="160" height="24" rx="3" fill="currentColor" opacity="0.08" stroke="currentColor" stroke-width="1" stroke-opacity="0.25"/>
-  <text x="110" y="238" text-anchor="middle" font-family="system-ui,sans-serif" font-size="10" fill="currentColor">5-bit field → codes 0–31 only</text>
-  <text x="220" y="216" font-family="system-ui,sans-serif" font-size="11" fill="currentColor" opacity="0.7">LAS 1.4 (current)</text>
-  <rect x="220" y="222" width="200" height="24" rx="3" fill="currentColor" opacity="0.08" stroke="currentColor" stroke-width="1" stroke-opacity="0.25"/>
-  <text x="320" y="238" text-anchor="middle" font-family="system-ui,sans-serif" font-size="10" fill="currentColor">8-bit field → full 0–255 range</text>
-  <text x="450" y="216" font-family="system-ui,sans-serif" font-size="11" fill="currentColor" opacity="0.7">User-defined (project-specific)</text>
-  <rect x="450" y="222" width="300" height="24" rx="3" fill="currentColor" opacity="0.08" stroke="currentColor" stroke-width="1" stroke-opacity="0.25"/>
-  <text x="600" y="238" text-anchor="middle" font-family="system-ui,sans-serif" font-size="10" fill="currentColor">Codes 64–255, LAS 1.4 only</text>
-  <!-- Bit-packing note -->
-  <text x="390" y="295" text-anchor="middle" font-family="system-ui,sans-serif" font-size="10" fill="currentColor" opacity="0.6">laspy .classification property handles LAS 1.2 bit-packing transparently</text>
+  <text x="380" y="22" text-anchor="middle" font-family="system-ui,sans-serif" font-size="13" font-weight="600" fill="currentColor">LAS 1.4 Classification Field — 8-bit unsigned integer (0–255)</text>
+  <!-- Range bar background -->
+  <rect x="20" y="34" width="720" height="32" rx="4" fill="currentColor" opacity="0.06" stroke="currentColor" stroke-width="1.2" stroke-opacity="0.2"/>
+  <!-- Standard range 0–18: codes 0-18 out of 255 = ~53px of 720 -->
+  <rect x="20" y="34" width="53" height="32" rx="4" fill="currentColor" opacity="0.22"/>
+  <!-- Reserved range 19–63: ~16% of 720 ≈ 129px -->
+  <rect x="73" y="34" width="129" height="32" fill="currentColor" opacity="0.09"/>
+  <!-- User-defined range 64–255: remaining 538px -->
+  <rect x="202" y="34" width="538" height="32" rx="4" fill="currentColor" opacity="0.04"/>
+  <!-- Range labels inside bar -->
+  <text x="46" y="55" text-anchor="middle" font-family="system-ui,sans-serif" font-size="10" font-weight="700" fill="currentColor">0–18</text>
+  <text x="137" y="55" text-anchor="middle" font-family="system-ui,sans-serif" font-size="10" fill="currentColor" opacity="0.8">19–63</text>
+  <text x="471" y="55" text-anchor="middle" font-family="system-ui,sans-serif" font-size="10" fill="currentColor" opacity="0.7">64–255</text>
+  <!-- Range category labels below bar -->
+  <text x="46" y="80" text-anchor="middle" font-family="system-ui,sans-serif" font-size="11" font-weight="700" fill="currentColor">Standard</text>
+  <text x="137" y="80" text-anchor="middle" font-family="system-ui,sans-serif" font-size="11" fill="currentColor" opacity="0.7">Reserved</text>
+  <text x="471" y="80" text-anchor="middle" font-family="system-ui,sans-serif" font-size="11" fill="currentColor" opacity="0.7">User-Defined</text>
+  <!-- Detail boxes — key standard codes -->
+  <rect x="20" y="98" width="88" height="44" rx="4" fill="currentColor" opacity="0.1" stroke="currentColor" stroke-width="1" stroke-opacity="0.25"/>
+  <text x="64" y="116" text-anchor="middle" font-family="system-ui,sans-serif" font-size="12" font-weight="700" fill="currentColor">2</text>
+  <text x="64" y="132" text-anchor="middle" font-family="system-ui,sans-serif" font-size="10" fill="currentColor">Ground</text>
+  <rect x="118" y="98" width="88" height="44" rx="4" fill="currentColor" opacity="0.1" stroke="currentColor" stroke-width="1" stroke-opacity="0.25"/>
+  <text x="162" y="116" text-anchor="middle" font-family="system-ui,sans-serif" font-size="12" font-weight="700" fill="currentColor">3–5</text>
+  <text x="162" y="132" text-anchor="middle" font-family="system-ui,sans-serif" font-size="10" fill="currentColor">Vegetation</text>
+  <rect x="216" y="98" width="88" height="44" rx="4" fill="currentColor" opacity="0.1" stroke="currentColor" stroke-width="1" stroke-opacity="0.25"/>
+  <text x="260" y="116" text-anchor="middle" font-family="system-ui,sans-serif" font-size="12" font-weight="700" fill="currentColor">6</text>
+  <text x="260" y="132" text-anchor="middle" font-family="system-ui,sans-serif" font-size="10" fill="currentColor">Building</text>
+  <rect x="314" y="98" width="88" height="44" rx="4" fill="currentColor" opacity="0.1" stroke="currentColor" stroke-width="1" stroke-opacity="0.25"/>
+  <text x="358" y="116" text-anchor="middle" font-family="system-ui,sans-serif" font-size="12" font-weight="700" fill="currentColor">7 / 18</text>
+  <text x="358" y="132" text-anchor="middle" font-family="system-ui,sans-serif" font-size="10" fill="currentColor">Noise</text>
+  <rect x="412" y="98" width="88" height="44" rx="4" fill="currentColor" opacity="0.1" stroke="currentColor" stroke-width="1" stroke-opacity="0.25"/>
+  <text x="456" y="116" text-anchor="middle" font-family="system-ui,sans-serif" font-size="12" font-weight="700" fill="currentColor">9</text>
+  <text x="456" y="132" text-anchor="middle" font-family="system-ui,sans-serif" font-size="10" fill="currentColor">Water</text>
+  <rect x="510" y="98" width="98" height="44" rx="4" fill="currentColor" opacity="0.1" stroke="currentColor" stroke-width="1" stroke-opacity="0.25"/>
+  <text x="559" y="116" text-anchor="middle" font-family="system-ui,sans-serif" font-size="12" font-weight="700" fill="currentColor">13–16</text>
+  <text x="559" y="132" text-anchor="middle" font-family="system-ui,sans-serif" font-size="10" fill="currentColor">Utility wires</text>
+  <rect x="618" y="98" width="122" height="44" rx="4" fill="currentColor" opacity="0.1" stroke="currentColor" stroke-width="1" stroke-opacity="0.25"/>
+  <text x="679" y="116" text-anchor="middle" font-family="system-ui,sans-serif" font-size="12" font-weight="700" fill="currentColor">64–255</text>
+  <text x="679" y="132" text-anchor="middle" font-family="system-ui,sans-serif" font-size="10" fill="currentColor">User-defined</text>
+  <!-- Version compatibility row -->
+  <text x="20" y="166" font-family="system-ui,sans-serif" font-size="11" font-weight="600" fill="currentColor" opacity="0.75">LAS 1.2 (legacy)</text>
+  <rect x="20" y="172" width="190" height="22" rx="3" fill="currentColor" opacity="0.07" stroke="currentColor" stroke-width="1" stroke-opacity="0.2"/>
+  <text x="115" y="187" text-anchor="middle" font-family="system-ui,sans-serif" font-size="10" fill="currentColor">5-bit field → codes 0–31 only</text>
+  <text x="230" y="166" font-family="system-ui,sans-serif" font-size="11" font-weight="600" fill="currentColor" opacity="0.75">LAS 1.4 (current)</text>
+  <rect x="230" y="172" width="200" height="22" rx="3" fill="currentColor" opacity="0.07" stroke="currentColor" stroke-width="1" stroke-opacity="0.2"/>
+  <text x="330" y="187" text-anchor="middle" font-family="system-ui,sans-serif" font-size="10" fill="currentColor">8-bit field → full 0–255 range</text>
+  <text x="448" y="166" font-family="system-ui,sans-serif" font-size="11" font-weight="600" fill="currentColor" opacity="0.75">Point formats 6–10</text>
+  <rect x="448" y="172" width="292" height="22" rx="3" fill="currentColor" opacity="0.07" stroke="currentColor" stroke-width="1" stroke-opacity="0.2"/>
+  <text x="594" y="187" text-anchor="middle" font-family="system-ui,sans-serif" font-size="10" fill="currentColor">Required for user-defined codes 64–255</text>
+  <!-- laspy note -->
+  <text x="380" y="224" text-anchor="middle" font-family="system-ui,sans-serif" font-size="10" fill="currentColor" opacity="0.55">laspy .classification unpacks LAS 1.2 bit-packing transparently — values above 31 in LAS 1.2 are silently truncated on write</text>
+  <!-- Section divider -->
+  <line x1="20" y1="234" x2="740" y2="234" stroke="currentColor" stroke-width="0.8" stroke-opacity="0.15"/>
+  <!-- 6-phase workflow labels -->
+  <text x="380" y="252" text-anchor="middle" font-family="system-ui,sans-serif" font-size="11" font-weight="600" fill="currentColor" opacity="0.8">Classification pipeline phases</text>
+  <!-- Phase boxes: 6 boxes across -->
+  <rect x="20" y="260" width="107" height="28" rx="3" fill="currentColor" opacity="0.08" stroke="currentColor" stroke-width="1" stroke-opacity="0.2"/>
+  <text x="73" y="278" text-anchor="middle" font-family="system-ui,sans-serif" font-size="9" fill="currentColor">1. Open + Inspect</text>
+  <rect x="135" y="260" width="107" height="28" rx="3" fill="currentColor" opacity="0.08" stroke="currentColor" stroke-width="1" stroke-opacity="0.2"/>
+  <text x="188" y="278" text-anchor="middle" font-family="system-ui,sans-serif" font-size="9" fill="currentColor">2. Load Array</text>
+  <rect x="250" y="260" width="107" height="28" rx="3" fill="currentColor" opacity="0.08" stroke="currentColor" stroke-width="1" stroke-opacity="0.2"/>
+  <text x="303" y="278" text-anchor="middle" font-family="system-ui,sans-serif" font-size="9" fill="currentColor">3. Validate Codes</text>
+  <rect x="365" y="260" width="107" height="28" rx="3" fill="currentColor" opacity="0.08" stroke="currentColor" stroke-width="1" stroke-opacity="0.2"/>
+  <text x="418" y="278" text-anchor="middle" font-family="system-ui,sans-serif" font-size="9" fill="currentColor">4. Reclassify</text>
+  <rect x="480" y="260" width="107" height="28" rx="3" fill="currentColor" opacity="0.08" stroke="currentColor" stroke-width="1" stroke-opacity="0.2"/>
+  <text x="533" y="278" text-anchor="middle" font-family="system-ui,sans-serif" font-size="9" fill="currentColor">5. Sync Header</text>
+  <rect x="595" y="260" width="107" height="28" rx="3" fill="currentColor" opacity="0.08" stroke="currentColor" stroke-width="1" stroke-opacity="0.2"/>
+  <text x="648" y="278" text-anchor="middle" font-family="system-ui,sans-serif" font-size="9" fill="currentColor">6. Export + Assert</text>
+  <!-- Arrow connectors -->
+  <line x1="127" y1="274" x2="135" y2="274" stroke="currentColor" stroke-width="1" stroke-opacity="0.4" marker-end="url(#arr)"/>
+  <line x1="242" y1="274" x2="250" y2="274" stroke="currentColor" stroke-width="1" stroke-opacity="0.4"/>
+  <line x1="357" y1="274" x2="365" y2="274" stroke="currentColor" stroke-width="1" stroke-opacity="0.4"/>
+  <line x1="472" y1="274" x2="480" y2="274" stroke="currentColor" stroke-width="1" stroke-opacity="0.4"/>
+  <line x1="587" y1="274" x2="595" y2="274" stroke="currentColor" stroke-width="1" stroke-opacity="0.4"/>
+  <defs>
+    <marker id="arr" markerWidth="5" markerHeight="5" refX="4" refY="2.5" orient="auto">
+      <polygon points="0 0, 5 2.5, 0 5" fill="currentColor" opacity="0.4"/>
+    </marker>
+  </defs>
+  <!-- Arrow ticks between boxes -->
+  <text x="131" y="278" text-anchor="middle" font-family="system-ui,sans-serif" font-size="9" fill="currentColor" opacity="0.4">›</text>
+  <text x="246" y="278" text-anchor="middle" font-family="system-ui,sans-serif" font-size="9" fill="currentColor" opacity="0.4">›</text>
+  <text x="361" y="278" text-anchor="middle" font-family="system-ui,sans-serif" font-size="9" fill="currentColor" opacity="0.4">›</text>
+  <text x="476" y="278" text-anchor="middle" font-family="system-ui,sans-serif" font-size="9" fill="currentColor" opacity="0.4">›</text>
+  <text x="591" y="278" text-anchor="middle" font-family="system-ui,sans-serif" font-size="9" fill="currentColor" opacity="0.4">›</text>
+  <text x="380" y="318" text-anchor="middle" font-family="system-ui,sans-serif" font-size="9" fill="currentColor" opacity="0.45">Phases 1–3 validate input; Phases 4–6 modify and persist output</text>
 </svg>
 
 The American Society for Photogrammetry and Remote Sensing defines a standardized integer mapping stored in each point record. Under LAS 1.4, the classification field is a full 8-bit unsigned integer (0–255). Standard codes run from 0 to 18; codes 19–63 are reserved for future ASPRS use; codes 64–255 are designated for user-defined project classes.
@@ -343,7 +374,7 @@ Silently processing a truncated array leads to classification results that do no
 
 ### Why call `las.update_header()` before writing
 
-Modifying the `classification` array does not recalculate the bounding box extents stored in the LAS header. `update_header()` recomputes min/max X, Y, Z and the exact `point_count`. Skipping this step produces headers that disagree with the actual data, causing downstream tools (PDAL, QGIS, ArcGIS Pro) to misreport extents or refuse to open the file.
+Modifying the `classification` array does not recalculate the bounding box extents stored in the LAS header. `update_header()` recomputes min/max X, Y, Z and the exact `point_count`. Skipping this step produces headers that disagree with the actual data, causing downstream tools (PDAL, QGIS, ArcGIS Pro) to misreport extents or refuse to open the file. This is the same [metadata header sync](/point-cloud-data-standards-fundamentals/metadata-header-sync/) requirement that applies after any attribute modification.
 
 ---
 
@@ -516,5 +547,7 @@ Classification codes are integer attributes on individual points; they do not ch
 - [Understanding ASPRS Classification Codes](/point-cloud-data-standards-fundamentals/asprs-classification-codes/understanding-asprs-classification-codes/) — per-code semantics, historical changes across LAS versions, and the LAS 1.4 specification reference
 - [LAS/LAZ File Structure](/point-cloud-data-standards-fundamentals/laslaz-file-structure/) — point record formats, VLR layout, header fields, and bit-packing in legacy formats
 - [Coordinate Reference Systems](/point-cloud-data-standards-fundamentals/coordinate-reference-systems/) — CRS validation, authority string extraction, and datum-aware spatial operations
+- [Metadata & Header Sync](/point-cloud-data-standards-fundamentals/metadata-header-sync/) — keeping LAS header fields (point count, bounding box, VLR records) in sync after attribute modifications
+- [Point Density Metrics](/point-cloud-data-standards-fundamentals/point-density-metrics/) — calculating returns-per-square-metre by classification class for survey quality assessment
 - [Fixing CRS Mismatches in Point Clouds](/point-cloud-data-standards-fundamentals/coordinate-reference-systems/fixing-crs-mismatches-in-point-clouds/) — practical steps to detect and correct misaligned projections before or after classification
 - [Point Cloud Data Standards & Fundamentals](/point-cloud-data-standards-fundamentals/) — parent section covering all LAS/LAZ standards, metadata, and Python workflows

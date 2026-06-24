@@ -1,49 +1,141 @@
-# PDAL Pipeline Architecture and Execution
+---
+title: "PDAL Pipeline Architecture and Execution"
+description: "The complete technical guide to PDAL's pipeline execution model: stage DAGs, streaming memory, readers/filters/writers, Python integration, performance tuning, and production deployment for LiDAR and point cloud processing workflows."
+slug: "pdal-pipeline-architecture-execution"
+type: "pillar"
+breadcrumb: "PDAL Pipeline Architecture and Execution"
+datePublished: "2024-01-15"
+dateModified: "2026-06-24"
+---
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Article",
+      "headline": "PDAL Pipeline Architecture and Execution",
+      "description": "The complete technical guide to PDAL's pipeline execution model: stage DAGs, streaming memory, readers/filters/writers, Python integration, performance tuning, and production deployment for LiDAR and point cloud processing workflows.",
+      "datePublished": "2024-01-15",
+      "dateModified": "2026-06-24",
+      "author": { "@type": "Organization", "name": "pythonlidar.com" },
+      "publisher": { "@type": "Organization", "name": "pythonlidar.com" }
+    },
+    {
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://pythonlidar.com/" },
+        { "@type": "ListItem", "position": 2, "name": "PDAL Pipeline Architecture and Execution", "item": "https://pythonlidar.com/pdal-pipeline-architecture-execution/" }
+      ]
+    },
+    {
+      "@type": "HowTo",
+      "name": "Build and Execute a Production PDAL Pipeline in Python",
+      "step": [
+        { "@type": "HowToStep", "name": "Define the pipeline as JSON", "text": "Express your reader, filter chain, and writer as a JSON array of stage objects with explicit type keys and realistic parameter values for your dataset's CRS, point format, and target output." },
+        { "@type": "HowToStep", "name": "Validate the pipeline before execution", "text": "Run pdal pipeline --validate pipeline.json to catch schema violations, missing stage parameters, and incompatible dimension names before processing large datasets." },
+        { "@type": "HowToStep", "name": "Execute via pdal.Pipeline in Python", "text": "Construct a pdal.Pipeline from the JSON string, call pipeline.execute(), and capture the returned point count for logging and assertions." },
+        { "@type": "HowToStep", "name": "Inspect pipeline.metadata for diagnostics", "text": "Examine the nested metadata dict for per-stage point counts, bounding boxes, CRS strings, and timing data to confirm correctness and catch silent data-loss failures." },
+        { "@type": "HowToStep", "name": "Tune capacity and parallelism for throughput", "text": "Adjust the capacity parameter on readers and filters, set OMP_NUM_THREADS for ground-classification stages, and distribute tiles across ProcessPoolExecutor workers for near-linear multi-core scaling." }
+      ]
+    },
+    {
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "Why does PDAL use a pull-based execution model instead of push?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Pull-based execution means the writer controls flow: it requests a batch only when it is ready to consume one. This backpressure mechanism prevents upstream stages from producing data faster than downstream stages can consume it, keeping the in-flight point count bounded and memory predictable regardless of dataset size."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Can I run a single PDAL pipeline across multiple CPU cores?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "A single pipeline instance is single-threaded except for stages that internally use OpenMP (notably filters.smrf and filters.pmf). To use all cores, run independent pipeline processes in parallel — one per spatial tile — using Python's ProcessPoolExecutor."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What happens to custom LAS dimensions (extra bytes) when I chain filters?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Extra bytes dimensions propagate through the pipeline unless a filter explicitly drops them via drop_dims. Set extra_dims=all on writers.las to preserve them in the output. If you need a custom dimension that does not exist in the input, use filters.ferry to create it with a default value before passing to filters that expect it."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How do I process a file that is larger than available RAM?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Use stream mode: pdal pipeline --stream pipeline.json. Stream mode requires all stages to support streaming (most readers, filters.range, filters.reprojection, filters.expression, and writers.las do; filters.sort does not). In Python, pass stream=True to pipeline.execute()."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Should I compress output to LAZ or write uncompressed LAS?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "For final delivery or archival, LAZ (LASzip compression) reduces file size by 70–90% with no precision loss. For iterative development where you re-read outputs multiple times, uncompressed LAS is 2–4x faster to read because it eliminates decompression overhead. Store intermediate tiles as uncompressed LAS; compress only at the final write step."
+          }
+        }
+      ]
+    }
+  ]
+}
+</script>
 
 For LiDAR analysts, Python GIS developers, and surveying tech teams, mastering how PDAL constructs and executes processing pipelines is the foundation of scalable, reproducible point cloud workflows. Raw airborne or terrestrial scan data arrives in formats that need filtering, reprojection, classification, and export — often across hundreds of tiles and dozens of gigabytes. PDAL's declarative, stage-based architecture lets you express that logic once in JSON, drive it from Python, and run it identically in a laptop terminal or a Kubernetes worker node. This guide covers the complete execution model: how stages connect into a directed graph, how points stream through memory, how to tune throughput, and how to deploy reliably in production CI/CD systems.
 
 ---
 
-<svg viewBox="0 0 820 200" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="PDAL pipeline execution flow from reader through filters to writer" style="width:100%;max-width:820px;display:block;margin:1.5rem auto">
+<svg viewBox="0 0 820 220" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="PDAL pipeline execution flow from reader through filters to writer" style="width:100%;max-width:820px;display:block;margin:1.5rem auto">
   <title>PDAL Pipeline Execution Flow</title>
-  <desc>Directed acyclic graph showing how a PDAL pipeline pulls data from a Reader stage through one or more Filter stages and into a Writer stage, with the pull-based request model indicated by arrows.</desc>
+  <desc>Directed acyclic graph showing how a PDAL pipeline pulls data from a Reader stage through one or more Filter stages and into a Writer stage, with the pull-based request model indicated by arrows flowing left to right.</desc>
   <defs>
-    <marker id="arr" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+    <marker id="arr-pillar" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
       <polygon points="0 0, 8 3, 0 6" fill="currentColor" opacity="0.6"/>
     </marker>
   </defs>
   <!-- Reader box -->
-  <rect x="20" y="70" width="140" height="60" rx="6" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.8"/>
-  <text x="90" y="96" text-anchor="middle" font-size="13" fill="currentColor" font-family="system-ui,sans-serif" font-weight="600">Reader</text>
-  <text x="90" y="113" text-anchor="middle" font-size="11" fill="currentColor" font-family="system-ui,sans-serif" opacity="0.75">readers.las / readers.e57</text>
+  <rect x="20" y="75" width="145" height="65" rx="6" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.8"/>
+  <text x="92" y="101" text-anchor="middle" font-size="13" fill="currentColor" font-family="system-ui,sans-serif" font-weight="600">Reader</text>
+  <text x="92" y="118" text-anchor="middle" font-size="11" fill="currentColor" font-family="system-ui,sans-serif" opacity="0.75">readers.las</text>
+  <text x="92" y="132" text-anchor="middle" font-size="11" fill="currentColor" font-family="system-ui,sans-serif" opacity="0.75">readers.e57</text>
   <!-- Arrow 1 -->
-  <line x1="160" y1="100" x2="218" y2="100" stroke="currentColor" stroke-width="1.5" marker-end="url(#arr)" opacity="0.6"/>
-  <text x="189" y="92" text-anchor="middle" font-size="10" fill="currentColor" font-family="system-ui,sans-serif" opacity="0.6">pull</text>
+  <line x1="165" y1="107" x2="218" y2="107" stroke="currentColor" stroke-width="1.5" marker-end="url(#arr-pillar)" opacity="0.6"/>
+  <text x="191" y="100" text-anchor="middle" font-size="10" fill="currentColor" font-family="system-ui,sans-serif" opacity="0.6">pull</text>
   <!-- Filter 1 box -->
-  <rect x="220" y="70" width="150" height="60" rx="6" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.8"/>
-  <text x="295" y="96" text-anchor="middle" font-size="13" fill="currentColor" font-family="system-ui,sans-serif" font-weight="600">Filter</text>
-  <text x="295" y="113" text-anchor="middle" font-size="11" fill="currentColor" font-family="system-ui,sans-serif" opacity="0.75">filters.outlier / filters.smrf</text>
+  <rect x="220" y="75" width="158" height="65" rx="6" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.8"/>
+  <text x="299" y="101" text-anchor="middle" font-size="13" fill="currentColor" font-family="system-ui,sans-serif" font-weight="600">Filter</text>
+  <text x="299" y="118" text-anchor="middle" font-size="11" fill="currentColor" font-family="system-ui,sans-serif" opacity="0.75">filters.outlier</text>
+  <text x="299" y="132" text-anchor="middle" font-size="11" fill="currentColor" font-family="system-ui,sans-serif" opacity="0.75">filters.smrf</text>
   <!-- Arrow 2 -->
-  <line x1="370" y1="100" x2="428" y2="100" stroke="currentColor" stroke-width="1.5" marker-end="url(#arr)" opacity="0.6"/>
-  <text x="399" y="92" text-anchor="middle" font-size="10" fill="currentColor" font-family="system-ui,sans-serif" opacity="0.6">pull</text>
+  <line x1="378" y1="107" x2="428" y2="107" stroke="currentColor" stroke-width="1.5" marker-end="url(#arr-pillar)" opacity="0.6"/>
+  <text x="403" y="100" text-anchor="middle" font-size="10" fill="currentColor" font-family="system-ui,sans-serif" opacity="0.6">pull</text>
   <!-- Filter 2 box -->
-  <rect x="430" y="70" width="170" height="60" rx="6" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.8"/>
-  <text x="515" y="96" text-anchor="middle" font-size="13" fill="currentColor" font-family="system-ui,sans-serif" font-weight="600">Filter</text>
-  <text x="515" y="113" text-anchor="middle" font-size="11" fill="currentColor" font-family="system-ui,sans-serif" opacity="0.75">filters.reprojection / .range</text>
+  <rect x="430" y="75" width="168" height="65" rx="6" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.8"/>
+  <text x="514" y="101" text-anchor="middle" font-size="13" fill="currentColor" font-family="system-ui,sans-serif" font-weight="600">Filter</text>
+  <text x="514" y="118" text-anchor="middle" font-size="11" fill="currentColor" font-family="system-ui,sans-serif" opacity="0.75">filters.reprojection</text>
+  <text x="514" y="132" text-anchor="middle" font-size="11" fill="currentColor" font-family="system-ui,sans-serif" opacity="0.75">filters.range</text>
   <!-- Arrow 3 -->
-  <line x1="600" y1="100" x2="648" y2="100" stroke="currentColor" stroke-width="1.5" marker-end="url(#arr)" opacity="0.6"/>
-  <text x="624" y="92" text-anchor="middle" font-size="10" fill="currentColor" font-family="system-ui,sans-serif" opacity="0.6">pull</text>
+  <line x1="598" y1="107" x2="645" y2="107" stroke="currentColor" stroke-width="1.5" marker-end="url(#arr-pillar)" opacity="0.6"/>
+  <text x="621" y="100" text-anchor="middle" font-size="10" fill="currentColor" font-family="system-ui,sans-serif" opacity="0.6">pull</text>
   <!-- Writer box -->
-  <rect x="650" y="70" width="150" height="60" rx="6" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.8"/>
-  <text x="725" y="96" text-anchor="middle" font-size="13" fill="currentColor" font-family="system-ui,sans-serif" font-weight="600">Writer</text>
-  <text x="725" y="113" text-anchor="middle" font-size="11" fill="currentColor" font-family="system-ui,sans-serif" opacity="0.75">writers.las / writers.copc</text>
+  <rect x="647" y="75" width="153" height="65" rx="6" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.8"/>
+  <text x="723" y="101" text-anchor="middle" font-size="13" fill="currentColor" font-family="system-ui,sans-serif" font-weight="600">Writer</text>
+  <text x="723" y="118" text-anchor="middle" font-size="11" fill="currentColor" font-family="system-ui,sans-serif" opacity="0.75">writers.las</text>
+  <text x="723" y="132" text-anchor="middle" font-size="11" fill="currentColor" font-family="system-ui,sans-serif" opacity="0.75">writers.copc</text>
   <!-- Label row -->
-  <text x="90" y="155" text-anchor="middle" font-size="10" fill="currentColor" font-family="system-ui,sans-serif" opacity="0.5">Ingest</text>
-  <text x="295" y="155" text-anchor="middle" font-size="10" fill="currentColor" font-family="system-ui,sans-serif" opacity="0.5">Transform / Classify</text>
-  <text x="515" y="155" text-anchor="middle" font-size="10" fill="currentColor" font-family="system-ui,sans-serif" opacity="0.5">Project / Subset</text>
-  <text x="725" y="155" text-anchor="middle" font-size="10" fill="currentColor" font-family="system-ui,sans-serif" opacity="0.5">Serialize</text>
-  <!-- Batch size indicator -->
-  <text x="410" y="185" text-anchor="middle" font-size="10" fill="currentColor" font-family="system-ui,sans-serif" opacity="0.45">Points flow in configurable batches (capacity); data is never fully loaded into RAM at once</text>
+  <text x="92" y="165" text-anchor="middle" font-size="10" fill="currentColor" font-family="system-ui,sans-serif" opacity="0.5">Ingest</text>
+  <text x="299" y="165" text-anchor="middle" font-size="10" fill="currentColor" font-family="system-ui,sans-serif" opacity="0.5">Transform / Classify</text>
+  <text x="514" y="165" text-anchor="middle" font-size="10" fill="currentColor" font-family="system-ui,sans-serif" opacity="0.5">Project / Subset</text>
+  <text x="723" y="165" text-anchor="middle" font-size="10" fill="currentColor" font-family="system-ui,sans-serif" opacity="0.5">Serialize</text>
+  <!-- Batch note -->
+  <text x="410" y="200" text-anchor="middle" font-size="10" fill="currentColor" font-family="system-ui,sans-serif" opacity="0.45">Points flow in configurable batches (capacity); data is never fully loaded into RAM at once</text>
 </svg>
 
 ## How the PDAL Execution Model Works

@@ -434,4 +434,4 @@ For infrastructure deliverables, cross-check at least one ground control point a
 - [LAS/LAZ File Structure](/point-cloud-data-standards-fundamentals/laslaz-file-structure/) — VLR layout, GeoKey records, and binary header fields
 - [How to Parse LAS Headers with Python](/point-cloud-data-standards-fundamentals/laslaz-file-structure/how-to-parse-las-headers-with-python/) — extract scale, offset, point count, and CRS records
 - [Spatial Reprojection in PDAL](/pdal-pipeline-architecture-execution/spatial-reprojection/) — PDAL-native out-of-core reprojection for large surveys
-- [Point Cloud Data Standards & Fundamentals](/point-cloud-data-standards-fundamentals/) — pillar overview of LAS/LAZ formats, classification, and spatial metadata standards
+- [Point Cloud Data Standards & Fundamentals](/point-cloud-data-standards-fundamentals/) — reference overview of LAS/LAZ formats, classification codes, and spatial metadata standards

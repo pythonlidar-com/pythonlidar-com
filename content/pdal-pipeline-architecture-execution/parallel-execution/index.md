@@ -1,6 +1,86 @@
-# Parallel Execution in Python LiDAR & Point Cloud Processing Workflows
+---
+title: "Parallel Execution in PDAL: Multi-Core Point Cloud Processing with Python"
+description: "Distribute PDAL-driven LiDAR workflows across all CPU cores using Python's ProcessPoolExecutor — covering fan-out architecture, boundary-safe tiling, error recovery, and memory-aware tuning."
+slug: "parallel-execution"
+type: "cluster"
+breadcrumb: "Parallel Execution"
+datePublished: "2024-03-15"
+dateModified: "2026-06-24"
+---
 
-Point cloud datasets routinely exceed tens of gigabytes, and processing them one tile at a time turns overnight batch jobs into multi-day bottlenecks. This page explains how to distribute PDAL-driven workloads across all available CPU cores using Python's `ProcessPoolExecutor`, covering the worker dispatch architecture, boundary-safe spatial tiling, deterministic error handling, and memory-aware tuning. These techniques are part of the [PDAL Pipeline Architecture & Execution](/pdal-pipeline-architecture-execution/) parent topic, which explains how PDAL stages chain, buffer, and write point data. If you need to push beyond a single machine, see [Optimizing PDAL for Multi-Core Processing](/pdal-pipeline-architecture-execution/parallel-execution/optimizing-pdal-for-multi-core-processing/) for cache-aware chunking and NUMA-binding strategies.
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Article",
+      "headline": "Parallel Execution in PDAL: Multi-Core Point Cloud Processing with Python",
+      "description": "Distribute PDAL-driven LiDAR workflows across all CPU cores using Python's ProcessPoolExecutor — covering fan-out architecture, boundary-safe tiling, error recovery, and memory-aware tuning.",
+      "datePublished": "2024-03-15",
+      "dateModified": "2026-06-24",
+      "author": { "@type": "Organization", "name": "pythonlidar.com" }
+    },
+    {
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://pythonlidar.com/" },
+        { "@type": "ListItem", "position": 2, "name": "PDAL Pipeline Architecture & Execution", "item": "https://pythonlidar.com/pdal-pipeline-architecture-execution/" },
+        { "@type": "ListItem", "position": 3, "name": "Parallel Execution", "item": "https://pythonlidar.com/pdal-pipeline-architecture-execution/parallel-execution/" }
+      ]
+    },
+    {
+      "@type": "HowTo",
+      "name": "Run PDAL point cloud pipelines in parallel with Python",
+      "step": [
+        { "@type": "HowToStep", "name": "Validate the base pipeline for a single tile", "text": "Confirm the sequential pipeline executes cleanly for one tile before introducing concurrency." },
+        { "@type": "HowToStep", "name": "Build a tile manifest", "text": "Scan the input directory, filter by .las/.laz extension, and sort files largest-first to minimise straggler delay." },
+        { "@type": "HowToStep", "name": "Serialise the pipeline template per worker", "text": "Deep-copy the base pipeline JSON for each task and inject per-tile input/output paths so each worker is fully isolated." },
+        { "@type": "HowToStep", "name": "Dispatch to ProcessPoolExecutor", "text": "Submit all tasks to a ProcessPoolExecutor so each worker spawns its own OS process with an independent PDAL C++ runtime, bypassing the GIL." },
+        { "@type": "HowToStep", "name": "Collect and validate results", "text": "Use as_completed() to log each result immediately, detect partial failures, and validate output point counts and CRS before merging." }
+      ]
+    },
+    {
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "Why use ProcessPoolExecutor instead of ThreadPoolExecutor for PDAL?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "PDAL's Python bindings execute C++ code that holds the GIL during point buffer transfers. ThreadPoolExecutor workers share one GIL, so only one thread can call into PDAL at a time. ProcessPoolExecutor spawns separate OS processes, each with its own GIL, enabling genuine simultaneous PDAL execution across all cores."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How many parallel workers should I use for PDAL tile processing?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Start with max_workers equal to your physical (not hyperthreaded) core count. Point cloud processing is memory-bandwidth intensive; adding logical cores beyond the physical count typically increases L3 cache evictions and slows throughput. Monitor RSS per worker and reduce max_workers if total RSS approaches available RAM."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How do I prevent seam artifacts at tile boundaries in parallel PDAL runs?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Configure filters.splitter with a buffer parameter (typically 0.5–2.0 metres) so overlapping tiles are emitted. Each worker receives an overlap zone that prevents edge effects in ground classification and outlier removal. Strip the buffer with filters.crop in the output stage of each worker pipeline before aggregation."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How do I resume a parallel PDAL run after a partial failure?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Check for the existence of the output file at the start of the worker function and return early if it already exists and has a non-zero size. This makes the workflow idempotent: re-running with the full manifest will skip completed tiles and only process those that are missing or zero-byte."
+          }
+        }
+      ]
+    }
+  ]
+}
+</script>
+
+Point cloud datasets routinely exceed tens of gigabytes, and processing them one tile at a time turns overnight batch jobs into multi-day bottlenecks. This page explains how to distribute PDAL-driven workloads across all available CPU cores using Python's `ProcessPoolExecutor`, covering the worker dispatch architecture, boundary-safe spatial tiling, deterministic error handling, and memory-aware tuning. These techniques operate within the broader [PDAL Pipeline Architecture & Execution](/pdal-pipeline-architecture-execution/) model, which explains how PDAL stages chain, buffer, and write point data. If you need to push beyond a single machine, [Optimizing PDAL for Multi-Core Processing](/pdal-pipeline-architecture-execution/parallel-execution/optimizing-pdal-for-multi-core-processing/) covers cache-aware chunking and NUMA-binding strategies.
 
 ## Prerequisites
 
@@ -33,7 +113,7 @@ print("Points read:", p.metadata["metadata"]["readers.las"][0]["count"])
 
 Parallel point cloud processing follows a fan-out / fan-in model: a coordinator discovers and manifests all input tiles, dispatches each tile to an isolated worker process running its own PDAL instance, and then aggregates results once all workers complete. The diagram below shows this three-phase structure.
 
-<svg viewBox="0 0 780 310" role="img" aria-label="Fan-out fan-in parallel PDAL workflow diagram" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:780px;display:block;margin:1.5rem auto">
+<svg viewBox="0 0 780 340" role="img" aria-label="Fan-out fan-in parallel PDAL workflow diagram" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:780px;display:block;margin:1.5rem auto">
   <title>Fan-out / fan-in parallel PDAL workflow</title>
   <desc>A coordinator node fans out to four independent PDAL worker processes, each processing a separate LiDAR tile, and then fans back into a single aggregation step that merges outputs.</desc>
   <defs>
@@ -42,38 +122,38 @@ Parallel point cloud processing follows a fan-out / fan-in model: a coordinator 
     </marker>
   </defs>
   <!-- Coordinator box -->
-  <rect x="10" y="120" width="150" height="70" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
-  <text x="85" y="149" text-anchor="middle" font-family="system-ui,sans-serif" font-size="12" fill="currentColor" font-weight="600">Coordinator</text>
-  <text x="85" y="165" text-anchor="middle" font-family="system-ui,sans-serif" font-size="10" fill="currentColor">Tile manifest</text>
-  <text x="85" y="179" text-anchor="middle" font-family="system-ui,sans-serif" font-size="10" fill="currentColor">+ pipeline template</text>
+  <rect x="10" y="135" width="150" height="70" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="85" y="164" text-anchor="middle" font-family="system-ui,sans-serif" font-size="12" fill="currentColor" font-weight="600">Coordinator</text>
+  <text x="85" y="180" text-anchor="middle" font-family="system-ui,sans-serif" font-size="10" fill="currentColor">Tile manifest</text>
+  <text x="85" y="194" text-anchor="middle" font-family="system-ui,sans-serif" font-size="10" fill="currentColor">+ pipeline template</text>
   <!-- Fan-out arrows -->
-  <line x1="160" y1="140" x2="270" y2="68" stroke="currentColor" stroke-width="1.2" marker-end="url(#arrowhead)" opacity="0.7"/>
-  <line x1="160" y1="148" x2="270" y2="135" stroke="currentColor" stroke-width="1.2" marker-end="url(#arrowhead)" opacity="0.7"/>
-  <line x1="160" y1="162" x2="270" y2="175" stroke="currentColor" stroke-width="1.2" marker-end="url(#arrowhead)" opacity="0.7"/>
-  <line x1="160" y1="170" x2="270" y2="242" stroke="currentColor" stroke-width="1.2" marker-end="url(#arrowhead)" opacity="0.7"/>
-  <!-- Worker boxes -->
-  <rect x="270" y="40" width="200" height="56" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
-  <text x="370" y="62" text-anchor="middle" font-family="system-ui,sans-serif" font-size="11" fill="currentColor" font-weight="600">Worker 1</text>
-  <text x="370" y="78" text-anchor="middle" font-family="system-ui,sans-serif" font-size="10" fill="currentColor">readers.las → filters → writers.las</text>
-  <rect x="270" y="107" width="200" height="56" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
-  <text x="370" y="129" text-anchor="middle" font-family="system-ui,sans-serif" font-size="11" fill="currentColor" font-weight="600">Worker 2</text>
-  <text x="370" y="145" text-anchor="middle" font-family="system-ui,sans-serif" font-size="10" fill="currentColor">readers.las → filters → writers.las</text>
-  <rect x="270" y="147" width="200" height="56" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
-  <text x="370" y="169" text-anchor="middle" font-family="system-ui,sans-serif" font-size="11" fill="currentColor" font-weight="600">Worker 3</text>
-  <text x="370" y="185" text-anchor="middle" font-family="system-ui,sans-serif" font-size="10" fill="currentColor">readers.las → filters → writers.las</text>
-  <rect x="270" y="214" width="200" height="56" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
-  <text x="370" y="236" text-anchor="middle" font-family="system-ui,sans-serif" font-size="11" fill="currentColor" font-weight="600">Worker 4</text>
-  <text x="370" y="252" text-anchor="middle" font-family="system-ui,sans-serif" font-size="10" fill="currentColor">readers.las → filters → writers.las</text>
+  <line x1="160" y1="152" x2="268" y2="55" stroke="currentColor" stroke-width="1.2" marker-end="url(#arrowhead)" opacity="0.7"/>
+  <line x1="160" y1="161" x2="268" y2="130" stroke="currentColor" stroke-width="1.2" marker-end="url(#arrowhead)" opacity="0.7"/>
+  <line x1="160" y1="179" x2="268" y2="205" stroke="currentColor" stroke-width="1.2" marker-end="url(#arrowhead)" opacity="0.7"/>
+  <line x1="160" y1="188" x2="268" y2="280" stroke="currentColor" stroke-width="1.2" marker-end="url(#arrowhead)" opacity="0.7"/>
+  <!-- Worker boxes (each 56px tall, spaced 75px apart: y=30,105,180,255) -->
+  <rect x="270" y="30" width="210" height="52" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="375" y="52" text-anchor="middle" font-family="system-ui,sans-serif" font-size="11" fill="currentColor" font-weight="600">Worker 1</text>
+  <text x="375" y="68" text-anchor="middle" font-family="system-ui,sans-serif" font-size="10" fill="currentColor">readers.las → filters → writers.las</text>
+  <rect x="270" y="105" width="210" height="52" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="375" y="127" text-anchor="middle" font-family="system-ui,sans-serif" font-size="11" fill="currentColor" font-weight="600">Worker 2</text>
+  <text x="375" y="143" text-anchor="middle" font-family="system-ui,sans-serif" font-size="10" fill="currentColor">readers.las → filters → writers.las</text>
+  <rect x="270" y="180" width="210" height="52" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="375" y="202" text-anchor="middle" font-family="system-ui,sans-serif" font-size="11" fill="currentColor" font-weight="600">Worker 3</text>
+  <text x="375" y="218" text-anchor="middle" font-family="system-ui,sans-serif" font-size="10" fill="currentColor">readers.las → filters → writers.las</text>
+  <rect x="270" y="255" width="210" height="52" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="375" y="277" text-anchor="middle" font-family="system-ui,sans-serif" font-size="11" fill="currentColor" font-weight="600">Worker 4</text>
+  <text x="375" y="293" text-anchor="middle" font-family="system-ui,sans-serif" font-size="10" fill="currentColor">readers.las → filters → writers.las</text>
   <!-- Fan-in arrows -->
-  <line x1="470" y1="68" x2="580" y2="140" stroke="currentColor" stroke-width="1.2" marker-end="url(#arrowhead)" opacity="0.7"/>
-  <line x1="470" y1="135" x2="580" y2="148" stroke="currentColor" stroke-width="1.2" marker-end="url(#arrowhead)" opacity="0.7"/>
-  <line x1="470" y1="175" x2="580" y2="162" stroke="currentColor" stroke-width="1.2" marker-end="url(#arrowhead)" opacity="0.7"/>
-  <line x1="470" y1="242" x2="580" y2="170" stroke="currentColor" stroke-width="1.2" marker-end="url(#arrowhead)" opacity="0.7"/>
+  <line x1="480" y1="56" x2="578" y2="152" stroke="currentColor" stroke-width="1.2" marker-end="url(#arrowhead)" opacity="0.7"/>
+  <line x1="480" y1="131" x2="578" y2="161" stroke="currentColor" stroke-width="1.2" marker-end="url(#arrowhead)" opacity="0.7"/>
+  <line x1="480" y1="206" x2="578" y2="179" stroke="currentColor" stroke-width="1.2" marker-end="url(#arrowhead)" opacity="0.7"/>
+  <line x1="480" y1="281" x2="578" y2="188" stroke="currentColor" stroke-width="1.2" marker-end="url(#arrowhead)" opacity="0.7"/>
   <!-- Aggregation box -->
-  <rect x="580" y="120" width="185" height="70" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
-  <text x="672" y="149" text-anchor="middle" font-family="system-ui,sans-serif" font-size="12" fill="currentColor" font-weight="600">Aggregation</text>
-  <text x="672" y="165" text-anchor="middle" font-family="system-ui,sans-serif" font-size="10" fill="currentColor">Merge LAZ tiles /</text>
-  <text x="672" y="179" text-anchor="middle" font-family="system-ui,sans-serif" font-size="10" fill="currentColor">validate outputs</text>
+  <rect x="580" y="135" width="185" height="70" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="672" y="164" text-anchor="middle" font-family="system-ui,sans-serif" font-size="12" fill="currentColor" font-weight="600">Aggregation</text>
+  <text x="672" y="180" text-anchor="middle" font-family="system-ui,sans-serif" font-size="10" fill="currentColor">Merge LAZ tiles /</text>
+  <text x="672" y="194" text-anchor="middle" font-family="system-ui,sans-serif" font-size="10" fill="currentColor">validate outputs</text>
 </svg>
 
 The execution lifecycle unfolds in five phases:
@@ -150,6 +230,11 @@ def process_tile(tile_path: str, pipeline_template: Dict[str, Any], output_dir: 
     out_name = Path(tile_path).stem + "_proc.laz"
     out_path = str(Path(output_dir) / out_name)
 
+    # Skip already-processed tiles to make the workflow idempotent
+    if Path(out_path).exists() and Path(out_path).stat().st_size > 1024:
+        logging.info("SKIP (exists) %s", tile_path)
+        return {"tile": tile_path, "output": out_path, "points": -1, "ok": True}
+
     # Deep-copy prevents mutation across worker restarts
     pipeline_def = json.loads(json.dumps(pipeline_template))
     pipeline_def["pipeline"][0]["filename"] = tile_path
@@ -191,7 +276,7 @@ def run_parallel_workflow(
                 results.append({"tile": str(tile), "ok": False, "error": str(exc)})
 
     ok = sum(1 for r in results if r["ok"])
-    total_pts = sum(r.get("points", 0) for r in results)
+    total_pts = sum(r.get("points", 0) for r in results if r.get("points", 0) > 0)
     logging.info(
         "Complete — %d/%d tiles OK, %d total points written",
         ok, len(manifest), total_pts
@@ -215,19 +300,21 @@ if __name__ == "__main__":
 
 **`process_tile` imports `pdal` inside the function body.** Importing PDAL at module level would require the `pdal` module to be picklable across process boundaries; importing it inside the worker function sidesteps serialization entirely and guarantees each worker initialises its own PDAL C++ runtime.
 
+**Idempotent skip check** — the early-return guard on `out_path` lets you safely re-run the workflow after a hardware failure or quota limit without reprocessing completed tiles. Only tiles with a missing or zero-byte output file are dispatched.
+
 **Deep-copy via `json.loads(json.dumps(...))`** creates a fully independent pipeline dictionary per call. Mutating a shared template dict — even accidentally — would cause race conditions when multiple workers reference the same object during startup.
 
 **`as_completed()` versus `executor.map()`** — `as_completed()` lets you log each result immediately, retry individual failures, and avoid blocking until the slowest tile finishes. `executor.map()` buffers all results and re-raises the first exception, which hides partial successes in batch runs.
 
-**Structured result dicts** make it straightforward to write a retry loop: filter `results` for `ok == False`, rebuild a manifest from failed tiles, and call `run_parallel_workflow` again with the subset.
+**Structured result dicts** make it straightforward to build a retry loop: filter `results` for `ok == False`, rebuild a manifest from failed tiles, and call `run_parallel_workflow` again with the subset.
 
-The pipeline template uses `EPSG:32632` (UTM Zone 32N) as the output spatial reference. Replace with the EPSG code appropriate for your survey area before production use. Understanding how [spatial reprojection](/pdal-pipeline-architecture-execution/spatial-reprojection/) interacts with PDAL's CRS metadata is essential when combining tiles from multiple acquisition zones.
+The pipeline template writes to `EPSG:32632` (UTM Zone 32N). Replace with the EPSG code appropriate for your survey area before production use. Understanding how [spatial reprojection](/pdal-pipeline-architecture-execution/spatial-reprojection/) interacts with PDAL's CRS metadata is essential when combining tiles from multiple acquisition zones.
 
 ## Parameter Reference Table
 
 | Parameter | Stage | Type | Default | Recommended range | Effect |
 |---|---|---|---|---|---|
-| `max_workers` | Python executor | int | 4 | physical core count | Controls OS-level process parallelism; exceed physical cores to trigger cache thrashing |
+| `max_workers` | Python executor | int | 4 | physical core count | Controls OS-level process parallelism; exceeding physical cores triggers cache thrashing |
 | `chunk_size` | readers.las | int | 1,000,000 | 500,000 – 2,000,000 | Points loaded per I/O block; larger values reduce syscall overhead but raise peak RAM |
 | `mean_k` | filters.outlier | int | 8 | 8 – 20 | Neighbourhood size for statistical outlier removal; higher = fewer false positives |
 | `multiplier` | filters.outlier | float | 2.0 | 2.0 – 3.5 | Standard-deviation threshold; lower removes more noise but risks clipping valid returns |
@@ -235,7 +322,7 @@ The pipeline template uses `EPSG:32632` (UTM Zone 32N) as the output spatial ref
 | `window` | filters.smrf | float | 18.0 | 5.0 – 33.0 | Maximum window size in metres for ground surface extraction |
 | `threshold` | filters.smrf | float | 0.5 | 0.1 – 1.0 | Object height threshold in metres above provisional ground surface |
 | `compression` | writers.las | bool | False | True for production | Writes LAZ (LASzip) output; reduces disk I/O at the cost of ~5 % CPU per worker |
-| overlap_m | filters.splitter | float | 0.0 | 0.5 – 2.0 | Overlap buffer at tile boundaries; prevents ground-filter edge artifacts |
+| `buffer` | filters.splitter | float | 0.0 | 0.5 – 2.0 | Overlap buffer at tile boundaries; prevents ground-filter edge artifacts |
 
 Setting `OMP_NUM_THREADS` to your physical core count before launching the script prevents SMRF's OpenMP loops from over-subscribing the CPU when multiple workers run simultaneously:
 
@@ -287,7 +374,7 @@ print(f"Validation: {passed}/{len(tiles)} tiles passed")
 assert passed == len(tiles), "One or more output tiles failed validation"
 ```
 
-A bounding-box check can catch silent coordinate corruption: compare the union of all output bounding boxes against the known survey extent. Use PDAL's `pipeline.metadata["metadata"]["readers.las"][0]["bounds"]` field for each tile, which returns an object with `minx`, `miny`, `maxx`, `maxy` keys. See [pipeline validation](/pdal-pipeline-architecture-execution/pipeline-validation/) for systematic schema and metadata verification patterns.
+A bounding-box check can catch silent coordinate corruption: compare the union of all output bounding boxes against the known survey extent. Use `pipeline.metadata["metadata"]["readers.las"][0]["bounds"]` for each tile — it returns an object with `minx`, `miny`, `maxx`, `maxy` keys. See [pipeline validation](/pdal-pipeline-architecture-execution/pipeline-validation/) for systematic schema and metadata verification patterns.
 
 ## Performance Tuning
 
@@ -337,18 +424,10 @@ PDAL's Python bindings execute C++ code that holds the GIL during point buffer t
 Start with `max_workers` equal to your physical (not logical/hyperthreaded) core count. Point cloud processing is memory-bandwidth intensive; adding logical cores beyond the physical count typically increases L3 cache evictions and slows throughput. Monitor RSS per worker with `psutil.Process(pid).memory_info().rss` and reduce `max_workers` if total RSS approaches available RAM.
 
 **Can I process tiles that share boundary regions?**
-Yes, but seam artifacts from spatial filters (SMRF, outlier removal) require overlap buffers. Configure `filters.splitter` with an `"origin_x"`, `"origin_y"`, `"length"`, and `"buffer"` to emit overlapping tiles, then strip the buffer zone in `filters.crop` during the output-writing stage of each worker pipeline. The `buffer` parameter is typically 0.5–2.0 metres, depending on point density and filter window size. See [Pipeline Filtering Logic](/pdal-pipeline-architecture-execution/pipeline-filtering-logic/) for how filter stages consume and emit dimension buffers.
+Yes, but seam artifacts from spatial filters (SMRF, outlier removal) require overlap buffers. Configure `filters.splitter` with an `"origin_x"`, `"origin_y"`, `"length"`, and `"buffer"` to emit overlapping tiles, then strip the buffer zone with `filters.crop` during the output-writing stage of each worker pipeline. The `buffer` parameter is typically 0.5–2.0 metres, depending on point density and filter window size. See [pipeline filtering logic](/pdal-pipeline-architecture-execution/pipeline-filtering-logic/) for how filter stages consume and emit dimension buffers.
 
 **How do I resume a partial run without reprocessing completed tiles?**
-Check for the existence of the output file at the start of `process_tile` and return early if it already exists and is non-zero size:
-
-```python
-if Path(out_path).exists() and Path(out_path).stat().st_size > 1024:
-    logging.info("SKIP (exists) %s", tile_path)
-    return {"tile": tile_path, "output": out_path, "points": -1, "ok": True}
-```
-
-This makes the workflow idempotent and enables safe restarts after hardware failures or quota limits.
+The idempotent skip check in `process_tile` already handles this — it returns early if the output file exists and exceeds 1 KB. Re-running the full manifest will skip completed tiles and only process those that are missing or zero-byte, making safe restarts after hardware failures or quota limits straightforward.
 
 ---
 

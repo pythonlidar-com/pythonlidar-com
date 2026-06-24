@@ -24,6 +24,7 @@ dateModified: "2026-06-24"
       "description": "Step-by-step guide to chaining PDAL readers, filters, and writers in Python for noise removal, outlier rejection, and classification refinement — with a complete runnable example.",
       "datePublished": "2024-11-15",
       "dateModified": "2026-06-24",
+      "url": "https://pythonlidar.com/pdal-pipeline-architecture-execution/pdal-stage-chaining/chaining-pdal-stages-for-data-cleaning/",
       "author": { "@type": "Organization", "name": "pythonlidar.com" }
     },
     {
@@ -40,11 +41,10 @@ dateModified: "2026-06-24"
       "description": "Build a deterministic LiDAR cleaning pipeline by ordering PDAL readers, outlier filters, range clamps, classification assignments, and writers.",
       "step": [
         { "@type": "HowToStep", "position": 1, "name": "Declare the reader with a spatial reference", "text": "Start the pipeline with readers.las and set spatialreference to anchor the CRS." },
-        { "@type": "HowToStep", "position": 2, "name": "Reproject if needed", "text": "Insert filters.reprojection or filters.assign before geometric filters to standardise units and vertical datums." },
-        { "@type": "HowToStep", "position": 3, "name": "Apply geometric range clamps", "text": "Use filters.range to remove points outside valid elevation and scan-angle bounds." },
-        { "@type": "HowToStep", "position": 4, "name": "Remove statistical outliers", "text": "Add filters.outlier with method statistical to flag isolated noise and atmospheric scatter." },
-        { "@type": "HowToStep", "position": 5, "name": "Refine classification", "text": "Use filters.assign to set or override classification codes based on cleaned geometry." },
-        { "@type": "HowToStep", "position": 6, "name": "Write compressed output", "text": "Terminate the chain with writers.las and compression true to produce a clean LAZ file." }
+        { "@type": "HowToStep", "position": 2, "name": "Apply geometric range clamps", "text": "Use filters.range to remove points outside valid elevation and scan-angle bounds." },
+        { "@type": "HowToStep", "position": 3, "name": "Remove statistical outliers", "text": "Add filters.outlier with method statistical to flag isolated noise and atmospheric scatter." },
+        { "@type": "HowToStep", "position": 4, "name": "Refine classification", "text": "Use filters.assign to set or override classification codes based on cleaned geometry." },
+        { "@type": "HowToStep", "position": 5, "name": "Write compressed output", "text": "Terminate the chain with writers.las and compression true to produce a clean LAZ file." }
       ]
     },
     {
@@ -55,7 +55,7 @@ dateModified: "2026-06-24"
           "name": "What order should PDAL filters run in a cleaning pipeline?",
           "acceptedAnswer": {
             "@type": "Answer",
-            "text": "Apply coordinate normalisation first, then geometric range clamps, then statistical outlier removal, then classification updates. Running outlier filters before range clamps wastes cycles on points that will be discarded anyway."
+            "text": "Apply coordinate normalisation first, then geometric range clamps with filters.range, then statistical outlier removal with filters.outlier, then classification updates with filters.assign. Running outlier detection before range clamps wastes CPU cycles on points that will be discarded anyway and skews the neighbourhood density statistics."
           }
         },
         {
@@ -71,7 +71,7 @@ dateModified: "2026-06-24"
           "name": "How do I handle multi-gigabyte LAS files in a cleaning chain?",
           "acceptedAnswer": {
             "@type": "Answer",
-            "text": "Insert filters.splitter early in the chain. Set the length parameter to tile the point cloud into chunks that fit in RAM, forcing sequential processing and releasing memory between tiles."
+            "text": "Insert filters.splitter early in the chain. Set the length parameter to tile the point cloud into chunks that fit in available RAM, forcing sequential processing and releasing memory between tiles."
           }
         }
       ]
@@ -80,7 +80,7 @@ dateModified: "2026-06-24"
 }
 </script>
 
-**TL;DR:** Chain a `readers.las` → `filters.range` → `filters.outlier` → `filters.assign` → `writers.las` pipeline, call `pdal.Pipeline(config).execute()`, and PDAL passes a shared in-memory buffer through each stage — no intermediate files, no redundant I/O.
+**TL;DR:** Chain `readers.las` → `filters.range` → `filters.outlier` → `filters.assign` → `writers.las`, call `pdal.Pipeline(config).execute()`, and PDAL passes a shared in-memory PointView buffer through each stage — no intermediate files, no redundant I/O.
 
 ## Context and Motivation
 
@@ -92,44 +92,52 @@ This guide is part of [PDAL Stage Chaining](/pdal-pipeline-architecture-executio
 
 ## Stage-Flow Diagram
 
-The following diagram shows the six-stage cleaning chain and what each stage removes or transforms.
+The diagram below shows the five-stage cleaning chain, what each stage removes or transforms, and the shared PointView buffer that eliminates intermediate disk writes.
 
-<svg viewBox="0 0 720 160" role="img" aria-label="PDAL data-cleaning stage flow: reader to range filter to outlier filter to assign to writer" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:720px;display:block;margin:1.5rem auto;">
+<svg viewBox="0 0 760 190" role="img" aria-label="PDAL five-stage data-cleaning pipeline: readers.las, filters.range, filters.outlier, filters.assign, writers.las" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:760px;display:block;margin:1.5rem auto;">
   <title>PDAL data-cleaning stage flow</title>
-  <desc>Six sequential PDAL stages: readers.las, filters.range, filters.outlier, filters.assign, writers.las. Arrows show left-to-right buffer flow. Labels below each box note what each stage removes or modifies.</desc>
+  <desc>Five sequential PDAL stages from left to right: readers.las ingests raw LAS or LAZ with a CRS anchor; filters.range drops out-of-bounds points on Z and scan-angle limits; filters.outlier flags statistically isolated noise points with Classification 7; filters.assign updates classification codes using a WHERE expression; writers.las serialises compressed LAZ output. Arrows between boxes represent the shared in-memory PointView buffer passing through each stage without intermediate disk writes.</desc>
   <defs>
-    <marker id="arr" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
-      <path d="M0,0 L0,6 L8,3 z" fill="currentColor" opacity="0.55"/>
+    <marker id="arr-clean" markerWidth="9" markerHeight="9" refX="7" refY="3.5" orient="auto">
+      <path d="M0,0.5 L0,6.5 L8,3.5 z" fill="currentColor" opacity="0.6"/>
     </marker>
   </defs>
-  <!-- Stage boxes -->
-  <rect x="4" y="28" width="108" height="44" rx="6" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.7"/>
-  <text x="58" y="47" text-anchor="middle" font-size="11" fill="currentColor" font-family="monospace">readers.las</text>
-  <text x="58" y="62" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.7">raw LAS/LAZ</text>
-  <text x="58" y="104" text-anchor="middle" font-size="9" fill="currentColor" opacity="0.55">ingest + CRS</text>
-  <rect x="136" y="28" width="108" height="44" rx="6" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.7"/>
-  <text x="190" y="47" text-anchor="middle" font-size="11" fill="currentColor" font-family="monospace">filters.range</text>
-  <text x="190" y="62" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.7">Z / angle bounds</text>
-  <text x="190" y="104" text-anchor="middle" font-size="9" fill="currentColor" opacity="0.55">drops OOB points</text>
-  <rect x="268" y="28" width="120" height="44" rx="6" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.7"/>
-  <text x="328" y="47" text-anchor="middle" font-size="11" fill="currentColor" font-family="monospace">filters.outlier</text>
-  <text x="328" y="62" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.7">statistical noise</text>
-  <text x="328" y="104" text-anchor="middle" font-size="9" fill="currentColor" opacity="0.55">flags isolated pts</text>
-  <rect x="408" y="28" width="112" height="44" rx="6" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.7"/>
-  <text x="464" y="47" text-anchor="middle" font-size="11" fill="currentColor" font-family="monospace">filters.assign</text>
-  <text x="464" y="62" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.7">classification</text>
-  <text x="464" y="104" text-anchor="middle" font-size="9" fill="currentColor" opacity="0.55">updates codes</text>
-  <rect x="540" y="28" width="108" height="44" rx="6" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.7"/>
-  <text x="594" y="47" text-anchor="middle" font-size="11" fill="currentColor" font-family="monospace">writers.las</text>
-  <text x="594" y="62" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.7">compressed LAZ</text>
-  <text x="594" y="104" text-anchor="middle" font-size="9" fill="currentColor" opacity="0.55">serialise output</text>
-  <!-- Arrows -->
-  <line x1="113" y1="50" x2="133" y2="50" stroke="currentColor" stroke-width="1.5" opacity="0.55" marker-end="url(#arr)"/>
-  <line x1="245" y1="50" x2="265" y2="50" stroke="currentColor" stroke-width="1.5" opacity="0.55" marker-end="url(#arr)"/>
-  <line x1="389" y1="50" x2="406" y2="50" stroke="currentColor" stroke-width="1.5" opacity="0.55" marker-end="url(#arr)"/>
-  <line x1="521" y1="50" x2="538" y2="50" stroke="currentColor" stroke-width="1.5" opacity="0.55" marker-end="url(#arr)"/>
-  <!-- Buffer label -->
-  <text x="360" y="148" text-anchor="middle" font-size="9" fill="currentColor" opacity="0.45">shared PointView buffer — no intermediate disk writes</text>
+  <!-- Stage 1: readers.las -->
+  <rect x="8" y="30" width="122" height="60" rx="7" fill="none" stroke="currentColor" stroke-width="1.6" opacity="0.75"/>
+  <text x="69" y="54" text-anchor="middle" font-size="11.5" font-family="monospace" fill="currentColor" font-weight="600">readers.las</text>
+  <text x="69" y="72" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.8">raw LAS / LAZ</text>
+  <text x="69" y="112" text-anchor="middle" font-size="9.5" fill="currentColor" opacity="0.6">ingest + CRS anchor</text>
+  <!-- Arrow 1 -->
+  <line x1="131" y1="60" x2="150" y2="60" stroke="currentColor" stroke-width="1.5" opacity="0.55" marker-end="url(#arr-clean)"/>
+  <!-- Stage 2: filters.range -->
+  <rect x="152" y="30" width="122" height="60" rx="7" fill="none" stroke="currentColor" stroke-width="1.6" opacity="0.75"/>
+  <text x="213" y="54" text-anchor="middle" font-size="11.5" font-family="monospace" fill="currentColor" font-weight="600">filters.range</text>
+  <text x="213" y="72" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.8">Z + scan-angle clamp</text>
+  <text x="213" y="112" text-anchor="middle" font-size="9.5" fill="currentColor" opacity="0.6">drops OOB points</text>
+  <!-- Arrow 2 -->
+  <line x1="275" y1="60" x2="294" y2="60" stroke="currentColor" stroke-width="1.5" opacity="0.55" marker-end="url(#arr-clean)"/>
+  <!-- Stage 3: filters.outlier -->
+  <rect x="296" y="30" width="122" height="60" rx="7" fill="none" stroke="currentColor" stroke-width="1.6" opacity="0.75"/>
+  <text x="357" y="54" text-anchor="middle" font-size="11.5" font-family="monospace" fill="currentColor" font-weight="600">filters.outlier</text>
+  <text x="357" y="72" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.8">statistical noise</text>
+  <text x="357" y="112" text-anchor="middle" font-size="9.5" fill="currentColor" opacity="0.6">flags isolated pts cls=7</text>
+  <!-- Arrow 3 -->
+  <line x1="419" y1="60" x2="438" y2="60" stroke="currentColor" stroke-width="1.5" opacity="0.55" marker-end="url(#arr-clean)"/>
+  <!-- Stage 4: filters.assign -->
+  <rect x="440" y="30" width="122" height="60" rx="7" fill="none" stroke="currentColor" stroke-width="1.6" opacity="0.75"/>
+  <text x="501" y="54" text-anchor="middle" font-size="11.5" font-family="monospace" fill="currentColor" font-weight="600">filters.assign</text>
+  <text x="501" y="72" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.8">classification fix-up</text>
+  <text x="501" y="112" text-anchor="middle" font-size="9.5" fill="currentColor" opacity="0.6">updates class codes</text>
+  <!-- Arrow 4 -->
+  <line x1="563" y1="60" x2="582" y2="60" stroke="currentColor" stroke-width="1.5" opacity="0.55" marker-end="url(#arr-clean)"/>
+  <!-- Stage 5: writers.las -->
+  <rect x="584" y="30" width="122" height="60" rx="7" fill="none" stroke="currentColor" stroke-width="1.6" opacity="0.75"/>
+  <text x="645" y="54" text-anchor="middle" font-size="11.5" font-family="monospace" fill="currentColor" font-weight="600">writers.las</text>
+  <text x="645" y="72" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.8">compressed LAZ</text>
+  <text x="645" y="112" text-anchor="middle" font-size="9.5" fill="currentColor" opacity="0.6">serialise to disk</text>
+  <!-- Shared buffer label -->
+  <line x1="60" y1="160" x2="700" y2="160" stroke="currentColor" stroke-width="0.8" opacity="0.2" stroke-dasharray="4 3"/>
+  <text x="380" y="178" text-anchor="middle" font-size="9.5" fill="currentColor" opacity="0.5">shared PointView buffer — no intermediate disk writes</text>
 </svg>
 
 ---
@@ -138,9 +146,9 @@ The following diagram shows the six-stage cleaning chain and what each stage rem
 
 - **PDAL 2.5 or later** with Python bindings installed (`pip install pdal`)
 - **Python 3.10+** with `numpy` available
-- **Input LAS/LAZ** file with at least `X`, `Y`, `Z`, `ScanAngleRank`, and `Classification` dimensions
+- **Input LAS/LAZ** file with at least `X`, `Y`, `Z`, `ScanAngleRank` (LAS 1.2/1.3) or `ScanAngle` (LAS 1.4), and `Classification` dimensions
 - **Known input CRS** — set `spatialreference` in the reader rather than relying on embedded VLR data, which is sometimes absent in older files
-- Test dataset recommendation: any USGS 3DEP tile from [usgs.gov/3dep](https://www.usgs.gov/3d-elevation-program) or the PDAL test dataset at `https://github.com/PDAL/data`
+- Test dataset recommendation: any USGS 3DEP tile from the [3D Elevation Program](https://www.usgs.gov/3d-elevation-program) or the PDAL sample data at `https://github.com/PDAL/data`
 
 ---
 
@@ -156,7 +164,7 @@ The following diagram shows the six-stage cleaning chain and what each stage rem
 }
 ```
 
-Setting `spatialreference` here overrides any embedded projection record and prevents silent datum mismatches when a downstream [spatial reprojection](/pdal-pipeline-architecture-execution/spatial-reprojection/) stage or range-based spatial filter assumes a specific unit system.
+Setting `spatialreference` here overrides any embedded projection record and prevents silent datum mismatches when a downstream [spatial reprojection](/pdal-pipeline-architecture-execution/spatial-reprojection/) stage or range-based spatial filter assumes a specific unit system. Always verify the EPSG code matches the sensor's recording datum — not the delivery datum — before adding a reprojection stage.
 
 ### Step 2 — Clamp to physically valid bounds with `filters.range`
 
@@ -167,7 +175,7 @@ Setting `spatialreference` here overrides any embedded projection record and pre
 }
 ```
 
-The `limits` string is a comma-separated list of `Dimension[min:max]` expressions. Place `filters.range` *before* `filters.outlier` so the statistical algorithm only sees points that are geometrically plausible — running outlier detection on atmospheric noise wastes CPU and skews the neighbourhood statistics. The [Pipeline Filtering Logic](/pdal-pipeline-architecture-execution/pipeline-filtering-logic/) cluster covers filter ordering rules in depth.
+The `limits` string is a comma-separated list of `Dimension[min:max]` expressions. Place `filters.range` *before* `filters.outlier` so the statistical algorithm only sees points that are geometrically plausible — running outlier detection on atmospheric noise wastes CPU and skews the neighbourhood statistics. The [Pipeline Filtering Logic](/pdal-pipeline-architecture-execution/pipeline-filtering-logic/) section covers filter ordering rules in depth.
 
 ### Step 3 — Remove statistical noise with `filters.outlier`
 
@@ -191,7 +199,7 @@ The `limits` string is a comma-separated list of `Dimension[min:max]` expression
 }
 ```
 
-The `value` parameter is a PDAL expression string. The `WHERE` clause restricts the assignment to unclassified points (code 0), leaving ground (2), vegetation (3–5), and building (6) labels from the original data intact. Classification codes follow the [ASPRS classification scheme](/point-cloud-data-standards-fundamentals/asprs-classification-codes/); check that reference when you need to preserve or recategorise specific return types.
+The `value` parameter is a PDAL expression string. The `WHERE` clause restricts the assignment to unclassified points (code 0), leaving ground (2), vegetation (3–5), and building (6) labels from the original data intact. Classification codes follow the [ASPRS classification scheme](/point-cloud-data-standards-fundamentals/asprs-classification-codes/) — consult that reference when you need to preserve or recategorise specific return types.
 
 ### Step 5 — Write compressed output
 
@@ -210,7 +218,7 @@ The `value` parameter is a PDAL expression string. The `WHERE` clause restricts 
 
 ## Complete Working Example
 
-The following self-contained script wires all five stages together, validates the pipeline before execution, and extracts metadata for audit logging.
+The following self-contained script wires all five stages together and extracts metadata for audit logging.
 
 ```python
 import pdal
@@ -267,7 +275,7 @@ def run_cleaning_pipeline(input_file: str, output_file: str) -> dict:
             "status": "success",
             "points_out": point_count,
             "array_shape": arrays[0].shape if arrays else (0,),
-            "stages_run": len(meta.get("metadata", {}).get("pipeline", {}).get("readers", [])),
+            "stages_run": len(stages),
             "bounds": meta.get("metadata", {}).get("filters.range", {}).get("bbox", {}),
         }
 
@@ -300,12 +308,12 @@ if __name__ == "__main__":
 | Stage | Parameter | Type | Default | Tuning guidance |
 |---|---|---|---|---|
 | `readers.las` | `spatialreference` | string | none | Always set explicitly; do not rely on embedded VLR |
-| `filters.range` | `limits` | string | — | Match Z bounds to sensor ceiling; tighten ScanAngleRank for nadir-only surveys |
+| `filters.range` | `limits` | string | — | Match Z bounds to sensor ceiling; tighten `ScanAngleRank` for nadir-only surveys |
 | `filters.outlier` | `method` | string | `statistical` | Use `radius` for very sparse or terrestrial clouds |
 | `filters.outlier` | `mean_k` | int | 8 | 10–16 for airborne; 6–10 for TLS/MLS |
-| `filters.outlier` | `multiplier` | float | 2.0 | Lower values (1.5) flag more points as noise; higher (3.5) are more permissive |
+| `filters.outlier` | `multiplier` | float | 2.0 | Lower (1.5) flags more noise; higher (3.5) is more permissive |
 | `filters.assign` | `value` | string | — | Must be a valid PDAL expression; `WHERE` clause prevents overwriting existing labels |
-| `writers.las` | `compression` | string | `"false"` | Set to `"true"` for LAZ output; reduces file size ~75 % |
+| `writers.las` | `compression` | string | `"false"` | Set to `"true"` for LAZ output; reduces file size ~75% |
 | `writers.las` | `extra_dims` | string | none | Set to `"all"` to preserve non-standard dimensions |
 
 ---
@@ -315,7 +323,8 @@ if __name__ == "__main__":
 After execution, confirm the pipeline produced a valid, complete output:
 
 ```python
-import pdal, json
+import pdal
+import json
 
 # Re-read the output and check point count and dimension names
 verify_pipeline = [
@@ -332,33 +341,47 @@ assert count > 0, "Output file is empty"
 print(f"Verified: {count} points, dimensions: {dim_names}")
 ```
 
-Also inspect bounding boxes and classification histograms in the metadata to catch silent data loss from over-aggressive range clamps:
+Also inspect bounding boxes in the metadata to catch silent data loss from over-aggressive range clamps:
 
 ```python
-import json
-
 meta = pipe.metadata
 bbox = meta["metadata"]["readers.las"]["bbox"]
 print(f"Output bounds: Z {bbox['minz']:.2f} – {bbox['maxz']:.2f} m")
 ```
 
-If `minz` equals your lower `filters.range` bound, you may have clipped valid ground returns — raise the lower Z limit and re-run. The [memory management](/pdal-pipeline-architecture-execution/memory-management/) page explains how to verify buffer allocation and detect truncation from OOM conditions during execution.
+If `minz` equals your lower `filters.range` bound, you may have clipped valid ground returns — raise the lower Z limit and re-run. The [memory management](/pdal-pipeline-architecture-execution/memory-management/) page explains how to verify buffer allocation and detect truncation from out-of-memory conditions during execution.
 
 ---
 
 ## Gotchas and Edge Cases
 
 **1. `filters.outlier` flags valid thin-vegetation returns.**
-In sparse forests or low-shrub areas, isolated single returns from sub-metre vegetation look statistically identical to noise. Lower `multiplier` to 1.8 and inspect a sample tile with `pdal info --stats` before applying fleet-wide. Alternatively, run `filters.outlier` only on ground-classified subsets.
+In sparse forests or low-shrub areas, isolated single returns from sub-metre vegetation look statistically identical to noise. Lower `multiplier` to 1.8 and inspect a sample tile with `pdal info --stats` before applying fleet-wide. Alternatively, run `filters.outlier` only on ground-classified subsets by combining it with a `filters.range` on `Classification`.
 
 **2. `filters.range` on `ScanAngleRank` vs `ScanAngle`.**
-PDAL 2.5+ uses `ScanAngle` (float, degrees) in LAS 1.4 files and `ScanAngleRank` (int8, 1/10-degree units scaled −128 to +127) in LAS 1.2/1.3. Applying a `ScanAngleRank[-20:20]` limit to a LAS 1.4 file that stores `ScanAngle` will silently pass all points because the dimension name does not match. Run `pdal info --schema raw_survey.las | grep -i scan` to confirm which dimension is present.
+PDAL 2.5+ uses `ScanAngle` (float, degrees) in LAS 1.4 files and `ScanAngleRank` (int8, 1/10-degree units scaled −128 to +127) in LAS 1.2/1.3. Applying a `ScanAngleRank[-20:20]` limit to a LAS 1.4 file that stores `ScanAngle` will silently pass all points because the dimension name does not match. Run `pdal info --schema raw_survey.las | grep -i scan` to confirm which dimension is present before writing the `limits` expression.
 
 **3. `filters.assign` without a `WHERE` clause overwrites existing labels.**
-Omitting the `WHERE Classification == 0` guard sets every point to code 2, destroying building, vegetation, and water classifications that the sensor vendor may have pre-computed. Always scope assignment expressions with a `WHERE` predicate.
+Omitting the `WHERE Classification == 0` guard sets every point to code 2, destroying building, vegetation, and water classifications that the sensor vendor may have pre-computed. Always scope assignment expressions with a `WHERE` predicate. Cross-reference the [ASPRS classification codes](/point-cloud-data-standards-fundamentals/asprs-classification-codes/) table to confirm you are targeting the correct numeric codes before running a bulk assignment.
 
 **4. `compression: "true"` requires a `.laz` file extension.**
-If you set `compression: "true"` but write to a `.las` filename, `writers.las` raises a `RuntimeError` at execution time. The filename extension and the compression flag must agree.
+If you set `compression: "true"` but write to a `.las` filename, `writers.las` raises a `RuntimeError` at execution time. The filename extension and the compression flag must agree — use `.laz` for compressed output and `.las` for uncompressed.
+
+---
+
+## Frequently Asked Questions
+
+### What order should PDAL filters run in a cleaning pipeline?
+
+Apply coordinate normalisation first (if a reprojection is needed), then geometric range clamps with `filters.range`, then statistical outlier removal with `filters.outlier`, then classification updates with `filters.assign`. Running outlier detection before range clamps wastes CPU cycles on points that will be discarded anyway and skews the neighbourhood density statistics that `filters.outlier` relies on.
+
+### Does PDAL write intermediate files when stages are chained?
+
+No. PDAL passes a shared PointView buffer between stages entirely in memory. Intermediate disk writes only occur when you explicitly insert a `writers.*` stage mid-pipeline. This is what makes the chain fast for large files — I/O happens once on read and once on write.
+
+### How do I handle multi-gigabyte LAS files in a cleaning chain?
+
+Insert `filters.splitter` early in the chain. Set the `length` parameter to tile the point cloud into chunks that fit in available RAM, forcing sequential processing and releasing memory between tiles. See the [memory management](/pdal-pipeline-architecture-execution/memory-management/) page for recommended `length` values relative to available RAM and point density.
 
 ---
 
@@ -367,5 +390,5 @@ If you set `compression: "true"` but write to a `.las` filename, `writers.las` r
 - [PDAL Stage Chaining](/pdal-pipeline-architecture-execution/pdal-stage-chaining/) — parent guide covering the full buffer-passing execution model
 - [Applying Statistical Outlier Filters in PDAL](/pdal-pipeline-architecture-execution/pipeline-filtering-logic/applying-statistical-outlier-filters-in-pdal/) — deep dive on `mean_k` and `multiplier` calibration
 - [Pipeline Filtering Logic](/pdal-pipeline-architecture-execution/pipeline-filtering-logic/) — filter ordering rules and dimension propagation
-- [Spatial Reprojection](/pdal-pipeline-architecture-execution/spatial-reprojection/) — inserting CRS transformation before geometric filters
-- [PDAL Pipeline Architecture & Execution](/pdal-pipeline-architecture-execution/) — top-level guide to the DAG execution model
+- [Spatial Reprojection](/pdal-pipeline-architecture-execution/spatial-reprojection/) — inserting a CRS transformation before geometric filters
+- [PDAL Pipeline Architecture & Execution](/pdal-pipeline-architecture-execution/) — top-level guide to the execution model

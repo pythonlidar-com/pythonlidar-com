@@ -178,7 +178,10 @@
         summary.className = 'faq__q';
         // Wrap the question content in a <span> so inline elements form a single flex item
         var span = document.createElement('span');
-        span.innerHTML = pair.qEl.innerHTML;
+        // Clone qEl and strip heading-anchor links so they don't nest inside <summary>
+        var qClone = pair.qEl.cloneNode(true);
+        Array.prototype.forEach.call(qClone.querySelectorAll('.heading-anchor'), function (a) { a.parentNode.removeChild(a); });
+        span.innerHTML = qClone.innerHTML;
         summary.appendChild(span);
         details.appendChild(summary);
 

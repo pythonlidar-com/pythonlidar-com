@@ -75,7 +75,7 @@ dateModified: "2026-06-24"
 
 # Optimizing PDAL for Multi-Core Processing
 
-Set `OMP_NUM_THREADS` to your physical core count, size `chunk_size` to fit L3 cache, and wrap `pdal.Pipeline.execute()` in `ProcessPoolExecutor` — PDAL has no internal thread-pool key; all multi-core throughput comes from process-level orchestration.
+Set `OMP_NUM_THREADS` to your physical core count, size `chunk_size` to fit L3 cache, and wrap `pdal.Pipeline.execute()` in `ProcessPoolExecutor` — PDAL has no internal thread-pool key, so all multi-core throughput comes from process-level orchestration.
 
 This guide is part of [Parallel Execution](/pdal-pipeline-architecture-execution/parallel-execution/) within [PDAL Pipeline Architecture & Execution](/pdal-pipeline-architecture-execution/).
 
@@ -85,7 +85,7 @@ This guide is part of [Parallel Execution](/pdal-pipeline-architecture-execution
 
 A production aerial LiDAR survey covering 500 km² at 8 pts/m² produces roughly 4 billion points across thousands of LAZ tiles. Sequential processing of that volume — classify ground, filter outliers, write LAS 1.4 — takes 6–10 hours on a 16-core workstation when pipelines run one tile at a time. Multi-core tuning collapses that to under 90 minutes by dispatching one PDAL pipeline per tile, each on its own CPU core.
 
-The tuning challenge is subtle. PDAL deliberately exposes no `"threads"` key in pipeline JSON — the design assumes external orchestration. This means multi-core throughput depends on three independently tuned levers: **process concurrency** (how many pipeline instances run at once), **OpenMP threading** (how many threads each filter allocates internally), and **I/O chunking** (how many points each reader or writer buffers per syscall). Getting all three wrong simultaneously is the primary reason teams see only 2–3x speedups on 16-core hardware instead of the 8–12x achievable with proper tuning.
+The tuning challenge is subtle. PDAL deliberately exposes no `"threads"` key in pipeline JSON — the design assumes external orchestration. Multi-core throughput depends on three independently tuned levers: **process concurrency** (how many pipeline instances run at once), **OpenMP threading** (how many threads each filter allocates internally), and **I/O chunking** (how many points each reader or writer buffers per syscall). Getting all three wrong simultaneously is the primary reason teams see only 2–3x speedups on 16-core hardware instead of the 8–12x achievable with proper tuning.
 
 ---
 
@@ -103,11 +103,11 @@ If your input is a single large LAS file rather than pre-tiled data, insert a `f
 
 ## Architecture Overview
 
-The diagram below shows how three tuning levers interact across a 4-worker deployment. Each `ProcessPoolExecutor` worker owns an isolated PDAL heap; `OMP_NUM_THREADS` governs threads within each filter call; `chunk_size` controls the I/O buffer per reader/writer syscall.
+The diagram below shows how three tuning levers interact across a multi-worker deployment. Each `ProcessPoolExecutor` worker owns an isolated PDAL heap; `OMP_NUM_THREADS` governs threads within each filter call; `chunk_size` controls the I/O buffer per reader/writer syscall.
 
-<svg viewBox="0 0 760 320" role="img" aria-label="PDAL multi-core tuning: three levers across a 4-worker deployment" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:760px;display:block;margin:1.5rem auto;">
+<svg viewBox="0 0 760 320" role="img" aria-label="PDAL multi-core tuning: three levers across a multi-worker deployment" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:760px;display:block;margin:1.5rem auto;">
   <title>PDAL Multi-Core Tuning Architecture</title>
-  <desc>Diagram showing ProcessPoolExecutor dispatching four worker processes, each containing a PDAL pipeline with readers, filters (using OMP threads), and writers. An I/O chunk-size buffer sits between the reader and the filter stages.</desc>
+  <desc>Diagram showing ProcessPoolExecutor dispatching multiple worker processes, each containing a PDAL pipeline with readers, filters using OpenMP threads, and writers. A chunk-size I/O buffer sits between the reader and the filter stages.</desc>
   <defs>
     <marker id="arr" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
       <path d="M0,0 L0,6 L8,3 z" fill="currentColor" opacity="0.6"/>
@@ -117,7 +117,6 @@ The diagram below shows how three tuning levers interact across a 4-worker deplo
   <rect x="10" y="10" width="180" height="60" rx="6" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.7"/>
   <text x="100" y="35" text-anchor="middle" font-size="11" fill="currentColor" font-family="monospace">ProcessPoolExecutor</text>
   <text x="100" y="52" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.75">max_workers=N</text>
-  <!-- Worker boxes -->
   <!-- Worker 1 -->
   <rect x="240" y="10" width="490" height="60" rx="6" fill="none" stroke="currentColor" stroke-width="1.2" opacity="0.6"/>
   <text x="485" y="26" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.8">Worker 1 (isolated Python interpreter + PDAL C++ heap)</text>
@@ -368,23 +367,125 @@ def run_parallel_classification(
         "Finished: %d/%d tiles OK", results["success"], len(tile_manifest)
     )
     return results
+```
+
+---
+
+## Complete Working Example
+
+The following self-contained script brings together all five steps. Copy it to your project, adjust `TILE_DIR`, `OUTPUT_DIR`, and `MAX_WORKERS` to match your hardware, and run it against a folder of pre-tiled LAZ files.
+
+```python
+#!/usr/bin/env python3
+"""
+pdal_parallel_classify.py — ground-classify a folder of LAZ tiles across all physical cores.
+
+Usage:
+    python pdal_parallel_classify.py
+
+Requirements:
+    pip install pdal          # python-pdal >= 3.0
+    PDAL 2.6+ compiled with OpenMP
+
+Adjust TILE_DIR, OUTPUT_DIR, MAX_WORKERS, and CHUNK_SIZE before running.
+"""
+import os
+import glob
+import json
+import logging
+import multiprocessing
+from concurrent.futures import ProcessPoolExecutor, as_completed
+from pathlib import Path
+
+import pdal
+
+# ── Configuration ──────────────────────────────────────────────────────────────
+TILE_DIR   = "tiles/"          # directory containing *.laz input tiles
+OUTPUT_DIR = "classified/"     # classified output goes here
+MAX_WORKERS = multiprocessing.cpu_count() // 2  # physical cores
+CHUNK_SIZE  = 1_000_000        # points per I/O batch — tune to your L3 cache
+# ───────────────────────────────────────────────────────────────────────────────
+
+logging.basicConfig(level=logging.INFO, format="%(asctime)s | %(levelname)s | %(message)s")
 
 
-# --- Entry point ---
+def run_ground_classification(input_path: str, output_path: str, chunk_size: int) -> dict:
+    """Classify ground returns in one tile; return result dict or raise."""
+    pipeline_def = {
+        "pipeline": [
+            {"type": "readers.las", "filename": input_path, "chunk_size": chunk_size},
+            {
+                "type": "filters.smrf",
+                "slope": 0.15,
+                "window": 18.0,
+                "elevation": 0.5,
+                "threshold": 0.5,
+                "scalar": 1.25
+            },
+            {
+                "type": "writers.las",
+                "filename": output_path,
+                "minor_version": 4,
+                "dataformat_id": 6,
+                "extra_dims": "all"
+            }
+        ]
+    }
+    p = pdal.Pipeline(json.dumps(pipeline_def))
+    count = p.execute()
+    if count == 0:
+        raise RuntimeError(f"Zero output points — check {input_path}")
+    meta = p.metadata
+    return {
+        "input": input_path,
+        "output": output_path,
+        "points": count,
+        "crs": meta.get("metadata", {}).get("readers.las", {}).get("srs", {}).get("wkt", "unknown")
+    }
+
+
+def main() -> None:
+    # Propagate OpenMP settings into every spawned worker process
+    os.environ.setdefault("OMP_NUM_THREADS", str(max(1, MAX_WORKERS)))
+    os.environ.setdefault("OMP_MAX_ACTIVE_LEVELS", "1")
+
+    tiles = sorted(glob.glob(os.path.join(TILE_DIR, "*.laz")))
+    if not tiles:
+        raise FileNotFoundError(f"No .laz files found in {TILE_DIR!r}")
+
+    Path(OUTPUT_DIR).mkdir(parents=True, exist_ok=True)
+    success, failed, errors = 0, 0, []
+
+    with ProcessPoolExecutor(max_workers=MAX_WORKERS) as executor:
+        futures = {
+            executor.submit(
+                run_ground_classification,
+                t,
+                os.path.join(OUTPUT_DIR, Path(t).stem + "_ground.laz"),
+                CHUNK_SIZE
+            ): t
+            for t in tiles
+        }
+        for future in as_completed(futures):
+            tile = futures[future]
+            try:
+                r = future.result()
+                success += 1
+                logging.info("OK  %s  →  %d pts", r["input"], r["points"])
+            except Exception as exc:
+                failed += 1
+                errors.append((tile, str(exc)))
+                logging.error("ERR %s: %s", tile, exc)
+
+    logging.info("Done: %d/%d tiles succeeded.", success, len(tiles))
+    if errors:
+        logging.warning("Failed tiles:")
+        for t, e in errors:
+            logging.warning("  %s: %s", t, e)
+
+
 if __name__ == "__main__":
-    import glob
-
-    tiles = sorted(glob.glob("tiles/*.laz"))
-    summary = run_parallel_classification(
-        tile_manifest=tiles,
-        output_dir="classified/",
-        max_workers=8,        # tune to physical cores
-        chunk_size=1_000_000  # tune to L3 cache size
-    )
-    if summary["failed"]:
-        print("Failed tiles:")
-        for err in summary["errors"]:
-            print(f"  {err['tile']}: {err['error']}")
+    main()
 ```
 
 ---
@@ -394,7 +495,7 @@ if __name__ == "__main__":
 | Parameter | Stage | Type | Default | Recommended Range | Effect |
 |---|---|---|---|---|---|
 | `chunk_size` | `readers.las` | int | 10,000 | 500,000–2,000,000 | Points buffered per I/O syscall; larger fits more data in L3 cache |
-| `OMP_NUM_THREADS` | env var | int | all logical cores | physical cores / 2 | OpenMP thread count inside filters; excess causes cache thrashing |
+| `OMP_NUM_THREADS` | env var | int | all logical cores | physical cores / max_workers | OpenMP thread count inside filters; excess causes cache thrashing |
 | `OMP_MAX_ACTIVE_LEVELS` | env var | int | unlimited | 1 | Prevents nested OpenMP regions when multiple workers each use threads |
 | `max_workers` | `ProcessPoolExecutor` | int | `os.cpu_count()` | physical cores | Concurrent pipeline instances; cap at RAM / per-tile footprint |
 | `slope` | `filters.smrf` | float | 0.15 | 0.1–0.4 | Max slope in degrees for ground surface model |
@@ -430,7 +531,7 @@ for out_path in summary["outputs"]:
     print(f"{'PASS' if ok else 'FAIL'}  {out_path}")
 ```
 
-Also confirm that the [spatial reprojection](/pdal-pipeline-architecture-execution/spatial-reprojection/) metadata is consistent across tiles by checking the `srs.wkt` field in each output's `pipeline.metadata` — mismatched CRS across workers is a common silent corruption.
+Also confirm that the [spatial reprojection](/pdal-pipeline-architecture-execution/spatial-reprojection/) metadata is consistent across tiles by checking the `srs.wkt` field in each output's `pipeline.metadata` — mismatched CRS across workers is a common silent corruption that the [pipeline validation](/pdal-pipeline-architecture-execution/pipeline-validation/) stage should catch before any downstream rasterization.
 
 ---
 
@@ -439,14 +540,14 @@ Also confirm that the [spatial reprojection](/pdal-pipeline-architecture-executi
 **1. OpenMP oversubscription silently degrades throughput.**
 When `max_workers=8` and `OMP_NUM_THREADS=8`, each worker spawns 8 OpenMP threads, creating 64 OS threads competing for 8 physical cores. CPU utilization looks high in `htop` but wall-clock time doubles. Solution: `OMP_NUM_THREADS = max(1, physical_cores // max_workers)` — if running 8 workers on 8 cores, set `OMP_NUM_THREADS=1`.
 
-**2. chunk_size larger than file size causes no error but wastes memory.**
+**2. chunk_size larger than file size wastes memory without error.**
 If a tile holds 200,000 points and `chunk_size=1,000,000`, PDAL allocates a 1M-point buffer that is never filled. With 16 workers each holding a 48 MB buffer, you exhaust 768 MB on empty allocations. Set `chunk_size` to the median tile point count, not to a fixed ceiling.
 
 **3. filters.smrf requires a minimum point density.**
-SMRF's window search needs at least a few points per square metre to reliably distinguish ground returns. Tiles with fewer than ~0.5 pts/m² (e.g., forest interiors with heavy canopy) frequently produce zero classified ground points. This causes a silent empty-ground-class result, not an exception. Add a post-processing check: assert that at least 5% of points carry `Classification == 2`.
+SMRF's window search needs at least a few points per square metre to reliably distinguish ground returns. Tiles with fewer than ~0.5 pts/m² (e.g., forest interiors with heavy canopy) frequently produce zero classified ground points — a silent empty-ground-class result, not an exception. Add a post-processing check: assert that at least 5% of points carry `Classification == 2`. Refer to the [pipeline filtering logic](/pdal-pipeline-architecture-execution/pipeline-filtering-logic/) guide for strategies to handle these edge tiles with adaptive filter parameters.
 
 **4. LAZ decompression adds CPU overhead that scales non-linearly.**
-LASzip decompression is single-threaded per file. With 16 workers each decompressing a 200 MB LAZ tile, decompression becomes the bottleneck, not classification. For iterative workflows (classify → inspect → re-classify), stage intermediate results as uncompressed LAS. Reserve LAZ for final archival output only. See [pipeline filtering logic](/pdal-pipeline-architecture-execution/pipeline-filtering-logic/) for how intermediate format choices affect filter performance.
+LASzip decompression is single-threaded per file. With 16 workers each decompressing a 200 MB LAZ tile, decompression becomes the bottleneck, not classification. For iterative workflows (classify → inspect → re-classify), stage intermediate results as uncompressed LAS. Reserve LAZ for final archival output only.
 
 ---
 

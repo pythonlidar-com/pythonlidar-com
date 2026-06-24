@@ -32,9 +32,9 @@ dateModified: "2026-06-24"
       "@type": "HowTo",
       "name": "Validate and Remap ASPRS Classification Codes with laspy",
       "step": [
-        { "@type": "HowToStep", "position": 1, "name": "Read the LAS file and inspect the classification array", "text": "Open the file with laspy.open() and extract las.classification as a NumPy uint8 array." },
-        { "@type": "HowToStep", "position": 2, "name": "Identify codes outside the ASPRS standard ranges", "text": "Use np.isin() to flag values outside 0–18 (standard) and 64–255 (user-defined)." },
-        { "@type": "HowToStep", "position": 3, "name": "Apply optional remapping via a lookup table", "text": "Build a 256-element NumPy lookup array and index classifications through it for vectorized O(n) remapping." },
+        { "@type": "HowToStep", "position": 1, "name": "Read the LAS file and inspect the classification histogram", "text": "Open the file with laspy.open() and extract las.classification as a NumPy uint8 array, then call np.unique() with return_counts=True to audit which codes are present." },
+        { "@type": "HowToStep", "position": 2, "name": "Identify codes outside the ASPRS standard ranges", "text": "Use np.isin() to flag values outside 0–18 (standard) and 64–255 (user-defined). Codes 19–63 are reserved and should be treated as non-standard." },
+        { "@type": "HowToStep", "position": 3, "name": "Apply optional remapping via a lookup table", "text": "Build a 256-element NumPy lookup array and index classifications through it for vectorized O(n) remapping without Python loops." },
         { "@type": "HowToStep", "position": 4, "name": "Update the header and write the output file", "text": "Call las.update_header() to recalculate bounds and point counts before writing to preserve GIS reader compatibility." }
       ]
     },
@@ -46,7 +46,7 @@ dateModified: "2026-06-24"
           "name": "What is the difference between class 0 and class 1 in ASPRS LAS?",
           "acceptedAnswer": {
             "@type": "Answer",
-            "text": "Class 0 (Never Classified) indicates points that have never been processed by any classification algorithm — they are truly raw returns. Class 1 (Unclassified) means a classifier ran but did not assign the point to a known category. Many vendors write class 1 as a default after initial ingestion, so the distinction matters for audit trails."
+            "text": "Class 0 (Never Classified) indicates points that have never been processed by any classification algorithm — they are truly raw returns. Class 1 (Unclassified) means a classifier ran but did not assign the point to a known category. Many vendors write class 1 as a default after initial ingestion, so the distinction matters for audit trails and for setting up ground-filtering input pools correctly."
           }
         },
         {
@@ -62,7 +62,15 @@ dateModified: "2026-06-24"
           "name": "Why did ASPRS reassign class 12 in LAS 1.4?",
           "acceptedAnswer": {
             "@type": "Answer",
-            "text": "In LAS 1.1–1.3 class 12 meant Overlap. LAS 1.4 moved overlap to a dedicated bit flag in the point flags byte, freeing class 12 as Reserved. Pipelines reading mixed-version datasets must branch on the LAS version to avoid misclassifying overlap points as Reserved."
+            "text": "In LAS 1.1–1.3 class 12 meant Overlap. LAS 1.4 moved overlap to a dedicated bit flag in the point flags byte, freeing class 12 as Reserved. Pipelines reading mixed-version datasets must branch on the LAS version to avoid misclassifying overlap points as Reserved or vice versa."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How do I remap classification codes without a Python loop?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Build a 256-element NumPy uint8 array initialised to np.arange(256) — this is an identity mapping. Then set lut[source_code] = target_code for each substitution you need. Apply it as classifications = lut[classifications], which NumPy executes at C speed as a vectorized gather operation regardless of point count."
           }
         }
       ]
@@ -79,66 +87,67 @@ This guide is part of the [ASPRS Classification Codes](/point-cloud-data-standar
 
 Every return captured by an airborne or terrestrial LiDAR sensor enters a file as an uninterpreted XYZ triplet with an 8-bit `Classification` field. What makes that integer meaningful is the ASPRS taxonomy: a community-maintained mapping from integer value to semantic category (ground, vegetation tier, building, water, noise, infrastructure). When your Python pipeline treats these codes as strict enums rather than arbitrary labels, you prevent cascading failures — canopy bias in digital terrain models, inflated earthwork volumes, miscategorized assets in BIM deliverables, and rejected regulatory submissions.
 
-Understanding the classification schema is also the prerequisite for reading [LAS/LAZ file structure](/point-cloud-data-standards-fundamentals/laslaz-file-structure/) correctly: the classification byte sits inside the point data record alongside coordinate, intensity, and return-number fields, and its valid range changes between LAS format versions.
+Understanding the classification schema is also the prerequisite for reading [LAS/LAZ file structure](/point-cloud-data-standards-fundamentals/laslaz-file-structure/) correctly: the classification byte sits inside the point data record alongside coordinate, intensity, and return-number fields, and its valid range changes between LAS format versions. When working with multi-source datasets, always pair classification validation with [coordinate reference system](/point-cloud-data-standards-fundamentals/coordinate-reference-systems/) checks — both must be consistent before merging tiles.
 
 ---
 
 ## Classification Schema Diagram
 
-The diagram below shows how the 0–255 integer space is partitioned and how each zone feeds into downstream analysis products.
+The diagram below shows how the 0–255 integer space is partitioned across LAS versions and how each zone connects to downstream analysis products.
 
-<svg viewBox="0 0 740 320" role="img" aria-label="ASPRS classification integer space diagram" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:740px;font-family:inherit;">
+<svg viewBox="0 0 760 400" role="img" aria-label="ASPRS LAS classification integer space and downstream products" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:760px;font-family:inherit;">
   <title>ASPRS LAS Classification Integer Space</title>
-  <desc>A horizontal bar divided into three zones: 0–18 standard ASPRS classes feeding into terrain, vegetation, and infrastructure products; 19–63 reserved for future ASPRS expansion; and 64–255 user-defined classes for project-specific labeling.</desc>
-  <!-- Background -->
-  <rect width="740" height="320" fill="none"/>
-  <!-- Zone bars — height 56 so two-line labels (y=97 and y=111) stay inside bottom edge y=116 -->
-  <!-- 0-18: ~7.8% of 0-255 = ~58px of 740 -->
-  <rect x="20" y="60" width="130" height="56" rx="6" fill="#2563eb" opacity="0.15" stroke="#2563eb" stroke-width="1.5"/>
-  <!-- 19-63: ~17.6% -->
-  <rect x="158" y="60" width="200" height="56" rx="6" fill="#6b7280" opacity="0.12" stroke="#9ca3af" stroke-width="1.5" stroke-dasharray="6 3"/>
-  <!-- 64-255: ~74.5% -->
-  <rect x="366" y="60" width="354" height="56" rx="6" fill="#059669" opacity="0.12" stroke="#059669" stroke-width="1.5"/>
-  <!-- Zone labels -->
-  <text x="85" y="88" text-anchor="middle" font-size="13" font-weight="600" fill="currentColor">0 – 18</text>
-  <text x="258" y="82" text-anchor="middle" font-size="13" font-weight="600" fill="currentColor">19 – 63</text>
-  <text x="543" y="82" text-anchor="middle" font-size="13" font-weight="600" fill="currentColor">64 – 255</text>
-  <text x="85" y="101" text-anchor="middle" font-size="11" fill="currentColor">Standard (LAS 1.4)</text>
-  <text x="258" y="97" text-anchor="middle" font-size="11" fill="currentColor">Reserved</text>
-  <text x="258" y="111" text-anchor="middle" font-size="11" fill="currentColor">(future ASPRS)</text>
-  <text x="543" y="97" text-anchor="middle" font-size="11" fill="currentColor">User-Defined</text>
-  <text x="543" y="111" text-anchor="middle" font-size="11" fill="currentColor">(project-specific)</text>
-  <!-- Connector lines from standard zone to products -->
-  <line x1="85" y1="116" x2="85" y2="148" stroke="#2563eb" stroke-width="1.5"/>
-  <line x1="85" y1="148" x2="530" y2="148" stroke="#2563eb" stroke-width="1.5"/>
+  <desc>Three zone bars at top show how the 0–255 integer range is divided: codes 0–18 are standard ASPRS classes, codes 19–63 are reserved for future ASPRS expansion, and codes 64–255 are user-defined for project-specific labeling. Below, arrows connect the standard zone to four downstream products: class 2 feeds bare-earth DTM, classes 3–5 feed canopy height modeling, class 6 feeds building footprints, and classes 13–16 feed power-line models. A note at the bottom explains the version constraint: LAS 1.0–1.3 allows only codes 0–31 via a 5-bit field, while LAS 1.4 allows the full 0–255 range via a dedicated 8-bit byte.</desc>
+  <!-- Zone bars row -->
+  <!-- Standard 0–18 -->
+  <rect x="20" y="30" width="160" height="54" rx="6" fill="#2563eb" fill-opacity="0.13" stroke="#2563eb" stroke-width="1.5"/>
+  <text x="100" y="54" text-anchor="middle" font-size="14" font-weight="700" fill="currentColor">0 – 18</text>
+  <text x="100" y="72" text-anchor="middle" font-size="11" fill="currentColor">Standard (LAS 1.4)</text>
+  <!-- Reserved 19–63 -->
+  <rect x="196" y="30" width="200" height="54" rx="6" fill="#6b7280" fill-opacity="0.11" stroke="#9ca3af" stroke-width="1.5" stroke-dasharray="6 3"/>
+  <text x="296" y="54" text-anchor="middle" font-size="14" font-weight="700" fill="currentColor">19 – 63</text>
+  <text x="296" y="72" text-anchor="middle" font-size="11" fill="currentColor">Reserved (future ASPRS)</text>
+  <!-- User-defined 64–255 -->
+  <rect x="412" y="30" width="328" height="54" rx="6" fill="#059669" fill-opacity="0.11" stroke="#059669" stroke-width="1.5"/>
+  <text x="576" y="54" text-anchor="middle" font-size="14" font-weight="700" fill="currentColor">64 – 255</text>
+  <text x="576" y="72" text-anchor="middle" font-size="11" fill="currentColor">User-Defined (project-specific)</text>
+  <!-- Vertical drop from standard zone centre to horizontal rail -->
+  <line x1="100" y1="84" x2="100" y2="118" stroke="#2563eb" stroke-width="1.5"/>
+  <!-- Horizontal rail connecting all four product drop points -->
+  <line x1="100" y1="118" x2="620" y2="118" stroke="#2563eb" stroke-width="1.5"/>
+  <!-- Product drop lines -->
+  <line x1="100" y1="118" x2="100" y2="148" stroke="#2563eb" stroke-width="1.2"/>
+  <line x1="270" y1="118" x2="270" y2="148" stroke="#2563eb" stroke-width="1.2"/>
+  <line x1="450" y1="118" x2="450" y2="148" stroke="#2563eb" stroke-width="1.2"/>
+  <line x1="620" y1="118" x2="620" y2="148" stroke="#2563eb" stroke-width="1.2"/>
   <!-- Product boxes -->
-  <rect x="20" y="156" width="120" height="38" rx="5" fill="none" stroke="#2563eb" stroke-width="1.2"/>
-  <text x="80" y="173" text-anchor="middle" font-size="11" fill="currentColor">Class 2 → DTM</text>
-  <text x="80" y="187" text-anchor="middle" font-size="11" fill="currentColor">bare-earth DEM</text>
-  <line x1="80" y1="148" x2="80" y2="156" stroke="#2563eb" stroke-width="1.2"/>
-  <rect x="158" y="156" width="120" height="38" rx="5" fill="none" stroke="#2563eb" stroke-width="1.2"/>
-  <text x="218" y="173" text-anchor="middle" font-size="11" fill="currentColor">Class 3–5 → CHM</text>
-  <text x="218" y="187" text-anchor="middle" font-size="11" fill="currentColor">canopy modeling</text>
-  <line x1="218" y1="148" x2="218" y2="156" stroke="#2563eb" stroke-width="1.2"/>
-  <rect x="296" y="156" width="120" height="38" rx="5" fill="none" stroke="#2563eb" stroke-width="1.2"/>
-  <text x="356" y="173" text-anchor="middle" font-size="11" fill="currentColor">Class 6 → Buildings</text>
-  <text x="356" y="187" text-anchor="middle" font-size="11" fill="currentColor">urban modeling</text>
-  <line x1="356" y1="148" x2="356" y2="156" stroke="#2563eb" stroke-width="1.2"/>
-  <rect x="434" y="156" width="116" height="38" rx="5" fill="none" stroke="#2563eb" stroke-width="1.2"/>
-  <text x="492" y="173" text-anchor="middle" font-size="11" fill="currentColor">Class 13–16 →</text>
-  <text x="492" y="187" text-anchor="middle" font-size="11" fill="currentColor">power line model</text>
-  <line x1="492" y1="148" x2="492" y2="156" stroke="#2563eb" stroke-width="1.2"/>
-  <!-- LAS version note -->
-  <rect x="20" y="214" width="700" height="42" rx="5" fill="none" stroke="#9ca3af" stroke-width="1" stroke-dasharray="4 3"/>
-  <text x="370" y="232" text-anchor="middle" font-size="12" fill="currentColor" font-weight="600">LAS version determines maximum valid code</text>
-  <text x="370" y="248" text-anchor="middle" font-size="11" fill="currentColor">LAS 1.0–1.3: 5-bit field → codes 0–31 only   |   LAS 1.4: 8-bit byte → full 0–255 range</text>
+  <rect x="30" y="148" width="140" height="44" rx="5" fill="none" stroke="#2563eb" stroke-width="1.2"/>
+  <text x="100" y="167" text-anchor="middle" font-size="11" font-weight="600" fill="currentColor">Class 2 → DTM</text>
+  <text x="100" y="182" text-anchor="middle" font-size="11" fill="currentColor">bare-earth DEM</text>
+  <rect x="200" y="148" width="140" height="44" rx="5" fill="none" stroke="#2563eb" stroke-width="1.2"/>
+  <text x="270" y="167" text-anchor="middle" font-size="11" font-weight="600" fill="currentColor">Classes 3–5 → CHM</text>
+  <text x="270" y="182" text-anchor="middle" font-size="11" fill="currentColor">canopy modeling</text>
+  <rect x="375" y="148" width="150" height="44" rx="5" fill="none" stroke="#2563eb" stroke-width="1.2"/>
+  <text x="450" y="167" text-anchor="middle" font-size="11" font-weight="600" fill="currentColor">Class 6 → Buildings</text>
+  <text x="450" y="182" text-anchor="middle" font-size="11" fill="currentColor">urban footprints</text>
+  <rect x="548" y="148" width="144" height="44" rx="5" fill="none" stroke="#2563eb" stroke-width="1.2"/>
+  <text x="620" y="167" text-anchor="middle" font-size="11" font-weight="600" fill="currentColor">Classes 13–16 →</text>
+  <text x="620" y="182" text-anchor="middle" font-size="11" fill="currentColor">power-line model</text>
+  <!-- Version constraint box -->
+  <rect x="20" y="218" width="720" height="60" rx="5" fill="none" stroke="#9ca3af" stroke-width="1.2" stroke-dasharray="5 3"/>
+  <text x="380" y="240" text-anchor="middle" font-size="12" font-weight="700" fill="currentColor">LAS version determines the maximum valid classification code</text>
+  <text x="380" y="258" text-anchor="middle" font-size="11" fill="currentColor">LAS 1.0–1.3: 5-bit sub-field → codes 0–31 only (bits 0–4 of a shared byte)</text>
+  <text x="380" y="274" text-anchor="middle" font-size="11" fill="currentColor">LAS 1.4: dedicated 8-bit byte → full range 0–255; overlap moved to Classification Flags</text>
   <!-- Legend -->
-  <rect x="20" y="270" width="14" height="14" rx="2" fill="#2563eb" opacity="0.3" stroke="#2563eb" stroke-width="1.2"/>
-  <text x="40" y="282" font-size="11" fill="currentColor">Standard</text>
-  <rect x="110" y="270" width="14" height="14" rx="2" fill="#6b7280" opacity="0.2" stroke="#9ca3af" stroke-width="1.2"/>
-  <text x="130" y="282" font-size="11" fill="currentColor">Reserved</text>
-  <rect x="200" y="270" width="14" height="14" rx="2" fill="#059669" opacity="0.2" stroke="#059669" stroke-width="1.2"/>
-  <text x="220" y="282" font-size="11" fill="currentColor">User-defined</text>
+  <rect x="20" y="300" width="13" height="13" rx="2" fill="#2563eb" fill-opacity="0.25" stroke="#2563eb" stroke-width="1.2"/>
+  <text x="39" y="312" font-size="11" fill="currentColor">Standard (ASPRS-defined)</text>
+  <rect x="220" y="300" width="13" height="13" rx="2" fill="#6b7280" fill-opacity="0.2" stroke="#9ca3af" stroke-width="1.2" stroke-dasharray="3 2"/>
+  <text x="239" y="312" font-size="11" fill="currentColor">Reserved (unassigned)</text>
+  <rect x="420" y="300" width="13" height="13" rx="2" fill="#059669" fill-opacity="0.2" stroke="#059669" stroke-width="1.2"/>
+  <text x="439" y="312" font-size="11" fill="currentColor">User-defined (project-specific)</text>
+  <!-- Standard class quick ref -->
+  <text x="20" y="348" font-size="12" font-weight="700" fill="currentColor">Key standard codes:</text>
+  <text x="20" y="366" font-size="11" fill="currentColor">0 Never Classified  ·  1 Unclassified  ·  2 Ground  ·  3 Low Veg  ·  4 Med Veg  ·  5 High Veg  ·  6 Building  ·  7 Low Noise  ·  9 Water  ·  17 Bridge  ·  18 High Noise</text>
 </svg>
 
 ---
@@ -162,7 +171,7 @@ pip install "laspy[lazrs]" numpy
 
 ### Step 1 — Inspect the raw classification histogram
 
-Before remapping anything, audit what codes are actually present:
+Before remapping anything, audit what codes are actually present. This is especially important when ingesting third-party data because vendor classification schemes frequently deviate from the ASPRS standard — some providers shift standard classes by +10, others use `255` as a null sentinel, and older municipal datasets may still carry [LAS header](/point-cloud-data-standards-fundamentals/laslaz-file-structure/how-to-parse-las-headers-with-python/) version 1.1-era class 12 (Overlap) rather than the LAS 1.4 overlap bit flag.
 
 ```python
 import laspy
@@ -176,8 +185,6 @@ for code, count in zip(codes, counts):
     print(f"  Class {code:3d}: {count:>10,} points")
 ```
 
-This reveals vendor-specific deviations immediately: some providers shift standard classes by +10, others use `255` as a null mask, and older municipal datasets may still carry LAS 1.1-era class 12 (Overlap) rather than the LAS 1.4 overlap bit flag.
-
 ### Step 2 — Define the ASPRS valid ranges
 
 ```python
@@ -186,9 +193,9 @@ STANDARD = set(range(0, 19))
 USER_DEFINED = set(range(64, 256))
 ```
 
-Treat codes 19–63 as non-standard. The LAS 1.4 specification has not assigned them, so a point carrying code 35, for example, signals either a schema bug or a dataset that pre-dates finalized 1.4 additions.
+Treat codes 19–63 as non-standard. The LAS 1.4 specification has not assigned them, so a point carrying code 35 signals either a schema bug or a dataset that pre-dates finalized 1.4 additions.
 
-### Step 3 — Flag invalid codes
+### Step 3 — Flag non-standard codes
 
 ```python
 classifications = las.classification.copy()
@@ -202,7 +209,7 @@ if invalid_count:
     print(f"Non-standard codes found: {bad_codes} — {invalid_count} points affected")
 ```
 
-In regulated deliverables, route flagged points to a QA queue rather than silently overwriting them.
+In regulated deliverables, route flagged points to a QA queue rather than silently overwriting them. For multi-source datasets where [CRS mismatches](/point-cloud-data-standards-fundamentals/coordinate-reference-systems/fixing-crs-mismatches-in-point-clouds/) may already be present, track both validation failures together before writing any output.
 
 ### Step 4 — Apply vectorized remapping
 
@@ -337,6 +344,7 @@ if __name__ == "__main__":
 | Reserved range | integer set | — | 19–63 | Not yet assigned; treat as non-standard |
 | User-defined range | integer set | — | 64–255 | Project-specific; document in the file's Variable Length Records |
 | `remap_dict` keys / values | int | — | 0–255 | Source and destination codes; validated at runtime |
+| `quarantine_invalid` | bool | `False` | — | When `True`, raises instead of silently resetting bad codes to class 0 |
 
 ---
 
@@ -366,15 +374,15 @@ assert h.x_max > h.x_min, "Header bounds not updated — was update_header() cal
 print("Verification passed.")
 ```
 
-For larger pipelines, wrap these assertions as a CI gate that runs on every new dataset ingestion.
+For larger pipelines, wrap these assertions as a CI gate that runs on every new dataset ingestion. Pair them with a [LAS header parse](/point-cloud-data-standards-fundamentals/laslaz-file-structure/how-to-parse-las-headers-with-python/) to also verify the point data format ID matches the expected LAS version before processing begins.
 
 ---
 
 ## Gotchas and Edge Cases
 
-**LAS version and bit-width mismatch.** Writing user-defined codes (64–255) into a LAS 1.2 or 1.3 file silently truncates the value because the classification field is only 5 bits wide (bits 0–4 of a shared byte). Always check `las.header.version.minor` and upgrade to LAS 1.4 point format 6 or higher before using the full 0–255 range.
+**LAS version and bit-width mismatch.** Writing user-defined codes (64–255) into a LAS 1.2 or 1.3 file silently truncates the value because the classification field is only 5 bits wide (bits 0–4 of a shared byte). Always check `las.header.version.minor` and upgrade to LAS 1.4 point format 6 or higher before using the full 0–255 range. This is the same header you inspect when [parsing LAS headers with Python](/point-cloud-data-standards-fundamentals/laslaz-file-structure/how-to-parse-las-headers-with-python/).
 
-**Class 12 semantic inversion between LAS versions.** In LAS 1.1–1.3 class 12 meant Overlap returns. LAS 1.4 removed this assignment and moved overlap detection to a dedicated `Overlap` bit in the `Classification Flags` byte. A pipeline reading mixed-version datasets must branch on `version.minor` to avoid treating LAS 1.4 Reserved class 12 points as overlaps — or the reverse, treating LAS 1.3 overlap points as reserved unknowns. When working with [coordinate reference system](/point-cloud-data-standards-fundamentals/coordinate-reference-systems/) validation across mixed datasets, version drift compounds this risk.
+**Class 12 semantic inversion between LAS versions.** In LAS 1.1–1.3 class 12 meant Overlap returns. LAS 1.4 removed this assignment and moved overlap detection to a dedicated `Overlap` bit in the `Classification Flags` byte. A pipeline reading mixed-version datasets must branch on `version.minor` to avoid treating LAS 1.4 Reserved class 12 points as overlaps — or the reverse, treating LAS 1.3 overlap points as reserved unknowns.
 
 **Class 0 vs class 1 confusion in vendor outputs.** Many acquisition vendors write `Classification = 1` (Unclassified) for all raw returns, leaving `Classification = 0` (Never Classified) unused. Other vendors do the opposite. If your ground-classification filter checks for class 0 as the input pool and the vendor delivered class 1, the filter finds zero candidates and exits silently. Always histogram before filtering.
 
@@ -385,7 +393,7 @@ For larger pipelines, wrap these assertions as a CI gate that runs on every new 
 ## Related
 
 - [ASPRS Classification Codes — Python Workflows](/point-cloud-data-standards-fundamentals/asprs-classification-codes/) — parent guide covering the full reclassification workflow, QA automation, and export patterns
-- [Point Cloud Data Standards & Fundamentals](/point-cloud-data-standards-fundamentals/) — pillar covering LAS/LAZ format, CRS, metadata, and classification standards end-to-end
+- [Point Cloud Data Standards & Fundamentals](/point-cloud-data-standards-fundamentals/) — overview covering LAS/LAZ format, CRS, metadata, and classification standards end-to-end
 - [LAS/LAZ File Structure](/point-cloud-data-standards-fundamentals/laslaz-file-structure/) — how the classification byte sits inside the binary point data record
 - [How to Parse LAS Headers with Python](/point-cloud-data-standards-fundamentals/laslaz-file-structure/how-to-parse-las-headers-with-python/) — extract version, point format, and scale factors before remapping
 - [Fixing CRS Mismatches in Point Clouds](/point-cloud-data-standards-fundamentals/coordinate-reference-systems/fixing-crs-mismatches-in-point-clouds/) — coordinate reference validation to pair with classification QA on multi-source datasets

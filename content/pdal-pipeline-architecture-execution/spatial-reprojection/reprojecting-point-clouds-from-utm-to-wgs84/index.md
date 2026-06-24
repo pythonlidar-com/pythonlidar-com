@@ -57,6 +57,11 @@ dateModified: "2026-06-24"
           "@type": "Question",
           "name": "Which UTM EPSG codes map to WGS84 (EPSG:4326)?",
           "acceptedAnswer": { "@type": "Answer", "text": "North-hemisphere zones run EPSG:32601-32660 (zone 1N-60N); south-hemisphere zones run EPSG:32701-32760. For NAD83 UTM use EPSG:26901-26923." }
+        },
+        {
+          "@type": "Question",
+          "name": "Does filters.reprojection require the input file to have a valid CRS in its header?",
+          "acceptedAnswer": { "@type": "Answer", "text": "No. If you supply in_srs explicitly in the pipeline JSON, PDAL uses that value regardless of what the header says. This is the correct approach for files with empty or incorrect CRS metadata." }
         }
       ]
     }
@@ -68,34 +73,55 @@ dateModified: "2026-06-24"
 
 ## Context and Motivation
 
-This guide is part of [Spatial Reprojection in PDAL](/pdal-pipeline-architecture-execution/spatial-reprojection/), which covers the full range of coordinate system transformations you can apply inside a [PDAL pipeline](/pdal-pipeline-architecture-execution/).
+This guide is part of [Spatial Reprojection in PDAL](/pdal-pipeline-architecture-execution/spatial-reprojection/), which covers the full range of coordinate system transformations available in a [PDAL pipeline](/pdal-pipeline-architecture-execution/).
 
-UTM coordinates are ubiquitous in survey-grade LiDAR deliverables — they are metre-based, zone-specific, and optimised for regional accuracy. WGS84 (EPSG:4326) is the geographic coordinate system that web maps, cloud platforms, and most interoperability formats expect. The mismatch creates a routine but error-prone handoff: naive reprojection either corrupts the LAS header CRS, silently applies approximate datum shifts, or produces unit confusion when Z values in metres are mixed with X/Y in decimal degrees.
+UTM coordinates are ubiquitous in survey-grade LiDAR deliverables — they are metre-based, zone-specific, and optimised for regional accuracy. WGS84 (EPSG:4326) is the geographic coordinate system that web maps, cloud platforms, and most interoperability formats expect. The mismatch creates a routine but error-prone handoff: naive reprojection either corrupts the [LAS/LAZ file](/point-cloud-data-standards-fundamentals/laslaz-file-structure/) header CRS, silently applies approximate datum shifts, or produces unit confusion when Z values in metres are mixed with X/Y in decimal degrees.
 
-Getting this right matters beyond aesthetics. A mismatched CRS in a production [LAS/LAZ file](/point-cloud-data-standards-fundamentals/laslaz-file-structure/) can cascade into broken ground classification, incorrect hillshade rasters, and failed API ingest. PDAL's `filters.reprojection` stage, backed by the PROJ engine, handles the inverse map projection and datum grid application in a single streaming pass — no in-memory array juggling required.
+Getting this right matters beyond aesthetics. A mismatched [coordinate reference system](/point-cloud-data-standards-fundamentals/coordinate-reference-systems/) in a production point cloud can cascade into broken ground classification, incorrect hillshade rasters, and failed API ingest. PDAL's `filters.reprojection` stage, backed by the PROJ engine, handles the inverse map projection and datum grid application in a single streaming pass — no in-memory array juggling required.
 
-<svg viewBox="0 0 720 200" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="PDAL reprojection data flow: UTM LAS input through filters.reprojection to WGS84 LAS output" style="width:100%;max-width:720px;display:block;margin:1.5rem auto;">
-  <title>UTM to WGS84 reprojection pipeline stage flow</title>
-  <desc>Three boxes connected by arrows showing: readers.las with EPSG:32618 UTM input, then filters.reprojection stage using the PROJ engine, then writers.las producing EPSG:4326 WGS84 output with updated header.</desc>
+<svg viewBox="0 0 760 280" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="PDAL UTM to WGS84 reprojection data flow with PROJ datum lookup" style="width:100%;max-width:760px;display:block;margin:1.5rem auto;">
+  <title>UTM to WGS84 reprojection pipeline stage flow with PROJ datum grid lookup</title>
+  <desc>Four boxes connected by arrows: readers.las reading EPSG:32618 UTM input, then filters.reprojection which calls out to the PROJ datum grid for the inverse UTM projection, then writers.las writing EPSG:4326 WGS84 output with an updated WKT2 VLR in the header. A separate annotation shows that Z values are passed through unchanged unless a compound CRS is used.</desc>
   <defs>
-    <marker id="rp-arr" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto">
+    <marker id="utm-arr" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto">
       <path d="M0,0 L0,6 L8,3 z" fill="currentColor"/>
     </marker>
+    <marker id="utm-arr-dashed" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="currentColor" opacity="0.5"/>
+    </marker>
   </defs>
-  <rect x="10" y="60" width="160" height="80" rx="8" fill="none" stroke="currentColor" stroke-width="1.5"/>
-  <text x="90" y="96" text-anchor="middle" font-size="13" fill="currentColor" font-family="sans-serif">readers.las</text>
-  <text x="90" y="114" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif" opacity=".75">EPSG:32618 (UTM)</text>
-  <line x1="170" y1="100" x2="248" y2="100" stroke="currentColor" stroke-width="1.5" marker-end="url(#rp-arr)"/>
-  <rect x="250" y="36" width="220" height="128" rx="8" fill="none" stroke="currentColor" stroke-width="1.5"/>
-  <text x="360" y="72" text-anchor="middle" font-size="13" fill="currentColor" font-family="sans-serif">filters.reprojection</text>
-  <text x="360" y="94" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif" opacity=".75">in_srs: EPSG:32618</text>
-  <text x="360" y="112" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif" opacity=".75">out_srs: EPSG:4326</text>
-  <text x="360" y="130" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity=".6">via PROJ engine + datum grids</text>
-  <text x="360" y="148" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity=".6">streaming — no full RAM load</text>
-  <line x1="470" y1="100" x2="548" y2="100" stroke="currentColor" stroke-width="1.5" marker-end="url(#rp-arr)"/>
-  <rect x="550" y="60" width="160" height="80" rx="8" fill="none" stroke="currentColor" stroke-width="1.5"/>
-  <text x="630" y="96" text-anchor="middle" font-size="13" fill="currentColor" font-family="sans-serif">writers.las</text>
-  <text x="630" y="114" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif" opacity=".75">EPSG:4326 + header sync</text>
+  <!-- readers.las box -->
+  <rect x="10" y="90" width="155" height="80" rx="8" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="87" y="124" text-anchor="middle" font-size="13" fill="currentColor" font-family="sans-serif" font-weight="600">readers.las</text>
+  <text x="87" y="143" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif" opacity="0.7">EPSG:32618</text>
+  <text x="87" y="159" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.55">UTM Zone 18N</text>
+  <!-- arrow 1 -->
+  <line x1="165" y1="130" x2="213" y2="130" stroke="currentColor" stroke-width="1.5" marker-end="url(#utm-arr)"/>
+  <!-- filters.reprojection box -->
+  <rect x="215" y="60" width="200" height="140" rx="8" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="315" y="92" text-anchor="middle" font-size="13" fill="currentColor" font-family="sans-serif" font-weight="600">filters.reprojection</text>
+  <text x="315" y="113" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif" opacity="0.75">in_srs: EPSG:32618</text>
+  <text x="315" y="131" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif" opacity="0.75">out_srs: EPSG:4326</text>
+  <text x="315" y="153" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.55">inverse UTM projection</text>
+  <text x="315" y="169" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.55">streaming — no full RAM load</text>
+  <text x="315" y="185" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.55">X,Y → lon/lat (degrees)</text>
+  <!-- PROJ datum grid callout -->
+  <rect x="248" y="218" width="135" height="46" rx="6" fill="none" stroke="currentColor" stroke-width="1" stroke-dasharray="4 3" opacity="0.6"/>
+  <text x="315" y="238" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.7">PROJ datum grid</text>
+  <text x="315" y="253" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.7">$PROJ_DATA/*.tif</text>
+  <line x1="315" y1="200" x2="315" y2="218" stroke="currentColor" stroke-width="1" stroke-dasharray="3 3" opacity="0.5" marker-end="url(#utm-arr-dashed)"/>
+  <!-- arrow 2 -->
+  <line x1="415" y1="130" x2="463" y2="130" stroke="currentColor" stroke-width="1.5" marker-end="url(#utm-arr)"/>
+  <!-- writers.las box -->
+  <rect x="465" y="90" width="180" height="80" rx="8" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="555" y="124" text-anchor="middle" font-size="13" fill="currentColor" font-family="sans-serif" font-weight="600">writers.las</text>
+  <text x="555" y="143" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif" opacity="0.75">a_srs: EPSG:4326</text>
+  <text x="555" y="159" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.55">WKT2 VLR injected</text>
+  <!-- Z passthrough annotation -->
+  <text x="380" y="26" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.55" font-style="italic">Z passthrough (unchanged unless compound CRS)</text>
+  <line x1="87" y1="90" x2="87" y2="36" stroke="currentColor" stroke-width="1" stroke-dasharray="3 3" opacity="0.35"/>
+  <line x1="87" y1="36" x2="555" y2="36" stroke="currentColor" stroke-width="1" stroke-dasharray="3 3" opacity="0.35"/>
+  <line x1="555" y1="36" x2="555" y2="90" stroke="currentColor" stroke-width="1" stroke-dasharray="3 3" opacity="0.35"/>
 </svg>
 
 ## Prerequisites and Assumptions
@@ -115,7 +141,7 @@ Confirm your input file's embedded CRS before writing the pipeline:
 pdal info --metadata input.laz | python -m json.tool | grep -i srs
 ```
 
-If the header reports `EPSG:0` or empty WKT, supply `in_srs` explicitly rather than relying on the file — an untagged file will silently produce incorrect output coordinates. See [fixing CRS mismatches in point clouds](/point-cloud-data-standards-fundamentals/coordinate-reference-systems/fixing-crs-mismatches-in-point-clouds/) for a full repair workflow.
+If the header reports `EPSG:0` or empty WKT, supply `in_srs` explicitly rather than relying on the file — an untagged file will silently produce incorrect output coordinates. See [fixing CRS mismatches in point clouds](/point-cloud-data-standards-fundamentals/coordinate-reference-systems/fixing-crs-mismatches-in-point-clouds/) for a full repair workflow. You can also run [pipeline validation](/pdal-pipeline-architecture-execution/pipeline-validation/) on the source pipeline JSON before executing it against real data.
 
 ## Step-by-Step Implementation
 
@@ -125,7 +151,7 @@ UTM zones follow a deterministic pattern. For a file covering the US East Coast 
 
 ### Step 2 — Build the reprojection pipeline
 
-The minimal JSON pipeline has three stages: a reader, the reprojection filter, and a writer with explicit CRS tagging.
+The minimal JSON pipeline has three stages: a reader, the reprojection filter, and a writer with explicit CRS tagging. This follows the same [PDAL stage chaining](/pdal-pipeline-architecture-execution/pdal-stage-chaining/) pattern used across all PDAL workflows — each stage passes its point buffer to the next in sequence.
 
 ```json
 {
@@ -205,18 +231,9 @@ def reproject_utm_to_wgs84(
         )
 
     return count
-
-
-if __name__ == "__main__":
-    n = reproject_utm_to_wgs84(
-        input_path="survey_utm18n.laz",
-        output_path="survey_wgs84.laz",
-        source_epsg=32618,
-    )
-    print(f"Reprojected {n:,} points to EPSG:4326.")
 ```
 
-PDAL's streaming model processes the file in configurable chunks — this pipeline handles multi-gigabyte files without loading the full point cloud into RAM, unlike the array-based fallback below.
+PDAL's streaming model processes the file in configurable chunks — this pipeline handles multi-gigabyte files without loading the full point cloud into RAM, unlike the array-based fallback in the complete example below.
 
 ### Step 4 — Lightweight fallback with `pyproj` + `laspy`
 
@@ -267,6 +284,109 @@ def reproject_utm_to_wgs84_laspy(
     print(f"Transformed {len(las.x):,} points to EPSG:4326.")
 ```
 
+## Complete Working Example
+
+The following script can be copied, saved as `reproject_utm_wgs84.py`, and run against any LAS/LAZ file in UTM. It wires together the PDAL pipeline approach, verification, and coordinate range assertion in a single executable module.
+
+```python
+#!/usr/bin/env python3
+"""
+reproject_utm_wgs84.py
+Reproject a LAS/LAZ file from any UTM zone to WGS84 (EPSG:4326) using PDAL.
+
+Usage:
+    python reproject_utm_wgs84.py input_utm18n.laz output_wgs84.laz 32618
+
+Requirements:
+    pip install pdal
+    PDAL 2.4+ with PROJ 8+ (available via conda-forge: conda install -c conda-forge pdal)
+"""
+
+import json
+import sys
+
+import pdal
+
+
+def reproject_utm_to_wgs84(
+    input_path: str,
+    output_path: str,
+    source_epsg: int,
+) -> int:
+    """Reproject UTM LAS/LAZ to WGS84 geographic coordinates (EPSG:4326)."""
+    pipeline_dict = {
+        "pipeline": [
+            input_path,
+            {
+                "type": "filters.reprojection",
+                "in_srs": f"EPSG:{source_epsg}",
+                "out_srs": "EPSG:4326",
+            },
+            {
+                "type": "writers.las",
+                "filename": output_path,
+                "a_srs": "EPSG:4326",
+                "forward": "all",
+            },
+        ]
+    }
+
+    pipeline = pdal.Pipeline(json.dumps(pipeline_dict))
+    count = pipeline.execute()
+
+    if count == 0:
+        raise RuntimeError(
+            f"PDAL processed 0 points from '{input_path}'. "
+            "Verify that in_srs matches the actual file CRS."
+        )
+
+    return count
+
+
+def verify_reprojection(input_path: str, output_path: str, expected_count: int) -> None:
+    """Assert point count parity and check output coordinate ranges."""
+
+    def count_points(path: str) -> int:
+        p = pdal.Pipeline(json.dumps({"pipeline": [path]}))
+        p.execute()
+        return p.arrays[0].shape[0]
+
+    n_out = count_points(output_path)
+    assert n_out == expected_count, (
+        f"Point count mismatch: {expected_count:,} in vs {n_out:,} out. "
+        "Check that no filter stage was unintentionally applied."
+    )
+
+    # Spot-check coordinate ranges — WGS84 lon is [-180, 180], lat is [-90, 90]
+    p = pdal.Pipeline(json.dumps({"pipeline": [output_path]}))
+    p.execute()
+    pts = p.arrays[0]
+    assert pts["X"].min() > -180 and pts["X"].max() < 180, "X outside WGS84 longitude range"
+    assert pts["Y"].min() > -90 and pts["Y"].max() < 90, "Y outside WGS84 latitude range"
+
+    print(f"OK: {n_out:,} points verified at EPSG:4326 coordinate ranges.")
+
+
+def main() -> None:
+    if len(sys.argv) != 4:
+        print("Usage: python reproject_utm_wgs84.py <input.laz> <output.laz> <source_epsg>")
+        sys.exit(1)
+
+    input_path = sys.argv[1]
+    output_path = sys.argv[2]
+    source_epsg = int(sys.argv[3])
+
+    print(f"Reprojecting {input_path} (EPSG:{source_epsg}) -> {output_path} (EPSG:4326)...")
+    count = reproject_utm_to_wgs84(input_path, output_path, source_epsg)
+    print(f"Reprojected {count:,} points.")
+
+    verify_reprojection(input_path, output_path, count)
+
+
+if __name__ == "__main__":
+    main()
+```
+
 ## Key Parameter Table
 
 | Parameter | Stage | Type | Default | Notes |
@@ -312,7 +432,7 @@ def verify_reprojection(input_path: str, output_path: str) -> None:
     def count_points(path: str) -> int:
         p = pdal.Pipeline(json.dumps({"pipeline": [path]}))
         p.execute()
-        return p.metadata["metadata"][path]["count"]
+        return p.arrays[0].shape[0]
 
     n_in  = count_points(input_path)
     n_out = count_points(output_path)
@@ -339,10 +459,10 @@ assert pts["Y"].min() >  -90 and pts["Y"].max() <  90, "Y outside WGS84 latitude
 ## Gotchas and Edge Cases
 
 **1. Header says UTM but coordinates are already geographic.**
-Some LAZ files created by third-party exporters embed the wrong CRS in the header while the stored X/Y are already in decimal degrees. If you apply UTM→WGS84 to these, the output is garbage. Always run `pdal info --stats` and eyeball the `X`/`Y` ranges: UTM easting typically falls between 160,000 and 834,000 m; values below 180 almost certainly indicate geographic coordinates already.
+Some LAZ files created by third-party exporters embed the wrong CRS in the header while the stored X/Y are already in decimal degrees. If you apply UTM to WGS84 to these, the output is garbage. Always run `pdal info --stats` and eyeball the `X`/`Y` ranges: UTM easting typically falls between 160,000 and 834,000 m; values below 180 almost certainly indicate geographic coordinates already.
 
 **2. Missing PROJ datum grid files produce silent metre-scale errors.**
-When PROJ cannot find a required transformation grid (e.g. `us_noaa_conus.tif` for NAD27→WGS84), it silently falls back to an approximate 7-parameter Helmert transformation, introducing errors of 1–10 m. Install the full PROJ grid package before running survey-grade reprojection:
+When PROJ cannot find a required transformation grid (e.g. `us_noaa_conus.tif` for NAD27 to WGS84), it silently falls back to an approximate 7-parameter Helmert transformation, introducing errors of 1–10 m. Install the full PROJ grid package before running survey-grade reprojection:
 
 ```bash
 conda install -c conda-forge proj-data
@@ -360,13 +480,21 @@ projinfo -s EPSG:32618 -t EPSG:4326 --summary
 The `laspy` fallback assigns decimal-degree values to `las.x` and `las.y`, which triggers automatic scale/offset recalculation. However, if the original LAS file had a large UTM northing offset (e.g. 4,500,000 m), the auto-offset may store coordinates with insufficient decimal places. Check `las.header.offsets` and `las.header.scales` after assignment and confirm the stored precision is no larger than `1e-7` degrees (about 1 cm at the equator).
 
 **4. Mixing horizontal WGS84 degrees with vertical metre values.**
-A common oversight when working with [coordinate reference systems](/point-cloud-data-standards-fundamentals/coordinate-reference-systems/) in survey workflows: horizontal units shift to decimal degrees while Z remains in metres. Downstream tools that compute 3D distances will produce wildly incorrect results if they assume a single unit system. Document this in the output file's VLR description, or apply the compound CRS approach in the parameter table above to convert Z to ellipsoidal heights in the same pass.
+A common oversight in survey workflows: horizontal units shift to decimal degrees while Z remains in metres. Downstream tools that compute 3D distances will produce wildly incorrect results if they assume a single unit system. Document this in the output file's VLR description, or apply the compound CRS approach in the parameter table above to convert Z to ellipsoidal heights in the same pass.
 
 ## Frequently Asked Questions
 
 **Does `filters.reprojection` require the input file to have a valid CRS in its header?**
 
 No. If you supply `in_srs` explicitly in the pipeline JSON, PDAL uses that value regardless of what the header says. This is the correct approach for files with empty or incorrect CRS metadata — a situation that [fixing CRS mismatches in point clouds](/point-cloud-data-standards-fundamentals/coordinate-reference-systems/fixing-crs-mismatches-in-point-clouds/) covers in depth.
+
+**Does PDAL automatically update the LAS header CRS after reprojection?**
+
+Yes — when you set `a_srs` on `writers.las`, PDAL writes a WKT2 VLR into the output header. Without `a_srs` the header retains the source CRS, which will confuse downstream GIS tools. Parsing and checking that VLR is covered in [how to parse LAS headers with Python](/point-cloud-data-standards-fundamentals/laslaz-file-structure/how-to-parse-las-headers-with-python/).
+
+**Are Z values transformed when reprojecting from UTM to WGS84?**
+
+Only if you include a compound CRS (e.g. `EPSG:32618+5703`) in `out_srs`. A plain `EPSG:4326` target leaves Z values in their original vertical datum (NAVD88, EGM96, etc.) untouched, as shown in the diagram above.
 
 **Can I chain reprojection with other filters in the same pipeline?**
 

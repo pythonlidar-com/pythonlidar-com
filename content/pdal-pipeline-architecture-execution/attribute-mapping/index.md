@@ -1,50 +1,121 @@
-# Attribute Mapping in Python LiDAR & Point Cloud Workflows
+---
+title: "Attribute Mapping in PDAL: Translate, Compute & Persist Point Cloud Dimensions"
+description: "How to translate, derive, and persist point cloud dimensions in PDAL pipelines using filters.assign and extra_dims — covering schema auditing, type casting, validation checks, and common errors."
+slug: "attribute-mapping"
+type: "cluster"
+breadcrumb: "Attribute Mapping"
+datePublished: "2024-03-15"
+dateModified: "2026-06-24"
+---
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Article",
+      "headline": "Attribute Mapping in PDAL: Translate, Compute & Persist Point Cloud Dimensions",
+      "description": "How to translate, derive, and persist point cloud dimensions in PDAL pipelines using filters.assign and extra_dims — covering schema auditing, type casting, validation checks, and common errors.",
+      "datePublished": "2024-03-15",
+      "dateModified": "2026-06-24",
+      "author": {"@type": "Organization", "name": "pythonlidar.com"}
+    },
+    {
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        {"@type": "ListItem", "position": 1, "name": "Home", "item": "/"},
+        {"@type": "ListItem", "position": 2, "name": "PDAL Pipeline Architecture & Execution", "item": "/pdal-pipeline-architecture-execution/"},
+        {"@type": "ListItem", "position": 3, "name": "Attribute Mapping", "item": "/pdal-pipeline-architecture-execution/attribute-mapping/"}
+      ]
+    },
+    {
+      "@type": "HowTo",
+      "name": "Map and persist custom point cloud dimensions in a PDAL pipeline",
+      "step": [
+        {"@type": "HowToStep", "name": "Audit the input schema", "text": "Run pdal info --schema on the input file to list every dimension name, type, and value range before writing any pipeline JSON."},
+        {"@type": "HowToStep", "name": "Declare extra_dims in the reader", "text": "Add extra_dims to readers.las so PDAL allocates buffer space for any non-standard inbound dimension before filters run."},
+        {"@type": "HowToStep", "name": "Add filters.assign stages for each mapping rule", "text": "Chain one filters.assign per logical group of transformations — static flags, unit conversions, and derived metrics — in execution order."},
+        {"@type": "HowToStep", "name": "Declare extra_dims in the writer", "text": "Mirror every custom dimension in writers.las extra_dims with its target type so PDAL persists it to disk rather than silently dropping it."},
+        {"@type": "HowToStep", "name": "Validate output dimensions and value ranges", "text": "After execute(), inspect pipeline.arrays[0].dtype.names and assert value ranges to confirm the schema contract was met."}
+      ]
+    },
+    {
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "Why do custom dimensions disappear from the output LAS file even though filters.assign ran without errors?",
+          "acceptedAnswer": {"@type": "Answer", "text": "The most common cause is a missing extra_dims declaration in the writer stage. PDAL computes the dimension correctly in the in-memory buffer but writers.las only persists dimensions that are explicitly listed in its extra_dims parameter. Add the dimension name and type (e.g. intensity_norm=float) to the writer's extra_dims and the output will include it."}
+        },
+        {
+          "@type": "Question",
+          "name": "Can I reference a dimension computed in one filters.assign stage inside a later filters.assign expression?",
+          "acceptedAnswer": {"@type": "Answer", "text": "Yes. PDAL evaluates filters.assign stages in the order they appear in the pipeline array, and each stage writes its results back into the shared PointView buffer before the next stage reads from it. A dimension assigned in stage N is therefore available to expressions in stage N+1 and beyond."}
+        },
+        {
+          "@type": "Question",
+          "name": "What types can I use in extra_dims for LAS 1.4 output?",
+          "acceptedAnswer": {"@type": "Answer", "text": "PDAL supports uint8, uint16, uint32, uint64, int8, int16, int32, int64, float, and double as extra_dims types for writers.las. Choose the narrowest type that fits your value range to minimize file size — uint8 for flags (0/1), float for normalized ratios, double for high-precision measurements."}
+        }
+      ]
+    }
+  ]
+}
+</script>
 
 Raw LiDAR sensor output almost never matches the dimensional schema your downstream analysis expects. Intensity values arrive as raw 16-bit integers when your terrain classifier wants a normalized float; classification codes are absent when your vegetation filter requires them; vendor-specific extra bytes carry reflectance data that standard `writers.las` will silently discard. Attribute mapping is the systematic process of translating, computing, and persisting point cloud dimensions so that every downstream stage in the processing graph receives exactly the schema it needs. It is a foundational concern within the broader [PDAL Pipeline Architecture & Execution](/pdal-pipeline-architecture-execution/) framework — without explicit dimension contracts, silent schema violations propagate undetected through multi-stage pipelines and corrupt analytical outputs.
 
 ---
 
-<svg viewBox="0 0 720 220" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Attribute mapping data-flow: raw LAS input flows through schema inspection, transformation rules, and filters.assign into validated output with custom dimensions" style="width:100%;max-width:720px;display:block;margin:1.5rem auto;">
-  <title>Attribute Mapping Data-Flow</title>
-  <desc>Diagram showing how a raw LAS/LAZ file passes through four stages: schema inspection, transformation rules, filters.assign pipeline, and validated output with mapped dimensions.</desc>
+<svg viewBox="0 0 760 240" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Attribute mapping data-flow: raw LAS input flows through schema inspection, filters.assign transformation, and validated output with custom dimensions" style="width:100%;max-width:760px;display:block;margin:1.5rem auto;">
+  <title>Attribute Mapping Pipeline Data-Flow</title>
+  <desc>Four-stage left-to-right flow diagram. Stage 1: readers.las reads raw input and declares extra_dims. Stage 2: Schema inspect audits dtype names, type and range. Stage 3: filters.assign computes static and derived dimensions with type casting. Stage 4: writers.las persists extra_dims to validated output. Numbered arrows connect each stage.</desc>
   <defs>
-    <marker id="arrowhead" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+    <marker id="am-arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
       <polygon points="0 0, 8 3, 0 6" fill="currentColor" opacity="0.6"/>
     </marker>
   </defs>
-  <!-- Stage boxes -->
-  <!-- Input -->
-  <rect x="10" y="70" width="130" height="80" rx="6" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.4"/>
-  <text x="75" y="102" text-anchor="middle" font-size="12" fill="currentColor" font-family="ui-monospace,monospace" font-weight="600">readers.las</text>
-  <text x="75" y="118" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.7">Raw input</text>
-  <text x="75" y="133" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.7">extra_dims declared</text>
-  <!-- Schema inspect -->
-  <rect x="180" y="70" width="130" height="80" rx="6" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.4"/>
-  <text x="245" y="102" text-anchor="middle" font-size="12" fill="currentColor" font-family="ui-monospace,monospace" font-weight="600">Schema inspect</text>
-  <text x="245" y="118" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.7">dtype.names audit</text>
-  <text x="245" y="133" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.7">type + range check</text>
-  <!-- filters.assign -->
-  <rect x="350" y="70" width="150" height="80" rx="6" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.4"/>
-  <text x="425" y="102" text-anchor="middle" font-size="12" fill="currentColor" font-family="ui-monospace,monospace" font-weight="600">filters.assign</text>
-  <text x="425" y="118" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.7">static + derived dims</text>
-  <text x="425" y="133" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.7">type casting</text>
-  <!-- Output -->
-  <rect x="545" y="70" width="160" height="80" rx="6" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.4"/>
-  <text x="625" y="102" text-anchor="middle" font-size="12" fill="currentColor" font-family="ui-monospace,monospace" font-weight="600">writers.las</text>
-  <text x="625" y="118" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.7">extra_dims persisted</text>
-  <text x="625" y="133" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.7">validated output</text>
-  <!-- Arrows -->
-  <line x1="140" y1="110" x2="178" y2="110" stroke="currentColor" stroke-width="1.5" opacity="0.6" marker-end="url(#arrowhead)"/>
-  <line x1="310" y1="110" x2="348" y2="110" stroke="currentColor" stroke-width="1.5" opacity="0.6" marker-end="url(#arrowhead)"/>
-  <line x1="500" y1="110" x2="543" y2="110" stroke="currentColor" stroke-width="1.5" opacity="0.6" marker-end="url(#arrowhead)"/>
-  <!-- Stage labels below -->
-  <text x="75" y="170" text-anchor="middle" font-size="9" fill="currentColor" opacity="0.5">① read</text>
-  <text x="245" y="170" text-anchor="middle" font-size="9" fill="currentColor" opacity="0.5">② inspect</text>
-  <text x="425" y="170" text-anchor="middle" font-size="9" fill="currentColor" opacity="0.5">③ transform</text>
-  <text x="625" y="170" text-anchor="middle" font-size="9" fill="currentColor" opacity="0.5">④ write</text>
   <!-- Top label -->
-  <text x="360" y="28" text-anchor="middle" font-size="13" fill="currentColor" font-weight="600" opacity="0.8">Attribute Mapping Pipeline Data-Flow</text>
-  <text x="360" y="48" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.5">Dimensions flow left to right; extra_dims must be declared at both reader and writer</text>
+  <text x="380" y="24" text-anchor="middle" font-size="13" fill="currentColor" font-weight="600" opacity="0.85">Attribute Mapping Pipeline Data-Flow</text>
+  <text x="380" y="44" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.5">extra_dims must be declared at both reader and writer; assignment order matters</text>
+  <!-- Stage 1: readers.las -->
+  <rect x="10" y="70" width="148" height="90" rx="6" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.4"/>
+  <text x="84" y="97" text-anchor="middle" font-size="12" fill="currentColor" font-family="ui-monospace,monospace" font-weight="600">readers.las</text>
+  <text x="84" y="115" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.7">Raw sensor input</text>
+  <text x="84" y="131" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.7">extra_dims declared</text>
+  <text x="84" y="147" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.7">buffer allocated</text>
+  <!-- Stage 2: Schema inspect -->
+  <rect x="193" y="70" width="148" height="90" rx="6" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.4"/>
+  <text x="267" y="97" text-anchor="middle" font-size="12" fill="currentColor" font-family="ui-monospace,monospace" font-weight="600">Schema inspect</text>
+  <text x="267" y="115" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.7">dtype.names audit</text>
+  <text x="267" y="131" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.7">type + range check</text>
+  <text x="267" y="147" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.7">rule definition</text>
+  <!-- Stage 3: filters.assign -->
+  <rect x="376" y="70" width="155" height="90" rx="6" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.4"/>
+  <text x="453" y="97" text-anchor="middle" font-size="12" fill="currentColor" font-family="ui-monospace,monospace" font-weight="600">filters.assign</text>
+  <text x="453" y="115" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.7">unit conversions</text>
+  <text x="453" y="131" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.7">derived dimensions</text>
+  <text x="453" y="147" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.7">type casting</text>
+  <!-- Stage 4: writers.las -->
+  <rect x="566" y="70" width="180" height="90" rx="6" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.4"/>
+  <text x="656" y="97" text-anchor="middle" font-size="12" fill="currentColor" font-family="ui-monospace,monospace" font-weight="600">writers.las</text>
+  <text x="656" y="115" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.7">extra_dims persisted</text>
+  <text x="656" y="131" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.7">LAS 1.4 format pinned</text>
+  <text x="656" y="147" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.7">validated output</text>
+  <!-- Arrows -->
+  <line x1="158" y1="115" x2="191" y2="115" stroke="currentColor" stroke-width="1.5" opacity="0.6" marker-end="url(#am-arrow)"/>
+  <line x1="341" y1="115" x2="374" y2="115" stroke="currentColor" stroke-width="1.5" opacity="0.6" marker-end="url(#am-arrow)"/>
+  <line x1="531" y1="115" x2="564" y2="115" stroke="currentColor" stroke-width="1.5" opacity="0.6" marker-end="url(#am-arrow)"/>
+  <!-- Stage labels -->
+  <text x="84" y="180" text-anchor="middle" font-size="9" fill="currentColor" opacity="0.5">① read</text>
+  <text x="267" y="180" text-anchor="middle" font-size="9" fill="currentColor" opacity="0.5">② inspect</text>
+  <text x="453" y="180" text-anchor="middle" font-size="9" fill="currentColor" opacity="0.5">③ transform</text>
+  <text x="656" y="180" text-anchor="middle" font-size="9" fill="currentColor" opacity="0.5">④ write</text>
+  <!-- Step numbers in corners -->
+  <text x="18" y="86" font-size="9" fill="currentColor" opacity="0.4">①</text>
+  <text x="201" y="86" font-size="9" fill="currentColor" opacity="0.4">②</text>
+  <text x="384" y="86" font-size="9" fill="currentColor" opacity="0.4">③</text>
+  <text x="574" y="86" font-size="9" fill="currentColor" opacity="0.4">④</text>
 </svg>
 
 ## Prerequisites
@@ -55,7 +126,7 @@ Before implementing attribute mapping, confirm your environment and input data m
 - **Python 3.10+** with `numpy`, `pyproj`, and `logging` available in the active environment
 - **Input file** conforming to LAS 1.2–1.4 or LAZ; vendor-specific formats (E57, PLY) require an additional reader stage
 - **Known input dimensions**: the workflow below assumes `X`, `Y`, `Z`, `Intensity` (uint16), `ReturnNumber`, `NumberOfReturns`, and `Classification` are present — verify with `pdal info --schema input.laz` before starting
-- **CRS metadata** present in the input file's VLR records; if missing, handle it at the reader level with an explicit `spatialreference` parameter
+- **CRS metadata** present in the input file's VLR records; if missing, handle it at the reader level with an explicit `spatialreference` parameter before combining it with [spatial reprojection](/pdal-pipeline-architecture-execution/spatial-reprojection/) stages
 - **Test dataset**: a USGS 3DEP tile or any LAZ tile from OpenTopography works well; the examples below use a 2 million-point urban scan
 
 ## Core Workflow Architecture
@@ -65,10 +136,8 @@ Attribute mapping follows a five-phase execution lifecycle inside every PDAL pip
 1. **Reader declaration with `extra_dims`**: the reader stage must name any non-standard incoming dimensions so PDAL allocates buffer space for them. Omitting `extra_dims` here causes custom bytes to be ignored before any filter sees them.
 2. **Schema audit**: after an initial `execute()` call, inspect `pipeline.arrays[0].dtype.names` to confirm which dimensions exist, their NumPy types, and their value ranges. This audit drives the mapping rule definition in phase 3.
 3. **Rule definition**: document static assignments (provenance flags, CRS identifiers), unit conversions (intensity normalization, elevation offsets), derived attributes (return ratio, height-above-ground proxy), and type casts in a version-controlled JSON configuration before writing any pipeline JSON.
-4. **Transformation pipeline construction**: translate each rule into a `filters.assign` expression. Chain multiple `filters.assign` stages when expressions are logically independent — PDAL evaluates them in declaration order, so dimensions computed in an earlier stage are available to later ones.
+4. **Transformation pipeline construction**: translate each rule into a `filters.assign` expression. Chain multiple `filters.assign` stages when expressions are logically independent — PDAL evaluates them in declaration order, so dimensions computed in an earlier stage are available to later ones. Understanding [PDAL stage chaining](/pdal-pipeline-architecture-execution/pdal-stage-chaining/) semantics is critical here: transformation stages that compute derived dimensions must appear *before* any filter that consumes those dimensions.
 5. **Writer declaration with `extra_dims`**: the writer must re-declare every custom dimension with its target type. Without this declaration, `writers.las` drops custom dimensions silently even when upstream filters have correctly computed them.
-
-Keeping [PDAL stage chaining](/pdal-pipeline-architecture-execution/pdal-stage-chaining/) in mind during phase 4 is critical: transformation stages that compute derived dimensions must appear *before* any filter that consumes those dimensions. For example, `intensity_norm` must be assigned before a `filters.range` that thresholds on it.
 
 ## Full Implementation
 
@@ -151,6 +220,8 @@ def run_attribute_mapping(
     Returns:
         dict with keys: status, points, dims, metadata, errors
     """
+    Path(output_path).parent.mkdir(parents=True, exist_ok=True)
+
     pipeline_def = build_mapping_pipeline(
         input_path=input_path,
         output_path=output_path,
@@ -176,7 +247,6 @@ def run_attribute_mapping(
 
     arr = pipeline.arrays[0]
     out_dims = list(arr.dtype.names)
-
     errors: list[str] = []
 
     # Validate that expected dimensions were produced
@@ -193,10 +263,6 @@ def run_attribute_mapping(
             errors.append(
                 f"intensity_norm out of bounds: min={min_val:.4f}, max={max_val:.4f} (expected [0.0, 1.0])"
             )
-
-    # Validate point count matches source
-    source_count = inspect_schema.__wrapped__(input_path) if hasattr(inspect_schema, "__wrapped__") else None
-    # (point-count cross-check is done separately via pdal info --summary)
 
     if errors:
         log.warning("Validation completed with %d error(s): %s", len(errors), errors)
@@ -242,11 +308,11 @@ The reader stage uses `"extra_dims": "custom_flag=uint8"` to tell PDAL to alloca
 
 ### `inspect_schema` for baseline auditing
 
-Running a minimal read-only pipeline before the transformation pipeline catches problems early: missing dimensions, unexpected types (e.g., intensity stored as `float32` instead of `uint16`), or out-of-range coordinate values. Feed this information back into your mapping rule definition phase — don't guess the input schema.
+Running a minimal read-only pipeline before the transformation pipeline catches problems early: missing dimensions, unexpected types (e.g., intensity stored as `float32` instead of `uint16`), or out-of-range coordinate values. Feed this information back into your mapping rule definition phase — do not guess the input schema.
 
 ### `filters.assign` expression ordering
 
-PDAL evaluates `filters.assign` stages sequentially. In the example above, `intensity_norm` is computed before `return_ratio`. If your pipeline had a conditional `filters.range` stage that thresholds on `intensity_norm`, it must come *after* the `filters.assign` that defines it. This ordering constraint is the most common source of silent errors in attribute mapping workflows. See [pipeline filtering logic](/pdal-pipeline-architecture-execution/pipeline-filtering-logic/) for how PDAL evaluates expressions and propagates dimension metadata between stages.
+PDAL evaluates `filters.assign` stages sequentially. In the example above, `intensity_norm` is computed before `return_ratio`. If your pipeline had a conditional `filters.range` stage that thresholds on `intensity_norm`, it must come *after* the `filters.assign` that defines it. This ordering constraint is the most common source of silent errors in attribute mapping workflows. The [pipeline filtering logic](/pdal-pipeline-architecture-execution/pipeline-filtering-logic/) section explains how PDAL evaluates expressions and propagates dimension metadata between stages.
 
 ### Writer with compression and format pins
 
@@ -256,18 +322,22 @@ Setting `"compression": "laszip"`, `"minor_version": 4`, and `"dataformat_id": 6
 
 The function returns a dict with `status`, `points`, `dims`, `metadata`, and `errors` rather than raising exceptions. This contract makes it safe to consume from batch orchestration code that loops over hundreds of tiles — the caller inspects `result["errors"]` and decides whether to retry, skip, or halt rather than catching bare exceptions in a tight loop.
 
+### Output directory creation
+
+The implementation calls `Path(output_path).parent.mkdir(parents=True, exist_ok=True)` before executing the pipeline. PDAL will not create missing directories, so adding this guard prevents a silent failure mode in batch jobs that write to a new directory structure.
+
 ## Parameter Reference Table
 
 | Parameter | Stage | Type | Default | Valid range / notes |
 |---|---|---|---|---|
 | `extra_dims` (reader) | `readers.las` | string | `""` (none) | Comma-separated `name=type` pairs. Must declare every non-standard inbound dimension. |
 | `extra_dims` (writer) | `writers.las` | string | `""` (none) | Must re-declare every custom dimension you want persisted. Omission silently drops the dimension. |
-| `value` | `filters.assign` | string | — | PDAL expression string; supports arithmetic, comparison operators, and ternary syntax. Max one `value` per stage instance. |
+| `value` | `filters.assign` | string or array | — | PDAL expression string; supports arithmetic, comparison operators, and ternary syntax. Array form available in PDAL 2.5+ for combining independent assignments in one buffer pass. |
+| `where` | `filters.assign` | string | `""` | Optional condition expression; limits assignments to matching points only. |
 | `compression` | `writers.las` | string | `"none"` | `"laszip"` for LAZ output; `"none"` for uncompressed LAS. Use LAZ for archival; raw LAS for iterative processing. |
 | `minor_version` | `writers.las` | int | `2` | LAS spec minor version (2 or 4). LAS 1.4 is required for point formats 6–10 and extended return counts. |
 | `dataformat_id` | `writers.las` | int | `0` | Point data record format (0–10). Format 6 is the baseline for LAS 1.4 with GPS time. |
 | `spatialreference` | `readers.las` | string | `""` | WKT or EPSG string to override embedded CRS. Use when the input VLR is missing or incorrect. |
-| `where` | `filters.assign` | string | `""` | Optional condition expression; limits assignments to matching points only. |
 
 For a complete list of `readers.las` and `writers.las` parameters, see the [PDAL documentation](https://pdal.io/en/latest/stages/readers.las.html).
 
@@ -339,9 +409,9 @@ LAZ compression reduces file size by 5–8× but adds decompression overhead on 
 | `.laz` (LASzip) | ~18 MB | ~0.9 s | ~1.4 s | Archival, final output |
 | `.las` (uncompressed) | ~140 MB | ~0.3 s | ~0.4 s | Iterative development |
 
-**Multiple `filters.assign` vs. single combined expression**
+**Multiple `filters.assign` vs. combined array form**
 
-Each `filters.assign` stage traverses the full point buffer once. Chaining ten separate stages for ten dimensions costs ten full passes. When dimensions are independent (no expression depends on another from this same batch), combine them using the `value` array syntax available in PDAL 2.5+:
+Each `filters.assign` stage traverses the full point buffer once. Chaining ten separate stages for ten dimensions costs ten full buffer passes. When dimensions are independent (no expression depends on another from this same batch), combine them using the `value` array syntax available in PDAL 2.5+:
 
 ```json
 {
@@ -353,11 +423,11 @@ Each `filters.assign` stage traverses the full point buffer once. Chaining ten s
 }
 ```
 
-This collapses two buffer passes into one. Check your PDAL version before relying on array-style `value`: `pdal --version`.
+This collapses two buffer passes into one. Verify your PDAL version supports array-style `value` with `pdal --version` before deploying.
 
 **Memory footprint for large tiles**
 
-Attribute mapping loads the entire point buffer into RAM. For tiles exceeding 50 million points, combine attribute mapping with [parallel execution](/pdal-pipeline-architecture-execution/parallel-execution/) by splitting tiles spatially with `filters.splitter` before mapping, then merging the mapped outputs. A `uint8` dimension adds 1 byte per point; a `float32` dimension adds 4 bytes. For 100 million points, adding five float32 custom dimensions increases RAM consumption by ~2 GB.
+Attribute mapping loads the entire point buffer into RAM. For tiles exceeding 50 million points, combine attribute mapping with [parallel execution](/pdal-pipeline-architecture-execution/parallel-execution/) by splitting tiles spatially with `filters.splitter` before mapping, then merging the mapped outputs. A `uint8` dimension adds 1 byte per point; a `float32` dimension adds 4 bytes. For 100 million points, adding five `float32` custom dimensions increases RAM consumption by approximately 2 GB.
 
 ## Common Errors and Troubleshooting
 
@@ -389,7 +459,7 @@ Fix: always mirror every custom dimension in both the reader and the writer `ext
 
 Cause: the dimension name in the `filters.assign` expression does not match the LAS dimension name exactly. PDAL dimension names are case-sensitive and follow the LAS specification (`ReturnNumber`, not `return_number` or `returnNumber`).
 
-Fix: run `pdal info --schema input.laz` to list the exact dimension names, then copy them verbatim into your expression strings.
+Fix: run `pdal info --schema input.laz` to list the exact dimension names, then copy them verbatim into your expression strings. Cross-reference standard dimension names against the [ASPRS classification codes](/point-cloud-data-standards-fundamentals/asprs-classification-codes/) and LAS header conventions if you are unsure whether a dimension is standard or vendor-specific.
 
 ---
 
@@ -410,3 +480,4 @@ For vendor-specific edge cases — arbitrary extra byte offsets, dynamic schema 
 - [Pipeline Filtering Logic](/pdal-pipeline-architecture-execution/pipeline-filtering-logic/) — conditional dimension filtering and expression evaluation that complements attribute assignment
 - [Spatial Reprojection](/pdal-pipeline-architecture-execution/spatial-reprojection/) — coordinate transformations that often accompany schema normalization in multi-source ingestion workflows
 - [Pipeline Validation](/pdal-pipeline-architecture-execution/pipeline-validation/) — pre-execution validation strategies to catch schema errors before running against large datasets
+- [PDAL Pipeline Architecture & Execution](/pdal-pipeline-architecture-execution/) — parent guide covering the full execution model, stage categories, and production deployment patterns

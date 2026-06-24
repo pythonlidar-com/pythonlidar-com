@@ -55,7 +55,7 @@ dateModified: "2026-06-24"
           "name": "Why do LAS coordinates use integer storage with scale factors?",
           "acceptedAnswer": {
             "@type": "Answer",
-            "text": "Storing coordinates as scaled 32-bit integers (LAS 1.0–1.3) or 32-bit integers (LAS 1.4) reduces file size and eliminates floating-point rounding errors during sequential writes. The actual coordinate is reconstructed as: Actual = (Integer × Scale) + Offset. Using a scale of 0.001 gives millimetre precision across offsets up to ±2,147,483 m."
+            "text": "Storing coordinates as scaled 32-bit integers reduces file size and eliminates floating-point rounding errors during sequential writes. The actual coordinate is reconstructed as: Actual = (Integer × Scale) + Offset. Using a scale of 0.001 gives millimetre precision across offsets up to ±2,147,483 m."
           }
         },
         {
@@ -80,61 +80,57 @@ dateModified: "2026-06-24"
 }
 </script>
 
-Point cloud datasets are only as reliable as the specifications governing their binary layout, spatial referencing, and semantic classification. For LiDAR analysts, Python GIS developers, and infrastructure engineering teams, mastering these foundations is what separates fragile one-off scripts from reproducible, scalable processing pipelines. This guide covers every layer of the stack—binary file anatomy, coordinate integrity, classification semantics, density validation, and metadata synchronization—so you can ingest, transform, and deliver point cloud data with full traceability and zero silent failures.
+Point cloud datasets are only as reliable as the specifications governing their binary layout, spatial referencing, and semantic classification. For LiDAR analysts, Python GIS developers, and infrastructure engineering teams, mastering these foundations is what separates fragile one-off scripts from reproducible, scalable processing pipelines. This guide covers every layer of the stack — binary file anatomy, coordinate integrity, classification semantics, density validation, and metadata synchronization — so you can ingest, transform, and deliver point cloud data with full traceability and zero silent failures.
 
-## Data Standards Architecture: How the Layers Interact
+## Standards Architecture: How the Layers Interact
 
 Before diving into individual topics, it helps to understand how the five standards domains relate to one another and where each one can break your pipeline if ignored.
 
-<svg viewBox="0 0 740 420" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Point cloud data standards architecture diagram showing five layers: file structure at the base, then CRS, classification, density metrics, and metadata sync at the top" style="width:100%;max-width:740px;display:block;margin:2rem auto;">
+<svg viewBox="0 0 700 440" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Point cloud data standards architecture showing five dependent layers" style="width:100%;max-width:700px;display:block;margin:2rem auto;">
   <title>Point Cloud Data Standards Architecture</title>
-  <desc>Five stacked layers of point cloud data standards, each building on the one below: LAS/LAZ File Structure at the base, Coordinate Reference Systems, ASPRS Classification Codes, Point Density Metrics, and Metadata &amp; Header Sync at the top. Arrows on the right side show that failures propagate upward through all layers.</desc>
+  <desc>Five stacked layers of point cloud data standards, each building on the layer below. From bottom to top: LAS/LAZ File Structure, Coordinate Reference Systems, ASPRS Classification Codes, Point Density Metrics, and Metadata and Header Sync. An upward arrow on the right indicates that failures in lower layers propagate upward.</desc>
   <defs>
-    <marker id="arr" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
-      <path d="M0,0 L0,6 L8,3 Z" fill="currentColor" opacity="0.5"/>
+    <marker id="arrowUp" markerWidth="8" markerHeight="8" refX="4" refY="6" orient="auto">
+      <path d="M1,7 L4,1 L7,7" fill="none" stroke="currentColor" stroke-width="1.2"/>
     </marker>
   </defs>
   <!-- Layer 1: File Structure -->
-  <rect x="40" y="340" width="560" height="52" rx="6" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.25"/>
-  <rect x="40" y="340" width="560" height="52" rx="6" fill="currentColor" opacity="0.07"/>
-  <text x="320" y="361" text-anchor="middle" font-size="12" font-weight="700" fill="currentColor" font-family="system-ui,sans-serif">LAS / LAZ File Structure</text>
-  <text x="320" y="379" text-anchor="middle" font-size="10.5" fill="currentColor" font-family="system-ui,sans-serif" opacity="0.75">Public header block · VLRs · Point Data Records · scale/offset encoding</text>
+  <rect x="30" y="360" width="580" height="56" rx="6" fill="currentColor" opacity="0.07" stroke="currentColor" stroke-width="1.5" stroke-opacity="0.25"/>
+  <text x="320" y="383" text-anchor="middle" font-size="13" font-weight="700" fill="currentColor" font-family="system-ui,sans-serif">LAS / LAZ File Structure</text>
+  <text x="320" y="402" text-anchor="middle" font-size="10.5" fill="currentColor" font-family="system-ui,sans-serif" opacity="0.7">Public header · VLRs · Point Data Records · scale/offset encoding</text>
   <!-- Layer 2: CRS -->
-  <rect x="60" y="272" width="520" height="52" rx="6" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.30"/>
-  <rect x="60" y="272" width="520" height="52" rx="6" fill="currentColor" opacity="0.09"/>
-  <text x="320" y="293" text-anchor="middle" font-size="12" font-weight="700" fill="currentColor" font-family="system-ui,sans-serif">Coordinate Reference Systems</text>
-  <text x="320" y="311" text-anchor="middle" font-size="10.5" fill="currentColor" font-family="system-ui,sans-serif" opacity="0.75">EPSG codes · GeoKey VLRs · horizontal + vertical datum transforms</text>
+  <rect x="52" y="292" width="536" height="56" rx="6" fill="currentColor" opacity="0.09" stroke="currentColor" stroke-width="1.5" stroke-opacity="0.30"/>
+  <text x="320" y="315" text-anchor="middle" font-size="13" font-weight="700" fill="currentColor" font-family="system-ui,sans-serif">Coordinate Reference Systems</text>
+  <text x="320" y="334" text-anchor="middle" font-size="10.5" fill="currentColor" font-family="system-ui,sans-serif" opacity="0.7">EPSG codes · GeoKey VLRs · horizontal + vertical datum transforms</text>
   <!-- Layer 3: Classification -->
-  <rect x="80" y="204" width="480" height="52" rx="6" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.38"/>
-  <rect x="80" y="204" width="480" height="52" rx="6" fill="currentColor" opacity="0.11"/>
-  <text x="320" y="225" text-anchor="middle" font-size="12" font-weight="700" fill="currentColor" font-family="system-ui,sans-serif">ASPRS Classification Codes</text>
-  <text x="320" y="243" text-anchor="middle" font-size="10.5" fill="currentColor" font-family="system-ui,sans-serif" opacity="0.75">Integer taxonomy · ground / vegetation / buildings / noise · custom codes 32–63</text>
+  <rect x="74" y="224" width="492" height="56" rx="6" fill="currentColor" opacity="0.11" stroke="currentColor" stroke-width="1.5" stroke-opacity="0.35"/>
+  <text x="320" y="247" text-anchor="middle" font-size="13" font-weight="700" fill="currentColor" font-family="system-ui,sans-serif">ASPRS Classification Codes</text>
+  <text x="320" y="266" text-anchor="middle" font-size="10.5" fill="currentColor" font-family="system-ui,sans-serif" opacity="0.7">Integer taxonomy · ground / vegetation / buildings / noise · custom codes 32–63</text>
   <!-- Layer 4: Density -->
-  <rect x="100" y="136" width="440" height="52" rx="6" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.46"/>
-  <rect x="100" y="136" width="440" height="52" rx="6" fill="currentColor" opacity="0.13"/>
-  <text x="320" y="157" text-anchor="middle" font-size="12" font-weight="700" fill="currentColor" font-family="system-ui,sans-serif">Point Density Metrics</text>
-  <text x="320" y="175" text-anchor="middle" font-size="10.5" fill="currentColor" font-family="system-ui,sans-serif" opacity="0.75">pts/m² · pulse spacing · scan-angle effects · KDTree spatial indexing</text>
+  <rect x="96" y="156" width="448" height="56" rx="6" fill="currentColor" opacity="0.13" stroke="currentColor" stroke-width="1.5" stroke-opacity="0.42"/>
+  <text x="320" y="179" text-anchor="middle" font-size="13" font-weight="700" fill="currentColor" font-family="system-ui,sans-serif">Point Density Metrics</text>
+  <text x="320" y="198" text-anchor="middle" font-size="10.5" fill="currentColor" font-family="system-ui,sans-serif" opacity="0.7">pts/m² · pulse spacing · scan-angle effects · KDTree spatial indexing</text>
   <!-- Layer 5: Metadata -->
-  <rect x="120" y="68" width="400" height="52" rx="6" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.55"/>
-  <rect x="120" y="68" width="400" height="52" rx="6" fill="currentColor" opacity="0.16"/>
-  <text x="320" y="89" text-anchor="middle" font-size="12" font-weight="700" fill="currentColor" font-family="system-ui,sans-serif">Metadata &amp; Header Sync</text>
-  <text x="320" y="107" text-anchor="middle" font-size="10.5" fill="currentColor" font-family="system-ui,sans-serif" opacity="0.75">Point counts · bounding boxes · EVLRs · provenance history · checksums</text>
-  <!-- Upward failure propagation arrow -->
-  <line x1="660" y1="385" x2="660" y2="85" stroke="currentColor" stroke-width="1.5" opacity="0.4" marker-end="url(#arr)"/>
-  <text x="672" y="240" font-size="10" fill="currentColor" font-family="system-ui,sans-serif" opacity="0.6" transform="rotate(90,672,240)">failures propagate upward</text>
-  <!-- Foundation label -->
-  <text x="320" y="24" text-anchor="middle" font-size="11" fill="currentColor" font-family="system-ui,sans-serif" opacity="0.5" font-style="italic">Standards hierarchy — each layer depends on the one below</text>
+  <rect x="118" y="88" width="404" height="56" rx="6" fill="currentColor" opacity="0.16" stroke="currentColor" stroke-width="1.5" stroke-opacity="0.50"/>
+  <text x="320" y="111" text-anchor="middle" font-size="13" font-weight="700" fill="currentColor" font-family="system-ui,sans-serif">Metadata &amp; Header Sync</text>
+  <text x="320" y="130" text-anchor="middle" font-size="10.5" fill="currentColor" font-family="system-ui,sans-serif" opacity="0.7">Point counts · bounding boxes · EVLRs · provenance history · checksums</text>
+  <!-- Upward arrow -->
+  <line x1="636" y1="405" x2="636" y2="108" stroke="currentColor" stroke-width="1.5" stroke-opacity="0.45" marker-end="url(#arrowUp)"/>
+  <!-- Arrow label — written horizontally beside the arrow, not rotated -->
+  <text x="648" y="310" font-size="9.5" fill="currentColor" font-family="system-ui,sans-serif" opacity="0.55" writing-mode="tb">failures propagate up</text>
+  <!-- Caption -->
+  <text x="320" y="44" text-anchor="middle" font-size="11" fill="currentColor" font-family="system-ui,sans-serif" opacity="0.5" font-style="italic">Standards hierarchy — each layer depends on the one below</text>
 </svg>
 
-The architecture is a strict dependency chain. A misconfigured scale factor in the [LAS/LAZ file structure](/point-cloud-data-standards-fundamentals/laslaz-file-structure/) silently corrupts every spatial coordinate before the CRS layer even evaluates them. An incorrect CRS embed will cause classification algorithms to operate on geometrically wrong return positions. Classification errors poison density calculations. And metadata that no longer reflects the modified payload makes the final product untraceable. Fix violations at the lowest layer they originate—not where they surface.
+The architecture is a strict dependency chain. A misconfigured scale factor in the [LAS/LAZ file structure](/point-cloud-data-standards-fundamentals/laslaz-file-structure/) silently corrupts every spatial coordinate before the CRS layer even evaluates them. An incorrect [coordinate reference system](/point-cloud-data-standards-fundamentals/coordinate-reference-systems/) embed will cause classification algorithms to operate on geometrically wrong return positions. Classification errors poison density calculations. And metadata that no longer reflects the modified payload makes the final product untraceable. Fix violations at the lowest layer they originate — not where they surface.
 
 ## LAS/LAZ File Structure: The Binary Foundation
 
-A LAS file is a precisely ordered binary stream, not a general-purpose container. Its layout is defined by the [LAS/LAZ File Structure](/point-cloud-data-standards-fundamentals/laslaz-file-structure/) specification and follows four sequential blocks:
+A LAS file is a precisely ordered binary stream, not a general-purpose container. Its layout is defined by the [LAS/LAZ file structure specification](/point-cloud-data-standards-fundamentals/laslaz-file-structure/) and follows four sequential blocks:
 
 **Public Header Block (PHB):** Occupies the first 227 bytes (LAS 1.0–1.2), 235 bytes (LAS 1.3), or 375 bytes (LAS 1.4). Contains the file signature `LASF`, version identifiers, global point count, bounding box extents, and the critical scale/offset parameters. The Point Data Format ID embedded here acts as the schema definition for every record that follows.
 
-**Variable-Length Records (VLRs):** Immediately follow the header. The GeoKeyDirectory VLR stores the embedded CRS as GeoTIFF keys. Additional VLRs may contain projection Well-Known Text (WKT), classification lookup tables, or vendor-defined schemas. Never strip VLRs during compression—doing so severs the spatial reference from the payload.
+**Variable-Length Records (VLRs):** Immediately follow the header. The GeoKeyDirectory VLR stores the embedded CRS as GeoTIFF keys. Additional VLRs may contain projection Well-Known Text (WKT), classification lookup tables, or vendor-defined schemas. Never strip VLRs during compression — doing so severs the spatial reference from the payload.
 
 **Point Data Records (PDRs):** The bulk of the file. Each record's byte layout is dictated by the Point Data Format ID. Format 0 is the most compact (20 bytes/record); Format 6 adds 64-bit GPS time (30 bytes/record); Formats 7 and 8 extend this with RGB and NIR channels (36–38 bytes/record). Choosing the wrong format for a dataset that contains RGB channels will silently zero or misread those channels.
 
@@ -148,11 +144,17 @@ Raw integer coordinates stored in PDRs must be reconstructed before any geometri
 Actual Coordinate = (Raw Integer × Scale Factor) + Offset
 ```
 
-`laspy` applies this automatically when you access `las.x`, `las.y`, or `las.z`. Custom memory-mapped readers must implement it explicitly. A common bug is applying the scale before adding the offset—the correct order is multiply then add. Using `float32` instead of `float64` for the reconstruction introduces 1–2 mm rounding errors at typical survey extents; always use `float64`.
+`laspy` applies this automatically when you access `las.x`, `las.y`, or `las.z`. Custom memory-mapped readers must implement it explicitly. A common bug is applying the scale before adding the offset — the correct order is multiply then add. Using `float32` instead of `float64` for the reconstruction introduces 1–2 mm rounding errors at typical survey extents; always use `float64`.
+
+### Dimension Propagation and Point Format Schemas
+
+Each LAS Point Format defines a fixed set of standard dimensions. When you add a PDAL filter that computes a derived value — such as `filters.hag` adding a `HeightAboveGround` dimension — that extra dimension exists only in memory unless you explicitly forward it. The `extra_dims: all` directive on `writers.las` persists all non-standard dimensions into Extra Bytes VLRs so downstream stages can read them. Omitting it silently discards computed attributes.
+
+For `laspy`, access `las.point_format.dimension_names` to enumerate all available dimensions before writing any attribute transformation. Attempting to write to a dimension that the point format does not define raises a `LaspyException` at runtime — check format compatibility first.
 
 ### Python Header Inspection
 
-Always inspect the header before accessing any point data:
+Always inspect the header before accessing any point data. The guide to [parsing LAS headers with Python](/point-cloud-data-standards-fundamentals/laslaz-file-structure/how-to-parse-las-headers-with-python/) covers this in depth; the essentials are:
 
 ```python
 import laspy
@@ -170,15 +172,15 @@ with laspy.open("survey.laz") as f:
     print(f"VLR record IDs: {vlr_types}")
 ```
 
-If `hdr.point_count` is zero and the file is LAS 1.4, check `hdr.legacy_point_count`—the extended point count lives in a separate field. Misreading this returns an empty dataset with no error.
+If `hdr.point_count` is zero and the file is LAS 1.4, check `hdr.legacy_point_count` — the extended point count lives in a separate field. Misreading this returns an empty dataset with no error.
 
 ## Coordinate Reference Systems: Spatial Integrity at Scale
 
-Raw XYZ triples are geometrically meaningless without a defined spatial reference. The [Coordinate Reference Systems](/point-cloud-data-standards-fundamentals/coordinate-reference-systems/) cluster covers the full lifecycle: reading embedded CRS definitions, validating datum alignment, and executing transformation pipelines that handle both horizontal and vertical components.
+Raw XYZ triples are geometrically meaningless without a defined spatial reference. The [coordinate reference systems](/point-cloud-data-standards-fundamentals/coordinate-reference-systems/) topic covers the full lifecycle: reading embedded CRS definitions, validating datum alignment, and executing transformation pipelines that handle both horizontal and vertical components. Practical repair workflows for mismatched tiles are covered in [fixing CRS mismatches in point clouds](/point-cloud-data-standards-fundamentals/coordinate-reference-systems/fixing-crs-mismatches-in-point-clouds/).
 
 ### CRS Embedding in LAS Headers
 
-A well-formed LAS file stores its CRS in the GeoKeyDirectory VLR (record ID 34735) using GeoTIFF key conventions, or as WKT2 in a separate WKT VLR for LAS 1.4+. Many GIS platforms ignore external `.prj` sidecar files entirely and rely only on embedded metadata. If your pipeline strips VLRs—for example, during a custom LAZ recompression—you must reconstruct and re-embed the spatial reference before delivery.
+A well-formed LAS file stores its CRS in the GeoKeyDirectory VLR (record ID 34735) using GeoTIFF key conventions, or as WKT2 in a separate WKT VLR for LAS 1.4+. Many GIS platforms ignore external `.prj` sidecar files entirely and rely only on embedded metadata. If your pipeline strips VLRs — for example, during a custom LAZ recompression — you must reconstruct and re-embed the spatial reference before delivery.
 
 ### Horizontal and Vertical Datum Handling
 
@@ -213,7 +215,7 @@ Before processing any delivery, run these checks:
 
 ## ASPRS Classification Codes: Semantic Taxonomy
 
-Classification transforms raw geometry into actionable features. The [ASPRS Classification Codes](/point-cloud-data-standards-fundamentals/asprs-classification-codes/) define a standardized integer mapping across the full range 0–255, where codes 0–18 are standardized by the LAS specification and codes 64–255 are reserved for user-defined classes.
+Classification transforms raw geometry into actionable features. The [ASPRS classification codes](/point-cloud-data-standards-fundamentals/asprs-classification-codes/) define a standardized integer mapping across the full range 0–255, where codes 0–18 are standardized by the LAS specification and codes 64–255 are reserved for user-defined classes. The practical interpretation of each code — and how to correct misclassified returns — is detailed in [understanding ASPRS classification codes](/point-cloud-data-standards-fundamentals/asprs-classification-codes/understanding-asprs-classification-codes/).
 
 ### Standard Code Reference
 
@@ -232,7 +234,7 @@ Classification transforms raw geometry into actionable features. The [ASPRS Clas
 | 17 | Bridge Deck | Infrastructure mapping |
 | 18 | High Noise | Above-flight-altitude outliers |
 
-For domain-specific projects—archaeology, utilities, rail infrastructure—extend into codes 32–63. Document custom mappings explicitly in a WKT-based Classification VLR or an accompanying GeoPackage attribute table; custom codes without documentation are useless to downstream consumers.
+For domain-specific projects — archaeology, utilities, rail infrastructure — extend into codes 32–63. Document custom mappings explicitly in a WKT-based Classification VLR or an accompanying GeoPackage attribute table; custom codes without documentation are useless to downstream consumers.
 
 ### Programmatic Reclassification
 
@@ -248,7 +250,7 @@ unique, counts = np.unique(las.classification, return_counts=True)
 for code, n in zip(unique, counts):
     print(f"  Code {code:3d}: {n:,} points")
 
-# Promote code-0 returns that are below 0.3 m above ground to code-7 (Low Noise)
+# Promote code-0 returns that are below 0.15 m above ground to code-7 (Low Noise)
 # Assumes 'HeightAboveGround' dimension was added by a previous filters.hag stage
 ground_relative = las.HeightAboveGround
 noise_mask = (las.classification == 0) & (ground_relative < -0.15)
@@ -259,7 +261,7 @@ las.write("reclassified.laz")
 print(f"Reclassified {noise_mask.sum():,} points to code 7 (Low Noise)")
 ```
 
-Always validate reclassification output by asserting that code-2 (Ground) returns still span a plausible Z range and that the total point count is unchanged. A reclassification bug that accidentally zeros the classification array is silent—you will only discover it when the DTM is flat.
+Always validate reclassification output by asserting that code-2 (Ground) returns still span a plausible Z range and that the total point count is unchanged. A reclassification bug that accidentally zeros the classification array is silent — you will only discover it when the DTM is flat.
 
 ### Boundary Seam Validation
 
@@ -267,7 +269,7 @@ When merging classified tiles from multiple flight lines, enforce classification
 
 ## Point Density Metrics: Quantifying Coverage Quality
 
-[Point Density Metrics](/point-cloud-data-standards-fundamentals/point-density-metrics/) underpin algorithm selection, quality reporting, and contractual compliance. The nominal density figure reported in the project specification (e.g., "≥ 8 pts/m²") is a minimum average—actual density varies with terrain slope, scan overlap, and flight altitude.
+[Point density metrics](/point-cloud-data-standards-fundamentals/point-density-metrics/) underpin algorithm selection, quality reporting, and contractual compliance. The nominal density figure reported in the project specification (e.g., "≥ 8 pts/m²") is a minimum average — actual density varies with terrain slope, scan overlap, and flight altitude. For drone-survey specific workflows, see [calculating point density for drone surveys](/point-cloud-data-standards-fundamentals/point-density-metrics/calculating-point-density-for-drone-surveys/).
 
 ### Computing Local Density with Spatial Indexing
 
@@ -320,7 +322,7 @@ This preserves spatial representativeness across slope transitions, which random
 
 ## Metadata & Header Sync: Integrity Through the Pipeline
 
-The [Metadata & Header Sync](/point-cloud-data-standards-fundamentals/metadata-header-sync/) process is the final guarantee that the binary payload and its descriptive envelope are mathematically consistent. Many processing tools modify point data without updating headers; the result is a file that passes a quick open but fails any conformance validator.
+The [metadata and header sync](/point-cloud-data-standards-fundamentals/metadata-header-sync/) process is the final guarantee that the binary payload and its descriptive envelope are mathematically consistent. Many processing tools modify point data without updating headers; the result is a file that passes a quick open but fails any conformance validator. Workflows for reconciling LAS headers with external attribute sources are in [syncing metadata between LAS and shapefiles](/point-cloud-data-standards-fundamentals/metadata-header-sync/syncing-metadata-between-las-and-shapefiles/).
 
 ### Critical Header Fields That Must Be Kept in Sync
 
@@ -358,7 +360,7 @@ assert len(las.x) == las.header.point_count, (
 las.write("processed_synced.laz")
 ```
 
-Run this sync step after every filter, merge, or reclassification operation—not just at final export. Silent count mismatches caught at the end of a 12-stage pipeline require rerunning from the stage of failure.
+Run this sync step after every filter, merge, or reclassification operation — not just at final export. Silent count mismatches caught at the end of a 12-stage pipeline require rerunning from the stage of failure.
 
 ### Processing Provenance in VLRs
 
@@ -387,7 +389,7 @@ Use `user_id` values that are unique to your organisation to avoid collisions wi
 Three libraries cover the full standards surface area:
 
 - **`laspy` (v2.4+):** Header inspection, point attribute access, VLR read/write, chunked iteration. Best for lightweight validation scripts and attribute manipulation without PDAL overhead.
-- **PDAL:** Pipeline-based reader/filter/writer chains with built-in CRS handling, classification filters, and tiling. The [PDAL pipeline architecture](/pdal-pipeline-architecture-execution/) section covers pipeline construction and execution in depth.
+- **PDAL:** Pipeline-based reader/filter/writer chains with built-in CRS handling, classification filters, and tiling. The [PDAL pipeline architecture](/pdal-pipeline-architecture-execution/) section covers pipeline construction and execution in depth, including [spatial reprojection](/pdal-pipeline-architecture-execution/spatial-reprojection/) and [pipeline validation](/pdal-pipeline-architecture-execution/pipeline-validation/).
 - **`pyproj` (v3.4+):** Authoritative CRS definitions, datum transformations, and epoch-aware network-based transforms (using PROJ network CDIST access when available).
 
 ### Annotated Reference Pipeline: Ingest → Validate → Classify → Export
@@ -425,6 +427,7 @@ Three libraries cover the full standards surface area:
     "type": "writers.las",
     "filename": "classified_navd88.laz",
     "compression": true,
+    "extra_dims": "all",
     "scale_x": 0.001,
     "scale_y": 0.001,
     "scale_z": 0.001,
@@ -435,7 +438,7 @@ Three libraries cover the full standards surface area:
 ]
 ```
 
-Stage rationale: `readers.las` with `use_eb_vlr: true` correctly reads extra-bytes dimensions added by acquisition software. `filters.range` on `returnnumber[1:1]` isolates first returns before statistical outlier removal—including multiple returns skews the mean used for threshold calculation. `filters.smrf` with `slope: 0.15` suits flat-to-rolling terrain; increase to 0.20–0.25 for hilly sites. `filters.reprojection` handles both horizontal and vertical in one step when using a compound CRS. `writers.las` with `offset_x: "auto"` computes optimal offsets from the data extent, preventing integer overflow in remote survey areas.
+Stage rationale: `readers.las` with `use_eb_vlr: true` correctly reads extra-bytes dimensions added by acquisition software. `filters.range` on `returnnumber[1:1]` isolates first returns before statistical outlier removal — including multiple returns skews the mean used for threshold calculation. `filters.smrf` with `slope: 0.15` suits flat-to-rolling terrain; increase to 0.20–0.25 for hilly sites. `filters.reprojection` handles both horizontal and vertical in one step when using a compound CRS. `writers.las` with `extra_dims: all` preserves any computed dimensions in Extra Bytes VLRs, and `offset_x: "auto"` computes optimal offsets from the data extent, preventing integer overflow in remote survey areas.
 
 ### Python Pipeline Execution
 
@@ -460,7 +463,7 @@ for stage_meta in _j.loads(meta)["metadata"].values():
         print(f"Output CRS: {stage_meta['comp_spatialreference'][:80]}")
 ```
 
-Always log `pipeline.loglevel = 4` in production—silent execution makes CRS and schema errors invisible until a downstream consumer reports garbled geometry.
+Always set `pipeline.loglevel = 4` in production — silent execution makes CRS and schema errors invisible until a downstream consumer reports garbled geometry.
 
 ## Performance and Scaling Strategies
 
@@ -474,20 +477,6 @@ Always log `pipeline.loglevel = 4` in production—silent execution makes CRS an
 
 Process in spatial tiles, not file chunks. A 20 GB survey covering 50 km² should be split by 500 m × 500 m tiles using `filters.splitter` before any per-point operation. This decouples memory from dataset size, enables embarrassingly parallel processing via `concurrent.futures`, and keeps individual PDAL pipeline invocations under 2 GB of working memory.
 
-## Failure Modes and Debugging
-
-### Common Runtime Errors
-
-**`RuntimeError: Unable to fetch SRS`** — The input file has no embedded CRS (no GeoKey VLR) and the pipeline stage requires one. Fix: add `spatialreference: "EPSG:XXXX"` to the `readers.las` stage to assign the known CRS at read time.
-
-**`laspy.errors.LaspyException: Point format 0 does not have a 'gps_time' dimension`** — Code attempts to access `las.gps_time` on a Point Format 0 file. Fix: check `las.point_format.id` before accessing format-specific dimensions. Formats 0 and 2 lack GPS time; formats 1, 3, 4, 5, 6–10 include it.
-
-**Silent coordinate drift after merge** — Two tiles use different scale factors (e.g., 0.001 vs 0.01). When appended naively, the integer values from the 0.01-scale tile are reconstructed with 0.001, shifting all coordinates by 10×. Fix: normalise all tiles to a common scale before merge, or use PDAL's `filters.merge` which recomputes offsets automatically.
-
-**`MemoryError` during ground classification** — SMRF or PMF loaded the full point cloud into RAM before tiling. Fix: pre-tile with `filters.splitter` and run classification per-tile, then merge outputs.
-
-**VLR stripped after LAZ recompression** — Third-party tool rewrote the file without preserving VLRs. Fix: extract VLRs from the original before recompression and re-inject via `laspy`. Validate with `len(output_las.header.vlrs) >= len(original_las.header.vlrs)`.
-
 ## Production Deployment Patterns
 
 ### Pipeline JSON Versioning
@@ -496,7 +485,7 @@ Store pipeline JSON definitions in version control alongside the data they proce
 
 ### CI/CD Validation
 
-Run `pdal --validate pipeline.json` in CI before merging any pipeline change. A valid pipeline JSON parses without executing—this catches schema errors, missing stage types, and invalid parameter names without consuming compute. Pair with unit tests that assert output point counts, CRS strings, and classification code distributions against known-good reference tiles.
+Run `pdal --validate pipeline.json` in CI before merging any pipeline change. A valid pipeline JSON parses without executing — this catches schema errors, missing stage types, and invalid parameter names without consuming compute. Pair with unit tests that assert output point counts, CRS strings, and classification code distributions against known-good reference tiles.
 
 ### Containerisation
 
@@ -508,14 +497,31 @@ RUN pip install laspy[lazrs]==2.4.1 pyproj==3.6.1 numpy==1.26.4
 COPY pipelines/ /app/pipelines/
 ```
 
-Pin `lazrs` alongside `laspy`—it provides the Rust-based LAZ encoder/decoder that outperforms the legacy `laszip` backend by 3–5× on write throughput. Without the `[lazrs]` extra, `laspy` silently falls back to a slower Python implementation.
+Pin `lazrs` alongside `laspy` — it provides the Rust-based LAZ encoder/decoder that outperforms the legacy `laszip` backend by 3–5× on write throughput. Without the `[lazrs]` extra, `laspy` silently falls back to a slower Python implementation.
+
+## Failure Modes and Debugging
+
+**`RuntimeError: Unable to fetch SRS`** — The input file has no embedded CRS (no GeoKey VLR) and the pipeline stage requires one. Fix: add `spatialreference: "EPSG:XXXX"` to the `readers.las` stage to assign the known CRS at read time.
+
+**`laspy.errors.LaspyException: Point format 0 does not have a 'gps_time' dimension`** — Code attempts to access `las.gps_time` on a Point Format 0 file. Fix: check `las.point_format.id` before accessing format-specific dimensions. Formats 0 and 2 lack GPS time; formats 1, 3, 4, 5, 6–10 include it.
+
+**Silent coordinate drift after merge** — Two tiles use different scale factors (e.g., 0.001 vs 0.01). When appended naively, the integer values from the 0.01-scale tile are reconstructed with 0.001, shifting all coordinates by 10×. Fix: normalise all tiles to a common scale before merge, or use PDAL's `filters.merge` which recomputes offsets automatically.
+
+**`MemoryError` during ground classification** — SMRF or PMF loaded the full point cloud into RAM before tiling. Fix: pre-tile with `filters.splitter` and run classification per-tile, then merge outputs.
+
+**VLR stripped after LAZ recompression** — Third-party tool rewrote the file without preserving VLRs. Fix: extract VLRs from the original before recompression and re-inject via `laspy`. Validate with `len(output_las.header.vlrs) >= len(original_las.header.vlrs)`.
 
 ---
 
 ## Related
 
 - [LAS/LAZ File Structure](/point-cloud-data-standards-fundamentals/laslaz-file-structure/) — Binary layout deep-dive: header parsing, VLR structure, and chunked Python ingestion patterns
+- [How to Parse LAS Headers with Python](/point-cloud-data-standards-fundamentals/laslaz-file-structure/how-to-parse-las-headers-with-python/) — Step-by-step header inspection with `laspy`, VLR enumeration, and scale/offset validation
 - [Coordinate Reference Systems](/point-cloud-data-standards-fundamentals/coordinate-reference-systems/) — CRS validation, datum transforms, and pyproj production workflows
+- [Fixing CRS Mismatches in Point Clouds](/point-cloud-data-standards-fundamentals/coordinate-reference-systems/fixing-crs-mismatches-in-point-clouds/) — Diagnosing and repairing EPSG conflicts between LAZ tiles
 - [ASPRS Classification Codes](/point-cloud-data-standards-fundamentals/asprs-classification-codes/) — Integer taxonomy, reclassification scripts, and boundary seam validation
+- [Understanding ASPRS Classification Codes](/point-cloud-data-standards-fundamentals/asprs-classification-codes/understanding-asprs-classification-codes/) — Code-by-code reference with reclassification decision trees
 - [Point Density Metrics](/point-cloud-data-standards-fundamentals/point-density-metrics/) — Grid-based density computation, algorithm selection thresholds, and resampling strategies
+- [Calculating Point Density for Drone Surveys](/point-cloud-data-standards-fundamentals/point-density-metrics/calculating-point-density-for-drone-surveys/) — UAV-specific density workflows and coverage gap detection
 - [Metadata & Header Sync](/point-cloud-data-standards-fundamentals/metadata-header-sync/) — Header field reconciliation, VLR provenance embedding, and sync workflows
+- [Syncing Metadata Between LAS and Shapefiles](/point-cloud-data-standards-fundamentals/metadata-header-sync/syncing-metadata-between-las-and-shapefiles/) — Keeping external attribute tables consistent with LAS header fields

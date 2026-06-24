@@ -4,7 +4,7 @@
 
 - **Niche:** Python LiDAR & Point Cloud Processing Workflows
 - **Audience:** LiDAR analysts, Python GIS devs, surveying tech teams, infrastructure/urban planning engineers
-- **Live now:** 24 pages, 28,641 words
+- **Live now:** 24 pages, 59,735 words
 - **Current phase:** foundation
 - **Next phase to build:** expansion
 
