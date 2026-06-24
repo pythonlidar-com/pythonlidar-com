@@ -129,7 +129,7 @@ function decorateCodeBlocks(html) {
           .replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&amp;/g, "&").replace(/&quot;/g, '"');
         return `<div class="mermaid">${text}</div>`;
       }
-      return `<div class="codeblock" data-lang="${lang}"><div class="codeblock__bar"><span class="codeblock__lang">${lang}</span><button class="codeblock__copy" type="button" aria-label="Copy code">Copy</button></div><pre${preAttrs}><code${codeAttrs}>${body}</code></pre></div>`;
+      return `<div class="codeblock" data-lang="${lang}"><div class="codeblock__bar"><span class="codeblock__lang">${lang}</span><button class="codeblock__copy" type="button" aria-label="Copy code">Copy</button></div><pre${preAttrs} tabindex="0"><code${codeAttrs}>${body}</code></pre></div>`;
     });
 }
 

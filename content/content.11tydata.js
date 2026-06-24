@@ -39,6 +39,20 @@ function shortTitle(h1) {
   return truncateOnWord(s, 48);
 }
 
+// Strip fenced code blocks (``` ... ```) so that Python/bash comment lines
+// beginning with "#" are not mistaken for Markdown H1 headings.
+function stripCodeFences(raw) {
+  return raw.replace(/^```[\s\S]*?^```/gm, "");
+}
+
+// Extract the "title:" field from YAML frontmatter (--- ... ---), if present.
+function frontmatterTitle(raw) {
+  const m = raw.match(/^---\r?\n([\s\S]*?)\r?\n---/);
+  if (!m) return null;
+  const titleMatch = m[1].match(/^title:\s*["']?(.+?)["']?\s*$/m);
+  return titleMatch ? titleMatch[1] : null;
+}
+
 module.exports = {
   tags: ["contentPage"],
   eleventyComputed: {
@@ -61,18 +75,31 @@ module.exports = {
       return "layouts/tutorial.njk";
     },
     title: (data) => {
-      const raw = readRaw(data.page.inputPath);
+      const rawFile = readRaw(data.page.inputPath);
+      // 1. If the source frontmatter already declares a title, honour it.
+      const fmTitle = frontmatterTitle(rawFile);
+      if (fmTitle) return fmTitle;
+      // 2. Otherwise extract the first real H1 from the markdown body,
+      //    skipping fenced code blocks so Python `# comment` lines are ignored.
+      const raw = stripCodeFences(rawFile);
       const m = raw.match(/^#\s+(.+?)\s*$/m);
-      return m ? m[1] : titleize(data.page.fileSlug || "Untitled");
+      if (m) return m[1];
+      // 3. Last resort: derive from the directory slug (avoids returning "Index").
+      const parts = data.page.inputPath.split("/");
+      const contentIdx = parts.indexOf("content");
+      const seg = parts[contentIdx + 1] || data.page.fileSlug || "Untitled";
+      return titleize(seg);
     },
     seoTitle: (data) => {
-      const raw = readRaw(data.page.inputPath);
+      const rawFile = readRaw(data.page.inputPath);
+      const fmTitle = frontmatterTitle(rawFile);
+      const raw = stripCodeFences(rawFile);
       const m = raw.match(/^#\s+(.+?)\s*$/m);
-      const t = m ? m[1] : titleize(data.page.fileSlug || "Untitled");
+      const t = fmTitle || (m ? m[1] : titleize(data.page.fileSlug || "Untitled"));
       return shortTitle(t);
     },
     metaDescription: (data) => {
-      const raw = readRaw(data.page.inputPath);
+      const raw = stripCodeFences(readRaw(data.page.inputPath));
       const stripped = raw.replace(/^#\s+.+\r?\n+/, "");
       const para = stripped.split(/\r?\n\s*\r?\n/).find(p => p.trim().length > 0) || "";
       const text = para
@@ -84,7 +111,7 @@ module.exports = {
       return truncateOnWord(text, 158);
     },
     bodyHasH1: (data) => {
-      const raw = readRaw(data.page.inputPath);
+      const raw = stripCodeFences(readRaw(data.page.inputPath));
       return /^#\s+.+/m.test(raw);
     },
     sourceMtime: (data) => {

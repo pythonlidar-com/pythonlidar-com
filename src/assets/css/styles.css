@@ -69,7 +69,7 @@ body {
     radial-gradient(800px 400px at -10% 10%, rgba(24, 182, 196, 0.06), transparent 60%);
   background-attachment: fixed;
 }
-img, svg { max-width: 100%; display: block; }
+img, svg { max-width: 100% !important; display: block; }
 button { font: inherit; cursor: pointer; }
 
 ::selection { background: rgba(91, 61, 245, 0.22); color: var(--c-text); }
@@ -253,6 +253,9 @@ h1 {
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
+  overflow-wrap: break-word;
+  word-break: break-word;
+  min-width: 0;
 }
 @supports not ((-webkit-background-clip: text) or (background-clip: text)) {
   h1 { background-image: none; color: var(--c-primary-deep); }
@@ -332,6 +335,13 @@ h2:hover .heading-anchor, h3:hover .heading-anchor, h4:hover .heading-anchor { o
 
 /* ---------- code blocks ---------- */
 
+/* Bare <pre> elements (no language tag — no .codeblock wrapper) must also
+   scroll internally so they never push the page wider than the viewport. */
+pre {
+  overflow-x: auto;
+  max-width: 100%;
+}
+
 .codeblock {
   position: relative;
   margin: 1.25rem 0 1.5rem;
@@ -382,11 +392,11 @@ h2:hover .heading-anchor, h3:hover .heading-anchor, h4:hover .heading-anchor { o
 }
 .codeblock pre code { background: transparent; padding: 0; border-radius: 0; color: inherit; font-size: inherit; }
 
-/* Prism overrides — light theme matching site palette */
-.token.comment, .token.prolog, .token.doctype, .token.cdata { color: #8a86a8; font-style: italic; }
+/* Prism overrides — light theme matching site palette (all colours pass WCAG AA 4.5:1 on #f5f3ff) */
+.token.comment, .token.prolog, .token.doctype, .token.cdata { color: #5a5678; font-style: italic; }
 .token.punctuation { color: #4d5573; }
-.token.property, .token.tag, .token.boolean, .token.number, .token.constant, .token.symbol, .token.deleted { color: #c44a93; }
-.token.selector, .token.attr-name, .token.string, .token.char, .token.builtin, .token.inserted { color: #0e9aa6; }
+.token.property, .token.tag, .token.boolean, .token.number, .token.constant, .token.symbol, .token.deleted { color: #9e1f6a; }
+.token.selector, .token.attr-name, .token.string, .token.char, .token.builtin, .token.inserted { color: #086b73; }
 .token.operator, .token.entity, .token.url { color: #5b3df5; }
 .token.atrule, .token.attr-value, .token.keyword { color: #5b3df5; font-weight: 600; }
 .token.function, .token.class-name { color: #3b1fb3; font-weight: 600; }
@@ -534,10 +544,10 @@ h2:hover .heading-anchor, h3:hover .heading-anchor, h4:hover .heading-anchor { o
   flex-wrap: wrap;
   gap: 0.35rem;
 }
-.breadcrumbs a { color: var(--c-text-soft); text-decoration: none; }
+.breadcrumbs a { color: var(--c-text-soft); text-decoration: none; overflow-wrap: break-word; word-break: break-word; min-width: 0; }
 .breadcrumbs a:hover { color: var(--c-primary); }
 .breadcrumbs__sep { color: var(--c-border); }
-.breadcrumbs__current { color: var(--c-text); font-weight: 600; }
+.breadcrumbs__current { color: var(--c-text); font-weight: 600; overflow-wrap: break-word; word-break: break-word; min-width: 0; }
 
 .article {
   background: var(--c-surface);
@@ -727,13 +737,13 @@ h2:hover .heading-anchor, h3:hover .heading-anchor, h4:hover .heading-anchor { o
   padding: 0.2rem 0.65rem;
   border-radius: 999px;
   background: var(--c-accent-soft);
-  color: var(--c-accent-deep);
+  color: #086b73;
   font-size: 0.78rem;
   font-weight: 600;
   text-decoration: none;
   transition: background-color 160ms var(--ease), color 160ms var(--ease);
 }
-.chip:hover { background: var(--c-accent); color: #fff; }
+.chip:hover { background: #086b73; color: #fff; }
 
 /* ---------- topic / tutorial subgrid ---------- */
 
@@ -750,6 +760,12 @@ a:focus-visible, button:focus-visible, summary:focus-visible, input:focus-visibl
   outline: 3px solid rgba(91, 61, 245, 0.45);
   outline-offset: 2px;
   border-radius: 6px;
+}
+
+.codeblock pre:focus-visible {
+  outline: 3px solid rgba(91, 61, 245, 0.45);
+  outline-offset: -2px;
+  border-radius: 0 0 var(--radius) var(--radius);
 }
 
 /* ---------- print ---------- */
