@@ -2,11 +2,44 @@
 
 Point density metrics quantify the spatial distribution of laser returns within a LiDAR dataset, serving as a foundational quality indicator for survey-grade processing. For infrastructure engineers, urban planners, and Python GIS developers, understanding how to compute, validate, and normalize these metrics ensures downstream analyses—such as canopy modeling, terrain extraction, and volumetric calculations—remain statistically sound. This guide integrates empirical density evaluation into reproducible Python workflows, aligning with broader [Point Cloud Data Standards & Fundamentals](/point-cloud-data-standards-fundamentals/) practices and industry compliance frameworks.
 
+<svg viewBox="0 0 760 180" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Point density computation pipeline: validate CRS, compute grid density, derive statistics, flag low-density cells, export report" style="width:100%;max-width:760px;display:block;margin:1.5rem auto;">
+  <title>Point Density Metrics Computation Pipeline</title>
+  <desc>Five stages for computing point density metrics from a LAS/LAZ file: validate CRS and header, grid-bin XY coordinates, compute pts/m² statistics per cell, flag cells below threshold, export density report.</desc>
+  <defs>
+    <marker id="arr" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="currentColor" opacity="0.6"/>
+    </marker>
+  </defs>
+  <!-- Stage boxes -->
+  <rect x="8" y="56" width="130" height="52" rx="6" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.7"/>
+  <text x="73" y="79" text-anchor="middle" font-size="11" fill="currentColor" font-family="monospace">Validate CRS</text>
+  <text x="73" y="96" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.65">header + proj check</text>
+  <rect x="162" y="56" width="130" height="52" rx="6" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.7"/>
+  <text x="227" y="79" text-anchor="middle" font-size="11" fill="currentColor" font-family="monospace">Grid Bin XY</text>
+  <text x="227" y="96" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.65">cell_size = 1.0 m</text>
+  <rect x="316" y="56" width="130" height="52" rx="6" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.7"/>
+  <text x="381" y="79" text-anchor="middle" font-size="11" fill="currentColor" font-family="monospace">Compute pts/m²</text>
+  <text x="381" y="96" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.65">mean / p5 / p95</text>
+  <rect x="470" y="56" width="130" height="52" rx="6" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.7"/>
+  <text x="535" y="79" text-anchor="middle" font-size="11" fill="currentColor" font-family="monospace">Flag Low Cells</text>
+  <text x="535" y="96" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.65">threshold check</text>
+  <rect x="624" y="56" width="128" height="52" rx="6" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.7"/>
+  <text x="688" y="79" text-anchor="middle" font-size="11" fill="currentColor" font-family="monospace">Export Report</text>
+  <text x="688" y="96" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.65">GeoTIFF / CSV</text>
+  <!-- Arrows -->
+  <line x1="138" y1="82" x2="160" y2="82" stroke="currentColor" stroke-width="1.5" marker-end="url(#arr)" opacity="0.6"/>
+  <line x1="292" y1="82" x2="314" y2="82" stroke="currentColor" stroke-width="1.5" marker-end="url(#arr)" opacity="0.6"/>
+  <line x1="446" y1="82" x2="468" y2="82" stroke="currentColor" stroke-width="1.5" marker-end="url(#arr)" opacity="0.6"/>
+  <line x1="600" y1="82" x2="622" y2="82" stroke="currentColor" stroke-width="1.5" marker-end="url(#arr)" opacity="0.6"/>
+  <!-- Bottom label -->
+  <text x="380" y="160" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.5">chunk-based I/O prevents OOM errors on large tiles — no full point cloud load required</text>
+</svg>
+
 ## Prerequisites & Environment Configuration
 
 Before implementing density calculations, ensure your environment and data meet baseline technical requirements. Production LiDAR pipelines demand strict dependency management and predictable I/O behavior.
 
-- **Python 3.9+** with a managed virtual environment (`venv` or `conda`)
+- **Python 3.10+** with a managed virtual environment (`venv` or `conda`)
 - **Core libraries:** `laspy` (v2.4+), `numpy` (≥1.24), `scipy`, `geopandas`, `shapely`, `pyproj`
 - **Input data:** LAS/LAZ files with valid coordinate metadata, complete point records, and consistent scale/offset headers
 - **System resources:** Minimum 16GB RAM for datasets under 50M points; NVMe SSD storage for sequential read operations
@@ -126,7 +159,7 @@ def generate_density_stats(density_grid: np.ndarray) -> dict:
 
 ## Quality Assurance & Workflow Integration
 
-Point density metrics are only as reliable as the classification filters applied before computation. Unclassified returns, water surface noise, and multi-path reflections artificially inflate local density. Always apply classification masks aligned with the [ASPRS LAS specification](https://github.com/ASPRSorg/LAS) before calculating density. For example, excluding Class 7 (noise) and Class 18 (high vegetation) when generating bare-earth terrain models prevents skewed volumetric outputs.
+Point density metrics are only as reliable as the classification filters applied before computation. Unclassified returns, water surface noise, and multi-path reflections artificially inflate local density. Always apply classification masks aligned with the [ASPRS LAS specification](https://github.com/ASPRSorg/LAS) before calculating density. For example, excluding Class 7 (low noise) and Class 18 (high noise) when generating bare-earth terrain models prevents skewed volumetric outputs.
 
 When integrating density validation into CI/CD pipelines, consider the following reliability patterns:
 

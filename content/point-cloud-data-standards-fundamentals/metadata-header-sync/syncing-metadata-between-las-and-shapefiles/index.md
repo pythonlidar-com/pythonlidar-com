@@ -1,6 +1,6 @@
 # Syncing Metadata Between LAS and Shapefiles: A Python Workflow
 
-Syncing metadata between LAS and Shapefiles requires extracting spatial reference, bounding extents, and custom attributes from the LAS header, then mapping them to the shapefile’s `.prj`, `.dbf`, and sidecar files. In Python, this is reliably done by parsing the LAS header with `laspy`, normalizing coordinate reference systems (CRS) via `pyproj`, and writing vector attributes with `geopandas`. Always enforce DBF field limits (10-character names, 254-character values), validate CRS alignment, and truncate oversized strings before export to prevent silent corruption in downstream GIS workflows.
+Syncing metadata between LAS and Shapefiles requires extracting spatial reference, bounding extents, and custom attributes from the LAS header, then mapping them to the shapefile's `.prj`, `.dbf`, and sidecar files. In Python, this is reliably done by parsing the LAS header with `laspy`, normalizing coordinate reference systems (CRS) via `pyproj`, and writing vector attributes with `geopandas`. Always enforce DBF field limits (10-character names, 254-character values), validate CRS alignment, and truncate oversized strings before export to prevent silent corruption in downstream GIS workflows.
 
 ## Why Metadata Drift Occurs
 
@@ -16,23 +16,43 @@ The following script extracts critical LAS header fields, normalizes the CRS, an
 import laspy
 import geopandas as gpd
 import pyproj
+from pyproj import CRS
 from shapely.geometry import box
 from datetime import datetime
 import warnings
 
-def sync_las_to_shapefile(las_path: str, out_shp: str):
+def extract_las_crs(header: laspy.LasHeader) -> CRS | None:
+    """
+    Extract CRS from laspy header by searching VLRs for WKT (record_id 2112)
+    or falling back to a GeoKey-based lookup.
+    Returns a pyproj.CRS object or None.
+    """
+    for vlr in header.vlrs:
+        if vlr.record_id == 2112:
+            try:
+                wkt_str = vlr.record_data.decode("utf-8").rstrip("\x00")
+                return CRS.from_wkt(wkt_str)
+            except Exception:
+                pass
+    return None
+
+
+def sync_las_to_shapefile(las_path: str, out_shp: str) -> str:
     """Extract LAS header metadata, build a bounding polygon, and export a valid shapefile."""
 
     # 1. Read LAS header (requires laspy >= 2.4.0)
     with laspy.open(las_path) as las:
         header = las.header
-        try:
-            crs = header.parse_crs()
-        except Exception:
-            crs = None
+        crs = extract_las_crs(header)
 
         min_x, min_y = header.x_min, header.y_min
         max_x, max_y = header.x_max, header.y_max
+        point_count = header.point_count
+
+        # laspy stores version as a Version object with .major and .minor attributes
+        version_str = f"{header.version.major}.{header.version.minor}"
+        system_id = str(header.system_identifier).strip()
+        gen_soft = str(header.generating_software).strip()
 
     # 2. Resolve CRS with safe fallback
     if crs is None:
@@ -45,11 +65,11 @@ def sync_las_to_shapefile(las_path: str, out_shp: str):
 
     # 4. Map LAS header to DBF-safe attributes
     # DBF constraint: field names <= 10 chars, string values <= 254 chars
-    gdf["LAS_VER"] = f"{header.version_major}.{header.version_minor}"
-    gdf["PT_COUNT"] = int(header.point_count)
+    gdf["LAS_VER"] = version_str
+    gdf["PT_COUNT"] = int(point_count)
     gdf["GEN_DATE"] = datetime.now().strftime("%Y-%m-%d")
-    gdf["SYSTEM_ID"] = str(header.system_id).strip()[:254]
-    gdf["GEN_SOFT"] = str(header.generating_software).strip()[:254]
+    gdf["SYSTEM_ID"] = system_id[:254]
+    gdf["GEN_SOFT"] = gen_soft[:254]
     gdf["X_MIN"] = float(min_x)
     gdf["Y_MIN"] = float(min_y)
     gdf["X_MAX"] = float(max_x)
@@ -83,7 +103,7 @@ if not gdf.crs.equals(target_crs):
 Reprojecting before export guarantees that bounding polygons align with municipal or state plane coordinate systems used in civil engineering deliverables.
 
 ### Handling LAS Version Differences
-LAS 1.2 stores CRS exclusively in VLRs (GeoTIFF tags), while LAS 1.4 supports extended VLRs (EVLRs) and embedded WKT. `laspy>=2.4.0` abstracts this via `header.parse_crs()`. If you must support older environments, fall back to `laspy.vlrs` parsing or use `rasterio`'s CRS utilities. Always log the detected LAS version (`header.version_major`, `header.version_minor`) to the `.dbf` for audit trails.
+LAS 1.2 stores CRS exclusively in VLRs (GeoTIFF tags, record IDs 34735–34737), while LAS 1.4 adds support for WKT2 via record_id 2112. The `extract_las_crs()` function above targets the WKT VLR; for legacy LAS 1.2 files, you may need to parse GeoKey VLRs using a GeoTIFF key parser. Always log the detected LAS version (`header.version.major`, `header.version.minor`) to the `.dbf` for audit trails.
 
 ## Testing & Downstream Integration
 

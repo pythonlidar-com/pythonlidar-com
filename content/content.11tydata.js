@@ -25,17 +25,18 @@ function truncateOnWord(s, max) {
 
 // Derive a short, search-engine-friendly title from the H1.
 // Strategies: take text before " — " or " - " or first colon; otherwise truncate on word.
+// Note: replace & with "and" to avoid HTML entity inflation (&amp; = 5 chars vs 1).
 function shortTitle(h1) {
   if (!h1) return "";
-  let s = h1.replace(/\s+/g, " ").trim();
+  let s = h1.replace(/\s+/g, " ").trim().replace(/\s*&\s*/g, " and ");
   // Prefer the segment before a long-dash or hyphen
   const dashMatch = s.match(/^(.+?)\s*[—–-]\s+/);
   if (dashMatch && dashMatch[1].length >= 8 && dashMatch[1].length <= 60) return dashMatch[1].trim();
   // Else split on colon if first part is meaningful
   const colonIdx = s.indexOf(":");
   if (colonIdx > 8 && colonIdx <= 60) return s.slice(0, colonIdx).trim();
-  // Else truncate on word
-  return truncateOnWord(s, 58);
+  // Else truncate on word (48 keeps encoded title + " — Site" suffix under 65 chars)
+  return truncateOnWord(s, 48);
 }
 
 module.exports = {

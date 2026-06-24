@@ -33,9 +33,9 @@ eleventyExcludeFromCollections: true
             <span class="cta__icon">{% icon "grid", 20 %}</span>
             Point cloud standards
           </a>
-          <a class="cta" href="#what-youll-find">
+          <a class="cta" href="#start-here">
             <span class="cta__icon">{% icon "book", 20 %}</span>
-            What you'll find
+            Start here
           </a>
         </div>
       </div>
@@ -53,6 +53,53 @@ eleventyExcludeFromCollections: true
           <li>QC &amp; metadata</li>
         </ul>
       </aside>
+    </div>
+  </div>
+</section>
+
+<section class="section" id="start-here">
+  <div class="container">
+    <div class="section__head">
+      <h2>Start here</h2>
+      <p>The most-useful, code-first guides — copy-paste ready for production LiDAR pipelines.</p>
+    </div>
+    <div class="cards">
+      <a class="card" href="/pdal-pipeline-architecture-execution/pdal-stage-chaining/chaining-pdal-stages-for-data-cleaning/">
+        <span class="card__icon">{% sectionIcon "pdal-pipeline-architecture-execution", 24 %}</span>
+        <h3 class="card__title">Chaining PDAL Stages for Data Cleaning</h3>
+        <p class="card__blurb">Chain readers, filters, and writers in Python for noise removal, outlier rejection, and classification refinement — with a complete runnable example.</p>
+        <div class="card__chips"><span class="chip">stage chaining</span><span class="chip">data cleaning</span></div>
+      </a>
+      <a class="card" href="/pdal-pipeline-architecture-execution/spatial-reprojection/reprojecting-point-clouds-from-utm-to-wgs84/">
+        <span class="card__icon">{% sectionIcon "pdal-pipeline-architecture-execution", 24 %}</span>
+        <h3 class="card__title">Reprojecting Point Clouds from UTM to WGS84</h3>
+        <p class="card__blurb">Reproject LAS/LAZ from UTM to WGS84 with PDAL filters.reprojection, datum handling, header sync, and round-trip validation.</p>
+        <div class="card__chips"><span class="chip">reprojection</span><span class="chip">CRS</span></div>
+      </a>
+      <a class="card" href="/point-cloud-data-standards-fundamentals/laslaz-file-structure/how-to-parse-las-headers-with-python/">
+        <span class="card__icon">{% sectionIcon "point-cloud-data-standards-fundamentals", 24 %}</span>
+        <h3 class="card__title">How to Parse LAS Headers with Python</h3>
+        <p class="card__blurb">Extract LAS/LAZ header fields with laspy and Python's struct module — version detection, VLR inspection, coordinate scale/offset, and validation.</p>
+        <div class="card__chips"><span class="chip">LAS headers</span><span class="chip">laspy</span></div>
+      </a>
+      <a class="card" href="/pdal-pipeline-architecture-execution/parallel-execution/optimizing-pdal-for-multi-core-processing/">
+        <span class="card__icon">{% sectionIcon "pdal-pipeline-architecture-execution", 24 %}</span>
+        <h3 class="card__title">Optimizing PDAL for Multi-Core Processing</h3>
+        <p class="card__blurb">Tune OMP_NUM_THREADS and chunk_size, then orchestrate parallel tile pipelines with Python's ProcessPoolExecutor for maximum throughput.</p>
+        <div class="card__chips"><span class="chip">parallel</span><span class="chip">performance</span></div>
+      </a>
+      <a class="card" href="/point-cloud-data-standards-fundamentals/asprs-classification-codes/understanding-asprs-classification-codes/">
+        <span class="card__icon">{% sectionIcon "point-cloud-data-standards-fundamentals", 24 %}</span>
+        <h3 class="card__title">Understanding ASPRS Classification Codes</h3>
+        <p class="card__blurb">Complete reference for LAS classification codes 0–255: schema versions, laspy validation, vectorized remapping, and QA automation.</p>
+        <div class="card__chips"><span class="chip">ASPRS</span><span class="chip">classification</span></div>
+      </a>
+      <a class="card" href="/pdal-pipeline-architecture-execution/pipeline-filtering-logic/applying-statistical-outlier-filters-in-pdal/">
+        <span class="card__icon">{% sectionIcon "pdal-pipeline-architecture-execution", 24 %}</span>
+        <h3 class="card__title">Applying Statistical Outlier Filters in PDAL</h3>
+        <p class="card__blurb">Use filters.outlier (statistical and radius modes) to remove noise points from aerial and terrestrial LiDAR scans, with Python integration and parameter tuning.</p>
+        <div class="card__chips"><span class="chip">outlier removal</span><span class="chip">filters</span></div>
+      </a>
     </div>
   </div>
 </section>
