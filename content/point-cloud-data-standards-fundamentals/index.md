@@ -215,7 +215,7 @@ Before processing any delivery, run these checks:
 
 ## ASPRS Classification Codes: Semantic Taxonomy
 
-Classification transforms raw geometry into actionable features. The [ASPRS classification codes](/point-cloud-data-standards-fundamentals/asprs-classification-codes/) define a standardized integer mapping across the full range 0–255, where codes 0–18 are standardized by the LAS specification and codes 64–255 are reserved for user-defined classes. The practical interpretation of each code — and how to correct misclassified returns — is detailed in [understanding ASPRS classification codes](/point-cloud-data-standards-fundamentals/asprs-classification-codes/understanding-asprs-classification-codes/).
+Classification transforms raw geometry into actionable features. The [ASPRS classification codes](/point-cloud-data-standards-fundamentals/asprs-classification-codes/) define a standardized integer mapping across the full range 0–255, where codes 0–18 are standardized by the LAS specification and codes 64–255 are reserved for user-defined classes. The practical interpretation of each code — and how to correct misclassified returns — is detailed in [understanding ASPRS classification codes](/point-cloud-data-standards-fundamentals/asprs-classification-codes/understanding-asprs-classification-codes/). Code 2 (Ground) is the anchor for most terrain work: see [ground filtering and DTM/DSM generation](/ground-filtering-dtm-dsm-generation/) for how [SMRF](/ground-filtering-dtm-dsm-generation/smrf-ground-classification/) and [PMF](/ground-filtering-dtm-dsm-generation/pmf-ground-classification/) assign it.
 
 ### Standard Code Reference
 

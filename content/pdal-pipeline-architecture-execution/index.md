@@ -227,7 +227,7 @@ The pipeline below is the minimal production starting point for airborne LiDAR c
 }
 ```
 
-Stage ordering matters: the outlier filter runs before reprojection because statistical distances are consistent within the source CRS; ground classification (`filters.smrf`) runs after reprojection so the window size in metres matches the target coordinate system.
+Stage ordering matters: the outlier filter runs before reprojection because statistical distances are consistent within the source CRS; [ground classification](/ground-filtering-dtm-dsm-generation/smrf-ground-classification/) with `filters.smrf` runs after reprojection so the window size in metres matches the target coordinate system. Once ground returns are labelled, the same pipeline can feed [DTM and DSM raster generation](/ground-filtering-dtm-dsm-generation/) for terrain products.
 
 Validate any pipeline before running it at scale:
 
@@ -379,7 +379,7 @@ Before running [pipeline validation](/pdal-pipeline-architecture-execution/pipel
 
 ### Containerisation
 
-Official PDAL Docker images (`ghcr.io/pdal/pdal`) bundle GDAL, PROJ, and the Python bindings, eliminating dependency drift between environments. Pin the image tag to a specific PDAL version in `docker-compose.yml` and in your Kubernetes job manifests.
+Official PDAL Docker images (`ghcr.io/pdal/pdal`) bundle GDAL, PROJ, and the Python bindings, eliminating dependency drift between environments. Pin the image tag to a specific PDAL version in `docker-compose.yml` and in your Kubernetes job manifests. See [batch automation and cloud integration](/batch-automation-cloud-integration/) for running these containers at scale on AWS Batch and Airflow.
 
 ### Cloud object-storage readers and writers
 

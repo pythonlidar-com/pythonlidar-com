@@ -21,5 +21,19 @@ module.exports = {
       blurb:
         "LAS/LAZ structure, ASPRS classification, coordinate reference systems, point density metrics, and metadata/header integrity.",
     },
+    {
+      slug: "ground-filtering-dtm-dsm-generation",
+      label: "Ground & Terrain Models",
+      iconName: "terrain",
+      blurb:
+        "SMRF and PMF ground classification, DTM and DSM raster generation with writers.gdal, interpolation choices, void filling, and hillshade derivation.",
+    },
+    {
+      slug: "batch-automation-cloud-integration",
+      label: "Batch & Cloud Automation",
+      iconName: "cloud",
+      blurb:
+        "Containerised PDAL, AWS Batch tile fan-out, streaming LAZ and COG I/O against S3, and Airflow DAG orchestration for production point cloud pipelines.",
+    },
   ],
 };

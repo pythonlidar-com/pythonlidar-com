@@ -343,6 +343,21 @@ function renderSectionIcon(slug, size) {
         <circle cx="20" cy="22" r="1.5" fill="#f59e0b"/>
         <circle cx="16" cy="20" r="2.2" fill="url(#g-pc)"/>
       </svg>`,
+    "ground-filtering-dtm-dsm-generation": `
+      <svg width="${s}" height="${s}" viewBox="0 0 32 32" fill="none" aria-hidden="true">
+        <defs><linearGradient id="g-terrain" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#2bb673"/><stop offset="100%" stop-color="#18b6c4"/></linearGradient></defs>
+        <path d="M3 24 L11 12 L16 19 L22 8 L29 24 Z" fill="url(#g-terrain)"/>
+        <path d="M3 24 L11 12 L16 19 L22 8 L29 24" stroke="#0e9aa6" stroke-width="1.4" fill="none" stroke-linejoin="round"/>
+        <path d="M3 27 H29" stroke="#f59e0b" stroke-width="1.6" stroke-dasharray="2 2"/>
+      </svg>`,
+    "batch-automation-cloud-integration": `
+      <svg width="${s}" height="${s}" viewBox="0 0 32 32" fill="none" aria-hidden="true">
+        <defs><linearGradient id="g-cloud" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#5b3df5"/><stop offset="100%" stop-color="#18b6c4"/></linearGradient></defs>
+        <path d="M9 22 h13 a5 5 0 0 0 .6-9.96 A7 7 0 0 0 9.2 13 A4.5 4.5 0 0 0 9 22 Z" fill="url(#g-cloud)"/>
+        <rect x="6" y="24" width="5" height="4" rx="1" fill="#f59e0b"/>
+        <rect x="13.5" y="24" width="5" height="4" rx="1" fill="#2bb673"/>
+        <rect x="21" y="24" width="5" height="4" rx="1" fill="#18b6c4"/>
+      </svg>`,
   };
   return icons[slug] || `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="8" stroke="#5b3df5" stroke-width="2"/></svg>`;
 }
