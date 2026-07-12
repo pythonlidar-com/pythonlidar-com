@@ -2,7 +2,7 @@
 title: "Fixing CRS Mismatches in Point Clouds with Python"
 description: "Step-by-step guide to diagnosing and fixing CRS mismatches in LAS/LAZ point clouds using laspy and pyproj: extract VLR metadata, apply datum-aware transformations, validate vertical accuracy, and write corrected files."
 slug: "fixing-crs-mismatches-in-point-clouds"
-type: "long_tail"
+type: "howto"
 breadcrumb: "Fixing CRS Mismatches in Point Clouds"
 datePublished: "2024-03-15"
 dateModified: "2026-06-24"
@@ -23,9 +23,9 @@ dateModified: "2026-06-24"
     {
       "@type": "BreadcrumbList",
       "itemListElement": [
-        { "@type": "ListItem", "position": 1, "name": "Point Cloud Data Standards & Fundamentals", "item": "https://pythonlidar.com/point-cloud-data-standards-fundamentals/" },
-        { "@type": "ListItem", "position": 2, "name": "Coordinate Reference Systems", "item": "https://pythonlidar.com/point-cloud-data-standards-fundamentals/coordinate-reference-systems/" },
-        { "@type": "ListItem", "position": 3, "name": "Fixing CRS Mismatches in Point Clouds", "item": "https://pythonlidar.com/point-cloud-data-standards-fundamentals/coordinate-reference-systems/fixing-crs-mismatches-in-point-clouds/" }
+        { "@type": "ListItem", "position": 1, "name": "Point Cloud Data Standards & Fundamentals", "item": "https://www.pythonlidar.com/point-cloud-data-standards-fundamentals/" },
+        { "@type": "ListItem", "position": 2, "name": "Coordinate Reference Systems", "item": "https://www.pythonlidar.com/point-cloud-data-standards-fundamentals/coordinate-reference-systems/" },
+        { "@type": "ListItem", "position": 3, "name": "Fixing CRS Mismatches in Point Clouds", "item": "https://www.pythonlidar.com/point-cloud-data-standards-fundamentals/coordinate-reference-systems/fixing-crs-mismatches-in-point-clouds/" }
       ]
     },
     {
@@ -77,9 +77,9 @@ Use `laspy` to extract the embedded CRS from the file's VLRs, construct a `pypro
 
 ## Context and Motivation
 
-This guide is part of [Coordinate Reference Systems](/point-cloud-data-standards-fundamentals/coordinate-reference-systems/) in the [Point Cloud Data Standards & Fundamentals](/point-cloud-data-standards-fundamentals/) reference.
+This guide is part of [Coordinate Reference Systems](https://www.pythonlidar.com/point-cloud-data-standards-fundamentals/coordinate-reference-systems/) in the [Point Cloud Data Standards & Fundamentals](https://www.pythonlidar.com/point-cloud-data-standards-fundamentals/) reference.
 
-CRS mismatches are the most common silent data-corruption problem in production LiDAR pipelines. A 1-metre horizontal offset in UTM coordinates propagates undetected through ground classification, volumetric calculations, and infrastructure model alignment — until a deliverable fails a field survey check. The failures stem from several sources: sensor firmware defaults writing incorrect EPSG codes, legacy GeoTIFF GeoKey records that encode only a 2D horizontal datum with no geoid, cross-organisation data sharing that strips headers entirely, and [LAS/LAZ file structure](/point-cloud-data-standards-fundamentals/laslaz-file-structure/) version constraints that limit LAS 1.0–1.3 files to a 5-bit classification byte and simplified CRS fields.
+CRS mismatches are the most common silent data-corruption problem in production LiDAR pipelines. A 1-metre horizontal offset in UTM coordinates propagates undetected through ground classification, volumetric calculations, and infrastructure model alignment — until a deliverable fails a field survey check. The failures stem from several sources: sensor firmware defaults writing incorrect EPSG codes, legacy GeoTIFF GeoKey records that encode only a 2D horizontal datum with no geoid, cross-organisation data sharing that strips headers entirely, and [LAS/LAZ file structure](https://www.pythonlidar.com/point-cloud-data-standards-fundamentals/laslaz-file-structure/) version constraints that limit LAS 1.0–1.3 files to a 5-bit classification byte and simplified CRS fields.
 
 Understanding where the CRS lives in the binary header is the prerequisite for fixing it reliably.
 
@@ -153,7 +153,7 @@ If your environment uses Conda, `conda install -c conda-forge pyproj` automatica
 
 ### Step 1 — Inspect the VLRs to Diagnose the Mismatch
 
-Before transforming anything, confirm what CRS information is actually present. [How to parse LAS headers with Python](/point-cloud-data-standards-fundamentals/laslaz-file-structure/how-to-parse-las-headers-with-python/) covers the full header layout; here the focus is the VLR block.
+Before transforming anything, confirm what CRS information is actually present. [How to parse LAS headers with Python](https://www.pythonlidar.com/point-cloud-data-standards-fundamentals/laslaz-file-structure/how-to-parse-las-headers-with-python/) covers the full header layout; here the focus is the VLR block.
 
 ```python
 import laspy
@@ -424,14 +424,14 @@ For infrastructure deliverables, cross-check at least one ground control point a
 
 **Scaled integer overflow.** `laspy` stores raw coordinates as 32-bit integers using the `scale` and `offset` from the header. If you keep the original offsets from a source file centred far from the target CRS, the integer representation can overflow. Recompute `new_header.offsets` as `[np.min(new_x), np.min(new_y), np.min(new_z)]` when the centroid shifts significantly (> 10⁷ units).
 
-**Large files and memory.** The complete example loads all points into RAM. For multi-gigabyte aerial surveys, switch to a chunk-reading loop with `laspy.open()` and accumulate transformed chunks, or pass the reprojection to a [PDAL spatial reprojection](/pdal-pipeline-architecture-execution/spatial-reprojection/) pipeline which streams chunks out-of-core and handles the offset recalculation automatically.
+**Large files and memory.** The complete example loads all points into RAM. For multi-gigabyte aerial surveys, switch to a chunk-reading loop with `laspy.open()` and accumulate transformed chunks, or pass the reprojection to a [PDAL spatial reprojection](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/spatial-reprojection/) pipeline which streams chunks out-of-core and handles the offset recalculation automatically.
 
 ---
 
 ## Related
 
-- [Coordinate Reference Systems](/point-cloud-data-standards-fundamentals/coordinate-reference-systems/) — parent guide covering CRS validation, compound CRS handling, and CI/CD integration
-- [LAS/LAZ File Structure](/point-cloud-data-standards-fundamentals/laslaz-file-structure/) — VLR layout, GeoKey records, and binary header fields
-- [How to Parse LAS Headers with Python](/point-cloud-data-standards-fundamentals/laslaz-file-structure/how-to-parse-las-headers-with-python/) — extract scale, offset, point count, and CRS records
-- [Spatial Reprojection in PDAL](/pdal-pipeline-architecture-execution/spatial-reprojection/) — PDAL-native out-of-core reprojection for large surveys
-- [Point Cloud Data Standards & Fundamentals](/point-cloud-data-standards-fundamentals/) — reference overview of LAS/LAZ formats, classification codes, and spatial metadata standards
+- [Coordinate Reference Systems](https://www.pythonlidar.com/point-cloud-data-standards-fundamentals/coordinate-reference-systems/) — parent guide covering CRS validation, compound CRS handling, and CI/CD integration
+- [LAS/LAZ File Structure](https://www.pythonlidar.com/point-cloud-data-standards-fundamentals/laslaz-file-structure/) — VLR layout, GeoKey records, and binary header fields
+- [How to Parse LAS Headers with Python](https://www.pythonlidar.com/point-cloud-data-standards-fundamentals/laslaz-file-structure/how-to-parse-las-headers-with-python/) — extract scale, offset, point count, and CRS records
+- [Spatial Reprojection in PDAL](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/spatial-reprojection/) — PDAL-native out-of-core reprojection for large surveys
+- [Point Cloud Data Standards & Fundamentals](https://www.pythonlidar.com/point-cloud-data-standards-fundamentals/) — reference overview of LAS/LAZ formats, classification codes, and spatial metadata standards

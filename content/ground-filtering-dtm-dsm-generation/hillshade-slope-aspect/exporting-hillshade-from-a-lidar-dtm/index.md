@@ -2,7 +2,7 @@
 title: "Exporting Hillshade from a LiDAR DTM"
 description: "Step-by-step guide to producing a shaded-relief hillshade GeoTIFF from a LiDAR DTM with gdaldem/gdal.DEMProcessing — setting azimuth, altitude, and z-factor, and rendering multidirectional shading."
 slug: "exporting-hillshade-from-a-lidar-dtm"
-type: "long_tail"
+type: "howto"
 breadcrumb: "Exporting Hillshade from a DTM"
 datePublished: "2024-06-28"
 dateModified: "2026-07-12"
@@ -23,10 +23,10 @@ dateModified: "2026-07-12"
     {
       "@type": "BreadcrumbList",
       "itemListElement": [
-        {"@type": "ListItem", "position": 1, "name": "Home", "item": "https://pythonlidar.com/"},
-        {"@type": "ListItem", "position": 2, "name": "Ground Filtering and DTM/DSM Generation with PDAL", "item": "https://pythonlidar.com/ground-filtering-dtm-dsm-generation/"},
-        {"@type": "ListItem", "position": 3, "name": "Hillshade, Slope and Aspect", "item": "https://pythonlidar.com/ground-filtering-dtm-dsm-generation/hillshade-slope-aspect/"},
-        {"@type": "ListItem", "position": 4, "name": "Exporting Hillshade from a LiDAR DTM", "item": "https://pythonlidar.com/ground-filtering-dtm-dsm-generation/hillshade-slope-aspect/exporting-hillshade-from-a-lidar-dtm/"}
+        {"@type": "ListItem", "position": 1, "name": "Home", "item": "https://www.pythonlidar.com/"},
+        {"@type": "ListItem", "position": 2, "name": "Ground Filtering and DTM/DSM Generation with PDAL", "item": "https://www.pythonlidar.com/ground-filtering-dtm-dsm-generation/"},
+        {"@type": "ListItem", "position": 3, "name": "Hillshade, Slope and Aspect", "item": "https://www.pythonlidar.com/ground-filtering-dtm-dsm-generation/hillshade-slope-aspect/"},
+        {"@type": "ListItem", "position": 4, "name": "Exporting Hillshade from a LiDAR DTM", "item": "https://www.pythonlidar.com/ground-filtering-dtm-dsm-generation/hillshade-slope-aspect/exporting-hillshade-from-a-lidar-dtm/"}
       ]
     },
     {
@@ -73,7 +73,7 @@ dateModified: "2026-07-12"
 
 ## Context and Motivation
 
-This guide is part of [Hillshade, Slope and Aspect from LiDAR DTMs](/ground-filtering-dtm-dsm-generation/hillshade-slope-aspect/), which surveys all three terrain derivatives; here the focus is narrowed to the single most requested product — the shaded-relief hillshade.
+This guide is part of [Hillshade, Slope and Aspect from LiDAR DTMs](https://www.pythonlidar.com/ground-filtering-dtm-dsm-generation/hillshade-slope-aspect/), which surveys all three terrain derivatives; here the focus is narrowed to the single most requested product — the shaded-relief hillshade.
 
 A hillshade is the image people picture when they think of a topographic map: a greyscale rendering that makes ridges, gullies, and terraces pop as if lit by a low afternoon sun. It carries no elevation numbers itself; it translates the DTM's gradient into brightness so the human eye can read the shape of the land at a glance. For LiDAR practitioners the hillshade is often the first sanity check on a freshly built terrain surface, because classification errors, interpolation artefacts, and tiling seams that hide in raw elevation values jump out instantly under raking light. It is also the base layer beneath most cartographic products, sitting under coloured elevation tints, contour lines, and vector overlays.
 
@@ -110,7 +110,7 @@ The mechanics are handled by GDAL's `gdaldem` tool, reached from Python through 
 | DTM CRS | projected and metric, e.g. EPSG:6342 (NAD83(2011)/UTM 13N) |
 | Void handling | NoData interior voids filled beforehand |
 
-The DTM should already be a finished bare-earth surface. If you have not built one yet, produce it with [Generating a DTM GeoTIFF with writers.gdal](/ground-filtering-dtm-dsm-generation/dtm-raster-generation/generating-a-dtm-geotiff-with-writers-gdal/). Confirm the CRS is projected before you start — this single check prevents the most common hillshade failure:
+The DTM should already be a finished bare-earth surface. If you have not built one yet, produce it with [Generating a DTM GeoTIFF with writers.gdal](https://www.pythonlidar.com/ground-filtering-dtm-dsm-generation/dtm-raster-generation/generating-a-dtm-geotiff-with-writers-gdal/). Confirm the CRS is projected before you start — this single check prevents the most common hillshade failure:
 
 ```python
 import rasterio
@@ -334,8 +334,8 @@ Yes. `gdal.DEMProcessing` writes the destination path unconditionally and replac
 
 ## Related
 
-- [Hillshade, Slope and Aspect from LiDAR DTMs](/ground-filtering-dtm-dsm-generation/hillshade-slope-aspect/) — parent guide covering all three terrain derivatives and their shared workflow
-- [DTM Raster Generation](/ground-filtering-dtm-dsm-generation/dtm-raster-generation/) — build the bare-earth surface the hillshade is derived from
-- [Generating a DTM GeoTIFF with writers.gdal](/ground-filtering-dtm-dsm-generation/dtm-raster-generation/generating-a-dtm-geotiff-with-writers-gdal/) — produce a suitable single-band DTM input
-- [Filling NoData Voids in DTM Rasters](/ground-filtering-dtm-dsm-generation/dtm-raster-generation/filling-nodata-voids-in-dtm-rasters/) — remove voids that would corrupt the shade
-- [Ground Filtering and DTM/DSM Generation with PDAL](/ground-filtering-dtm-dsm-generation/) — the wider terrain-modelling workflow
+- [Hillshade, Slope and Aspect from LiDAR DTMs](https://www.pythonlidar.com/ground-filtering-dtm-dsm-generation/hillshade-slope-aspect/) — parent guide covering all three terrain derivatives and their shared workflow
+- [DTM Raster Generation](https://www.pythonlidar.com/ground-filtering-dtm-dsm-generation/dtm-raster-generation/) — build the bare-earth surface the hillshade is derived from
+- [Generating a DTM GeoTIFF with writers.gdal](https://www.pythonlidar.com/ground-filtering-dtm-dsm-generation/dtm-raster-generation/generating-a-dtm-geotiff-with-writers-gdal/) — produce a suitable single-band DTM input
+- [Filling NoData Voids in DTM Rasters](https://www.pythonlidar.com/ground-filtering-dtm-dsm-generation/dtm-raster-generation/filling-nodata-voids-in-dtm-rasters/) — remove voids that would corrupt the shade
+- [Ground Filtering and DTM/DSM Generation with PDAL](https://www.pythonlidar.com/ground-filtering-dtm-dsm-generation/) — the wider terrain-modelling workflow

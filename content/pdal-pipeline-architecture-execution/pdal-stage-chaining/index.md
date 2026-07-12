@@ -2,7 +2,7 @@
 title: "PDAL Stage Chaining: Build Multi-Step Point Cloud Pipelines in Python"
 description: "How to chain PDAL readers, filters, and writers into reliable Python pipelines — covering buffer-passing semantics, parameter tables, schema validation, performance tuning, and common errors."
 slug: "pdal-stage-chaining"
-type: "cluster"
+type: "topic"
 breadcrumb: "PDAL Stage Chaining"
 datePublished: "2024-03-15"
 dateModified: "2026-06-24"
@@ -23,9 +23,9 @@ dateModified: "2026-06-24"
     {
       "@type": "BreadcrumbList",
       "itemListElement": [
-        {"@type": "ListItem", "position": 1, "name": "Home", "item": "/"},
-        {"@type": "ListItem", "position": 2, "name": "PDAL Pipeline Architecture & Execution", "item": "/pdal-pipeline-architecture-execution/"},
-        {"@type": "ListItem", "position": 3, "name": "PDAL Stage Chaining", "item": "/pdal-pipeline-architecture-execution/pdal-stage-chaining/"}
+        {"@type": "ListItem", "position": 1, "name": "Home", "item": "https://www.pythonlidar.com/"},
+        {"@type": "ListItem", "position": 2, "name": "PDAL Pipeline Architecture & Execution", "item": "https://www.pythonlidar.com/pdal-pipeline-architecture-execution/"},
+        {"@type": "ListItem", "position": 3, "name": "PDAL Stage Chaining", "item": "https://www.pythonlidar.com/pdal-pipeline-architecture-execution/pdal-stage-chaining/"}
       ]
     },
     {
@@ -63,7 +63,7 @@ dateModified: "2026-06-24"
 }
 </script>
 
-Production LiDAR workflows are rarely a single operation. Surveying teams and Python GIS developers routinely need to ingest compressed LAZ tiles, strip acquisition noise, normalize coordinate systems, classify ground returns, and export clean LAS files — all in one reproducible pass. PDAL stage chaining is the mechanism that connects these discrete operations into a directed execution graph, letting engineers express complex multi-step transformations as a single JSON-declared pipeline. This page is part of the broader [PDAL Pipeline Architecture & Execution](/pdal-pipeline-architecture-execution/) guide.
+Production LiDAR workflows are rarely a single operation. Surveying teams and Python GIS developers routinely need to ingest compressed LAZ tiles, strip acquisition noise, normalize coordinate systems, classify ground returns, and export clean LAS files — all in one reproducible pass. PDAL stage chaining is the mechanism that connects these discrete operations into a directed execution graph, letting engineers express complex multi-step transformations as a single JSON-declared pipeline. This page is part of the broader [PDAL Pipeline Architecture & Execution](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/) guide.
 
 <svg viewBox="0 0 740 180" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="PDAL stage chaining data-flow diagram" style="width:100%;max-width:740px;display:block;margin:1.5rem auto">
   <title>PDAL Stage Chaining Data Flow</title>
@@ -118,11 +118,11 @@ Stage chaining follows a strict buffer-passing model. PDAL allocates a single `P
 1. **Pipeline declaration** — express the stage sequence as a Python list of dicts or as a JSON string passed to `pdal.Pipeline()`.
 2. **Anchor configuration** — declare a `readers.*` stage (I/O source) and a `writers.*` stage (I/O sink) to bound the chain.
 3. **Intermediate insertion** — place transformation, filtering, and computation stages between the reader and writer in execution order.
-4. **Schema validation** — call `pipeline.validate()` to verify that each stage's required input dimensions exist in the buffer before execution starts. See [pipeline validation](/pdal-pipeline-architecture-execution/pipeline-validation/) for the full set of checks this performs.
+4. **Schema validation** — call `pipeline.validate()` to verify that each stage's required input dimensions exist in the buffer before execution starts. See [pipeline validation](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/pipeline-validation/) for the full set of checks this performs.
 5. **Execution and buffer management** — call `pipeline.execute()`, which streams data through each node in declaration order and returns the final point count.
 6. **Metadata extraction** — read `pipeline.metadata` for per-stage statistics, point counts, and transformation logs.
 
-Stage order is not flexible. CRS transformations handled by [spatial reprojection](/pdal-pipeline-architecture-execution/spatial-reprojection/) must precede any spatial indexing or ground classification. Outlier removal should occur before classification so that statistical distributions used by `filters.outlier` are not contaminated by noise labels. When [pipeline filtering logic](/pdal-pipeline-architecture-execution/pipeline-filtering-logic/) depends on attributes computed by an earlier filter — such as Height Above Ground from `filters.hag_nn` — that earlier filter must appear first in the array.
+Stage order is not flexible. CRS transformations handled by [spatial reprojection](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/spatial-reprojection/) must precede any spatial indexing or ground classification. Outlier removal should occur before classification so that statistical distributions used by `filters.outlier` are not contaminated by noise labels. When [pipeline filtering logic](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/pipeline-filtering-logic/) depends on attributes computed by an earlier filter — such as Height Above Ground from `filters.hag_nn` — that earlier filter must appear first in the array.
 
 ## Full Implementation
 
@@ -242,15 +242,15 @@ if __name__ == "__main__":
 
 ### Reader stage: anchoring the source CRS
 
-Declaring `spatialreference` on `readers.las` embeds the coordinate system into the `PointView` from the moment the first point is ingested. Omitting it forces PDAL to infer the CRS from the LAS VLR header, which may be absent in older files. An incorrect or missing CRS at this stage will silently corrupt any downstream [spatial reprojection](/pdal-pipeline-architecture-execution/spatial-reprojection/) result. If the input data was collected in NAD83(2011)/UTM 18N (`EPSG:6347`) but the VLR is blank, every reprojected coordinate will be wrong without raising an error.
+Declaring `spatialreference` on `readers.las` embeds the coordinate system into the `PointView` from the moment the first point is ingested. Omitting it forces PDAL to infer the CRS from the LAS VLR header, which may be absent in older files. An incorrect or missing CRS at this stage will silently corrupt any downstream [spatial reprojection](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/spatial-reprojection/) result. If the input data was collected in NAD83(2011)/UTM 18N (`EPSG:6347`) but the VLR is blank, every reprojected coordinate will be wrong without raising an error.
 
 ### Outlier filter: why it runs before reprojection
 
-`filters.outlier` in statistical mode computes the mean distance to the nearest `mean_k` neighbours for each point. Running this in the source CRS — metres from a UTM projection in this example — gives geometrically meaningful distances. After reprojection the coordinate values change, but the noise points remain; filtering first is therefore slightly cheaper and avoids a second pass. For radius-mode outlier removal the `radius` parameter is in the same units as the active CRS, so reprojection order matters even more. See [applying statistical outlier filters in PDAL](/pdal-pipeline-architecture-execution/pipeline-filtering-logic/applying-statistical-outlier-filters-in-pdal/) for a full parameter guide.
+`filters.outlier` in statistical mode computes the mean distance to the nearest `mean_k` neighbours for each point. Running this in the source CRS — metres from a UTM projection in this example — gives geometrically meaningful distances. After reprojection the coordinate values change, but the noise points remain; filtering first is therefore slightly cheaper and avoids a second pass. For radius-mode outlier removal the `radius` parameter is in the same units as the active CRS, so reprojection order matters even more. See [applying statistical outlier filters in PDAL](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/pipeline-filtering-logic/applying-statistical-outlier-filters-in-pdal/) for a full parameter guide.
 
 ### Reprojection filter: datum and vertical handling
 
-`filters.reprojection` wraps PROJ under the hood. Specifying `out_srs` with a full authority:code string (`EPSG:32618`) triggers PROJ's authority database, which includes datum shift grids. If your source data carries a vertical CRS (e.g. NAVD88), use the compound CRS form `EPSG:6347+5703` in `source_crs` to prevent silent ellipsoidal height substitution. The [spatial reprojection](/pdal-pipeline-architecture-execution/spatial-reprojection/) guide covers PROJ grid installation and compound CRS syntax in detail.
+`filters.reprojection` wraps PROJ under the hood. Specifying `out_srs` with a full authority:code string (`EPSG:32618`) triggers PROJ's authority database, which includes datum shift grids. If your source data carries a vertical CRS (e.g. NAVD88), use the compound CRS form `EPSG:6347+5703` in `source_crs` to prevent silent ellipsoidal height substitution. The [spatial reprojection](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/spatial-reprojection/) guide covers PROJ grid installation and compound CRS syntax in detail.
 
 ### SMRF ground classifier: parameter rationale
 
@@ -263,7 +263,7 @@ Declaring `spatialreference` on `readers.las` embeds the coordinate system into 
 
 ### Writer stage: dimension preservation
 
-`forward: "all"` instructs `writers.las` to re-emit every LAS dimension received from the pipeline — including the `Classification` codes 1 and 2 that SMRF writes. `extra_dims: "all"` preserves any non-standard dimensions added by earlier filters, such as `HAG` from `filters.hag_nn`. Omitting these options strips custom dimensions from the output file silently. For workflows that use [attribute mapping](/pdal-pipeline-architecture-execution/attribute-mapping/) to attach custom metadata, `extra_dims: "all"` is mandatory to avoid losing those fields at write time.
+`forward: "all"` instructs `writers.las` to re-emit every LAS dimension received from the pipeline — including the `Classification` codes 1 and 2 that SMRF writes. `extra_dims: "all"` preserves any non-standard dimensions added by earlier filters, such as `HAG` from `filters.hag_nn`. Omitting these options strips custom dimensions from the output file silently. For workflows that use [attribute mapping](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/attribute-mapping/) to attach custom metadata, `extra_dims: "all"` is mandatory to avoid losing those fields at write time.
 
 ## Parameter Reference Table
 
@@ -283,7 +283,7 @@ Declaring `spatialreference` on `readers.las` embeds the coordinate system into 
 
 ## Validation and Data Integrity Checks
 
-Always call `pipeline.validate()` before `pipeline.execute()`. Validation parses the stage graph, checks that required dimensions exist, and catches JSON syntax errors without spending time on actual I/O. The dedicated [pipeline validation](/pdal-pipeline-architecture-execution/pipeline-validation/) page covers the full set of checks PDAL performs and how to surface them as structured errors.
+Always call `pipeline.validate()` before `pipeline.execute()`. Validation parses the stage graph, checks that required dimensions exist, and catches JSON syntax errors without spending time on actual I/O. The dedicated [pipeline validation](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/pipeline-validation/) page covers the full set of checks PDAL performs and how to surface them as structured errors.
 
 ```python
 try:
@@ -314,9 +314,9 @@ noise   = int(np.sum(arr["Classification"] == 7))
 print(f"Total: {total:,}  Ground: {ground:,} ({ground/total:.1%})  Noise: {noise:,}")
 ```
 
-Healthy airborne LiDAR datasets typically yield 20–60 % ground returns depending on vegetation density. A ground fraction below 5 % usually indicates that SMRF parameters need adjustment, or that the [pipeline filtering logic](/pdal-pipeline-architecture-execution/pipeline-filtering-logic/) upstream discarded too many low-return points.
+Healthy airborne LiDAR datasets typically yield 20–60 % ground returns depending on vegetation density. A ground fraction below 5 % usually indicates that SMRF parameters need adjustment, or that the [pipeline filtering logic](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/pipeline-filtering-logic/) upstream discarded too many low-return points.
 
-For a deeper guide on structuring data cleaning sequences, see [Chaining PDAL Stages for Data Cleaning](/pdal-pipeline-architecture-execution/pdal-stage-chaining/chaining-pdal-stages-for-data-cleaning/).
+For a deeper guide on structuring data cleaning sequences, see [Chaining PDAL Stages for Data Cleaning](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/pdal-stage-chaining/chaining-pdal-stages-for-data-cleaning/).
 
 ## Performance Tuning
 
@@ -336,7 +336,7 @@ Key takeaways:
 - **`chunk_size` on the reader stage trades RAM for throughput.** The default of 50 000 points per chunk is a reasonable starting point for machines with 8+ GB RAM. For machines with under 8 GB, set `chunk_size: 10000` and accept the ~10 % throughput penalty. Chunk size does not affect output correctness — only peak memory footprint.
 - **`OMP_NUM_THREADS` affects SMRF significantly.** SMRF's window-based morphological operations parallelise well; `filters.outlier` benefits less. Set `OMP_NUM_THREADS` to the number of physical cores, not logical threads — hyperthreading does not help for memory-bandwidth-bound filters.
 
-For memory-constrained environments or very large tiles, see [Memory Management in PDAL Pipelines](/pdal-pipeline-architecture-execution/memory-management/) for techniques including tile splitting and streaming writers. For CPU-bound workloads that process many files in parallel, see [parallel execution in PDAL](/pdal-pipeline-architecture-execution/parallel-execution/).
+For memory-constrained environments or very large tiles, see [Memory Management in PDAL Pipelines](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/memory-management/) for techniques including tile splitting and streaming writers. For CPU-bound workloads that process many files in parallel, see [parallel execution in PDAL](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/parallel-execution/).
 
 ## Common Errors and Troubleshooting
 
@@ -344,7 +344,7 @@ For memory-constrained environments or very large tiles, see [Memory Management 
 Root cause: the `filename` value is a relative path and the process working directory does not match expectations. Fix: always resolve paths to absolute strings before passing them into the pipeline definition — `str(Path(p).resolve())`.
 
 **`RuntimeError: Dimension 'Classification' not found`**
-Root cause: a downstream filter (e.g. `filters.range` or `filters.hag_nn`) requires `Classification` but the reader stage is a format that does not carry that dimension (e.g. plain XYZ CSV). Fix: insert `filters.assign` before the offending stage and initialise the dimension — `"value": "Classification = 0"`. The [attribute mapping](/pdal-pipeline-architecture-execution/attribute-mapping/) guide covers `filters.assign` syntax in detail.
+Root cause: a downstream filter (e.g. `filters.range` or `filters.hag_nn`) requires `Classification` but the reader stage is a format that does not carry that dimension (e.g. plain XYZ CSV). Fix: insert `filters.assign` before the offending stage and initialise the dimension — `"value": "Classification = 0"`. The [attribute mapping](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/attribute-mapping/) guide covers `filters.assign` syntax in detail.
 
 **`RuntimeError: PROJ: no suitable transformation found`**
 Root cause: `filters.reprojection` cannot find a datum shift grid between the declared source and target CRS, typically because the PROJ data directory is missing grid files. Fix: install the `proj-data` package (`conda install -c conda-forge proj-data`), or switch to a transformation that does not require a grid shift (e.g. use `EPSG:4326` as an intermediate).
@@ -357,10 +357,10 @@ Root cause: passing a Python list directly as a bare array to `pdal.Pipeline()` 
 
 ## Related
 
-- [PDAL Pipeline Architecture & Execution](/pdal-pipeline-architecture-execution/) — parent overview of the PDAL execution model
-- [Chaining PDAL Stages for Data Cleaning](/pdal-pipeline-architecture-execution/pdal-stage-chaining/chaining-pdal-stages-for-data-cleaning/) — detailed patterns for noise removal, intensity normalisation, and classification refinement
-- [Pipeline Filtering Logic](/pdal-pipeline-architecture-execution/pipeline-filtering-logic/) — how `filters.range`, `filters.expression`, and conditional logic interact with the stage buffer
-- [Pipeline Validation](/pdal-pipeline-architecture-execution/pipeline-validation/) — how to surface schema errors, dimension mismatches, and CRS conflicts before execution
-- [Spatial Reprojection](/pdal-pipeline-architecture-execution/spatial-reprojection/) — CRS transformation, datum shift grids, and vertical offset handling
-- [Memory Management in PDAL Pipelines](/pdal-pipeline-architecture-execution/memory-management/) — chunk-size tuning, streaming writers, and tile-splitting for large regional datasets
-- [Attribute Mapping in PDAL Pipelines](/pdal-pipeline-architecture-execution/attribute-mapping/) — adding, renaming, and forwarding dimensions through a chained pipeline
+- [PDAL Pipeline Architecture & Execution](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/) — parent overview of the PDAL execution model
+- [Chaining PDAL Stages for Data Cleaning](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/pdal-stage-chaining/chaining-pdal-stages-for-data-cleaning/) — detailed patterns for noise removal, intensity normalisation, and classification refinement
+- [Pipeline Filtering Logic](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/pipeline-filtering-logic/) — how `filters.range`, `filters.expression`, and conditional logic interact with the stage buffer
+- [Pipeline Validation](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/pipeline-validation/) — how to surface schema errors, dimension mismatches, and CRS conflicts before execution
+- [Spatial Reprojection](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/spatial-reprojection/) — CRS transformation, datum shift grids, and vertical offset handling
+- [Memory Management in PDAL Pipelines](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/memory-management/) — chunk-size tuning, streaming writers, and tile-splitting for large regional datasets
+- [Attribute Mapping in PDAL Pipelines](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/attribute-mapping/) — adding, renaming, and forwarding dimensions through a chained pipeline

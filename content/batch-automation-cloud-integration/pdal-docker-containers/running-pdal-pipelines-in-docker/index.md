@@ -2,7 +2,7 @@
 title: "Running PDAL Pipelines in Docker"
 description: "A step-by-step guide to executing a PDAL pipeline inside a Docker container — mounting a data directory, passing pipeline JSON, and reading results back on the host."
 slug: "running-pdal-pipelines-in-docker"
-type: "long_tail"
+type: "howto"
 breadcrumb: "Running PDAL Pipelines in Docker"
 datePublished: "2024-07-08"
 dateModified: "2026-07-12"
@@ -23,10 +23,10 @@ dateModified: "2026-07-12"
     {
       "@type": "BreadcrumbList",
       "itemListElement": [
-        {"@type": "ListItem", "position": 1, "name": "Home", "item": "https://pythonlidar.com/"},
-        {"@type": "ListItem", "position": 2, "name": "Batch Automation and Cloud Integration for PDAL", "item": "https://pythonlidar.com/batch-automation-cloud-integration/"},
-        {"@type": "ListItem", "position": 3, "name": "PDAL Docker Containers", "item": "https://pythonlidar.com/batch-automation-cloud-integration/pdal-docker-containers/"},
-        {"@type": "ListItem", "position": 4, "name": "Running PDAL Pipelines in Docker", "item": "https://pythonlidar.com/batch-automation-cloud-integration/pdal-docker-containers/running-pdal-pipelines-in-docker/"}
+        {"@type": "ListItem", "position": 1, "name": "Home", "item": "https://www.pythonlidar.com/"},
+        {"@type": "ListItem", "position": 2, "name": "Batch Automation and Cloud Integration for PDAL", "item": "https://www.pythonlidar.com/batch-automation-cloud-integration/"},
+        {"@type": "ListItem", "position": 3, "name": "PDAL Docker Containers", "item": "https://www.pythonlidar.com/batch-automation-cloud-integration/pdal-docker-containers/"},
+        {"@type": "ListItem", "position": 4, "name": "Running PDAL Pipelines in Docker", "item": "https://www.pythonlidar.com/batch-automation-cloud-integration/pdal-docker-containers/running-pdal-pipelines-in-docker/"}
       ]
     },
     {
@@ -73,9 +73,9 @@ dateModified: "2026-07-12"
 
 ## Context and Motivation
 
-This guide is part of [PDAL Docker Containers for Reproducible Pipelines](/batch-automation-cloud-integration/pdal-docker-containers/), which covers building and pinning images; here the focus is narrower — the exact mechanics of getting one pipeline to execute against real files and returning the output to your host without surprises.
+This guide is part of [PDAL Docker Containers for Reproducible Pipelines](https://www.pythonlidar.com/batch-automation-cloud-integration/pdal-docker-containers/), which covers building and pinning images; here the focus is narrower — the exact mechanics of getting one pipeline to execute against real files and returning the output to your host without surprises.
 
-The idea is simple, but three details trip up almost everyone the first time: a container has its own filesystem, so the paths in your pipeline JSON are not host paths; a container writes files as its own user, so results can land owned by root; and hardened hosts refuse the mount entirely until it is relabelled. Getting these right once turns "run PDAL in Docker" into a reliable one-liner you can drop into scripts and schedulers. Because the container carries a fixed PDAL, GDAL, and PROJ build, the run is also reproducible — the same `pdal pipeline` invocation produces the same DTM whether it runs on your laptop or a cloud worker, which is exactly what the broader [batch and cloud automation](/batch-automation-cloud-integration/) work depends on.
+The idea is simple, but three details trip up almost everyone the first time: a container has its own filesystem, so the paths in your pipeline JSON are not host paths; a container writes files as its own user, so results can land owned by root; and hardened hosts refuse the mount entirely until it is relabelled. Getting these right once turns "run PDAL in Docker" into a reliable one-liner you can drop into scripts and schedulers. Because the container carries a fixed PDAL, GDAL, and PROJ build, the run is also reproducible — the same `pdal pipeline` invocation produces the same DTM whether it runs on your laptop or a cloud worker, which is exactly what the broader [batch and cloud automation](https://www.pythonlidar.com/batch-automation-cloud-integration/) work depends on.
 
 <svg viewBox="0 0 720 250" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Sequence of running a PDAL pipeline in a Docker container with a bind mount" style="width:100%;max-width:720px;display:block;margin:1.5rem auto">
   <title>Host to container pipeline execution sequence</title>
@@ -110,7 +110,7 @@ The idea is simple, but three details trip up almost everyone the first time: a 
 | Docker Engine | 24+ with rights to `docker pull` and `docker run` |
 | Image | `ghcr.io/pdal/pdal:2.6` (PDAL 2.6, GDAL 3.8, PROJ 9) |
 | Host data directory | `./data` containing at least one LAZ/LAS tile |
-| Pipeline JSON | A valid pipeline — see [PDAL Stage Chaining](/pdal-pipeline-architecture-execution/pdal-stage-chaining/) |
+| Pipeline JSON | A valid pipeline — see [PDAL Stage Chaining](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/pdal-stage-chaining/) |
 | Optional (Python driver) | `docker` SDK: `pip install docker` |
 
 This walkthrough assumes a project layout of `./data/input.laz` and `./data/pipeline.json` on the host. Everything the container needs lives under `./data`, mounted at `/data` inside the container.
@@ -189,7 +189,7 @@ Expect a raster with a valid CRS, a sensible extent, and ownership matching your
 
 ## Complete Working Example
 
-The script below drives the whole flow from host-side Python using `subprocess`. It builds the `docker run` command, executes it, checks the exit code, and confirms the output file appeared — a pattern that slots directly into a scheduler or a larger [orchestration DAG](/batch-automation-cloud-integration/airflow-dag-orchestration/).
+The script below drives the whole flow from host-side Python using `subprocess`. It builds the `docker run` command, executes it, checks the exit code, and confirms the output file appeared — a pattern that slots directly into a scheduler or a larger [orchestration DAG](https://www.pythonlidar.com/batch-automation-cloud-integration/airflow-dag-orchestration/).
 
 ```python
 #!/usr/bin/env python3
@@ -312,7 +312,7 @@ Finally, on the host, `ls -l data/dtm.tif` should show your username in the owne
 
 **3. Relative vs absolute mount sources.** Docker requires the host side of a bind mount to be an absolute path. `-v data:/data` is interpreted as a *named volume* called `data`, not your directory — quietly giving the container an empty volume. Always expand to an absolute path with `"$PWD/data"` in shell or `Path("data").resolve()` in Python.
 
-**4. Root-owned output files.** Omitting `--user` lets the container write as uid 0, leaving `dtm.tif` owned by root and uneditable without `sudo`. Add `--user $(id -u):$(id -g)`. If files are already root-owned, reclaim them with `sudo chown -R $(id -u):$(id -g) data`. When a run depends on reprojection, also confirm PROJ grids are available, exactly as covered in [reprojecting point clouds from UTM to WGS84](/pdal-pipeline-architecture-execution/spatial-reprojection/reprojecting-point-clouds-from-utm-to-wgs84/).
+**4. Root-owned output files.** Omitting `--user` lets the container write as uid 0, leaving `dtm.tif` owned by root and uneditable without `sudo`. Add `--user $(id -u):$(id -g)`. If files are already root-owned, reclaim them with `sudo chown -R $(id -u):$(id -g) data`. When a run depends on reprojection, also confirm PROJ grids are available, exactly as covered in [reprojecting point clouds from UTM to WGS84](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/spatial-reprojection/reprojecting-point-clouds-from-utm-to-wgs84/).
 
 ## Frequently Asked Questions
 
@@ -334,14 +334,14 @@ Add `--user $(id -u):$(id -g)` to `docker run` so the process runs as your host 
 
 **Should I bind mount input and output as separate directories?**
 
-You can, and it is good practice at scale — mount inputs read-only with `:ro` and outputs read-write. For a single ad-hoc run, one shared `/data` mount is simpler; the [container packaging guide](/batch-automation-cloud-integration/pdal-docker-containers/) shows the split-mount pattern used in production.
+You can, and it is good practice at scale — mount inputs read-only with `:ro` and outputs read-write. For a single ad-hoc run, one shared `/data` mount is simpler; the [container packaging guide](https://www.pythonlidar.com/batch-automation-cloud-integration/pdal-docker-containers/) shows the split-mount pattern used in production.
 
 ---
 
 ## Related
 
-- [PDAL Docker Containers for Reproducible Pipelines](/batch-automation-cloud-integration/pdal-docker-containers/) — parent guide on building, pinning, and sizing the image
-- [Batch Automation and Cloud Integration for PDAL](/batch-automation-cloud-integration/) — where containerised runs fit into batch and cloud workflows
-- [PDAL Stage Chaining](/pdal-pipeline-architecture-execution/pdal-stage-chaining/) — how the reader, filter, and writer stages in the pipeline JSON connect
-- [Reprojecting Point Clouds from UTM to WGS84](/pdal-pipeline-architecture-execution/spatial-reprojection/reprojecting-point-clouds-from-utm-to-wgs84/) — PROJ grid considerations when a containerised pipeline reprojects
-- [Airflow DAG Orchestration](/batch-automation-cloud-integration/airflow-dag-orchestration/) — schedule containerised pipeline runs as DAG tasks
+- [PDAL Docker Containers for Reproducible Pipelines](https://www.pythonlidar.com/batch-automation-cloud-integration/pdal-docker-containers/) — parent guide on building, pinning, and sizing the image
+- [Batch Automation and Cloud Integration for PDAL](https://www.pythonlidar.com/batch-automation-cloud-integration/) — where containerised runs fit into batch and cloud workflows
+- [PDAL Stage Chaining](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/pdal-stage-chaining/) — how the reader, filter, and writer stages in the pipeline JSON connect
+- [Reprojecting Point Clouds from UTM to WGS84](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/spatial-reprojection/reprojecting-point-clouds-from-utm-to-wgs84/) — PROJ grid considerations when a containerised pipeline reprojects
+- [Airflow DAG Orchestration](https://www.pythonlidar.com/batch-automation-cloud-integration/airflow-dag-orchestration/) — schedule containerised pipeline runs as DAG tasks

@@ -2,7 +2,7 @@
 title: "PDAL Pipeline Architecture and Execution"
 description: "The complete technical guide to PDAL's pipeline execution model: stage DAGs, streaming memory, readers/filters/writers, Python integration, performance tuning, and production deployment for LiDAR and point cloud processing workflows."
 slug: "pdal-pipeline-architecture-execution"
-type: "pillar"
+type: "guide"
 breadcrumb: "PDAL Pipeline Architecture and Execution"
 datePublished: "2024-01-15"
 dateModified: "2026-06-24"
@@ -24,8 +24,8 @@ dateModified: "2026-06-24"
     {
       "@type": "BreadcrumbList",
       "itemListElement": [
-        { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://pythonlidar.com/" },
-        { "@type": "ListItem", "position": 2, "name": "PDAL Pipeline Architecture and Execution", "item": "https://pythonlidar.com/pdal-pipeline-architecture-execution/" }
+        { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://www.pythonlidar.com/" },
+        { "@type": "ListItem", "position": 2, "name": "PDAL Pipeline Architecture and Execution", "item": "https://www.pythonlidar.com/pdal-pipeline-architecture-execution/" }
       ]
     },
     {
@@ -96,7 +96,7 @@ For LiDAR analysts, Python GIS developers, and surveying tech teams, mastering h
   <title>PDAL Pipeline Execution Flow</title>
   <desc>Directed acyclic graph showing how a PDAL pipeline pulls data from a Reader stage through one or more Filter stages and into a Writer stage, with the pull-based request model indicated by arrows flowing left to right.</desc>
   <defs>
-    <marker id="arr-pillar" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+    <marker id="arr-flow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
       <polygon points="0 0, 8 3, 0 6" fill="currentColor" opacity="0.6"/>
     </marker>
   </defs>
@@ -106,7 +106,7 @@ For LiDAR analysts, Python GIS developers, and surveying tech teams, mastering h
   <text x="92" y="118" text-anchor="middle" font-size="11" fill="currentColor" font-family="system-ui,sans-serif" opacity="0.75">readers.las</text>
   <text x="92" y="132" text-anchor="middle" font-size="11" fill="currentColor" font-family="system-ui,sans-serif" opacity="0.75">readers.e57</text>
   <!-- Arrow 1 -->
-  <line x1="165" y1="107" x2="218" y2="107" stroke="currentColor" stroke-width="1.5" marker-end="url(#arr-pillar)" opacity="0.6"/>
+  <line x1="165" y1="107" x2="218" y2="107" stroke="currentColor" stroke-width="1.5" marker-end="url(#arr-flow)" opacity="0.6"/>
   <text x="191" y="100" text-anchor="middle" font-size="10" fill="currentColor" font-family="system-ui,sans-serif" opacity="0.6">pull</text>
   <!-- Filter 1 box -->
   <rect x="220" y="75" width="158" height="65" rx="6" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.8"/>
@@ -114,7 +114,7 @@ For LiDAR analysts, Python GIS developers, and surveying tech teams, mastering h
   <text x="299" y="118" text-anchor="middle" font-size="11" fill="currentColor" font-family="system-ui,sans-serif" opacity="0.75">filters.outlier</text>
   <text x="299" y="132" text-anchor="middle" font-size="11" fill="currentColor" font-family="system-ui,sans-serif" opacity="0.75">filters.smrf</text>
   <!-- Arrow 2 -->
-  <line x1="378" y1="107" x2="428" y2="107" stroke="currentColor" stroke-width="1.5" marker-end="url(#arr-pillar)" opacity="0.6"/>
+  <line x1="378" y1="107" x2="428" y2="107" stroke="currentColor" stroke-width="1.5" marker-end="url(#arr-flow)" opacity="0.6"/>
   <text x="403" y="100" text-anchor="middle" font-size="10" fill="currentColor" font-family="system-ui,sans-serif" opacity="0.6">pull</text>
   <!-- Filter 2 box -->
   <rect x="430" y="75" width="168" height="65" rx="6" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.8"/>
@@ -122,7 +122,7 @@ For LiDAR analysts, Python GIS developers, and surveying tech teams, mastering h
   <text x="514" y="118" text-anchor="middle" font-size="11" fill="currentColor" font-family="system-ui,sans-serif" opacity="0.75">filters.reprojection</text>
   <text x="514" y="132" text-anchor="middle" font-size="11" fill="currentColor" font-family="system-ui,sans-serif" opacity="0.75">filters.range</text>
   <!-- Arrow 3 -->
-  <line x1="598" y1="107" x2="645" y2="107" stroke="currentColor" stroke-width="1.5" marker-end="url(#arr-pillar)" opacity="0.6"/>
+  <line x1="598" y1="107" x2="645" y2="107" stroke="currentColor" stroke-width="1.5" marker-end="url(#arr-flow)" opacity="0.6"/>
   <text x="621" y="100" text-anchor="middle" font-size="10" fill="currentColor" font-family="system-ui,sans-serif" opacity="0.6">pull</text>
   <!-- Writer box -->
   <rect x="647" y="75" width="153" height="65" rx="6" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.8"/>
@@ -166,7 +166,7 @@ Always set `spatialreference` explicitly on `readers.las` when the LAZ header em
 
 ### Filters
 
-Filters sit between readers and writers and either modify the point buffer in-place or produce a derived buffer. They can drop dimensions to save memory, add computed fields (`extra_dims`), subset by spatial or attribute predicates, or classify ground returns. Understanding how [PDAL stage chaining](/pdal-pipeline-architecture-execution/pdal-stage-chaining/) propagates buffers between filters is key to building pipelines where each stage receives the dimensions it expects.
+Filters sit between readers and writers and either modify the point buffer in-place or produce a derived buffer. They can drop dimensions to save memory, add computed fields (`extra_dims`), subset by spatial or attribute predicates, or classify ground returns. Understanding how [PDAL stage chaining](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/pdal-stage-chaining/) propagates buffers between filters is key to building pipelines where each stage receives the dimensions it expects.
 
 Key filters and their roles:
 
@@ -227,7 +227,7 @@ The pipeline below is the minimal production starting point for airborne LiDAR c
 }
 ```
 
-Stage ordering matters: the outlier filter runs before reprojection because statistical distances are consistent within the source CRS; [ground classification](/ground-filtering-dtm-dsm-generation/smrf-ground-classification/) with `filters.smrf` runs after reprojection so the window size in metres matches the target coordinate system. Once ground returns are labelled, the same pipeline can feed [DTM and DSM raster generation](/ground-filtering-dtm-dsm-generation/) for terrain products.
+Stage ordering matters: the outlier filter runs before reprojection because statistical distances are consistent within the source CRS; [ground classification](https://www.pythonlidar.com/ground-filtering-dtm-dsm-generation/smrf-ground-classification/) with `filters.smrf` runs after reprojection so the window size in metres matches the target coordinate system. Once ground returns are labelled, the same pipeline can feed [DTM and DSM raster generation](https://www.pythonlidar.com/ground-filtering-dtm-dsm-generation/) for terrain products.
 
 Validate any pipeline before running it at scale:
 
@@ -328,11 +328,11 @@ if __name__ == "__main__":
 
 Every stage in a PDAL pipeline operates on a shared point table. Readers declare the initial schema; filters can add, remove, or rename dimensions. If a downstream filter expects `Classification` but an upstream filter dropped it to save memory, the pipeline raises a schema violation at runtime. Always audit dimension propagation when combining filters — run a short dry-run against a 50 000-point sample and inspect `pipeline.metadata` to confirm the expected dimensions survive.
 
-Proper [attribute mapping](/pdal-pipeline-architecture-execution/attribute-mapping/) is especially important when ingesting data from multiple sensors with different field names. Use `filters.ferry` to copy or rename dimensions before passing them to stages that expect a canonical name.
+Proper [attribute mapping](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/attribute-mapping/) is especially important when ingesting data from multiple sensors with different field names. Use `filters.ferry` to copy or rename dimensions before passing them to stages that expect a canonical name.
 
 ### CRS handling
 
-PDAL carries CRS metadata through the entire pipeline. When a reader declares `spatialreference`, every subsequent stage inherits it unless a `filters.reprojection` stage changes it. Always insert an explicit [spatial reprojection](/pdal-pipeline-architecture-execution/spatial-reprojection/) stage before any operation that assumes metric distances — SMRF's `window` parameter is in the units of the current CRS, so running it in geographic (degree) coordinates produces nonsensical results.
+PDAL carries CRS metadata through the entire pipeline. When a reader declares `spatialreference`, every subsequent stage inherits it unless a `filters.reprojection` stage changes it. Always insert an explicit [spatial reprojection](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/spatial-reprojection/) stage before any operation that assumes metric distances — SMRF's `window` parameter is in the units of the current CRS, so running it in geographic (degree) coordinates produces nonsensical results.
 
 For vertical datums, PROJ 7+ handles ellipsoid-to-NAVD88 transformations via `filters.reprojection` when the pipeline CRS string includes a vertical component (e.g., `EPSG:6349+5703`). Omitting the vertical authority is the most common source of systematic elevation bias.
 
@@ -355,9 +355,9 @@ Raw CPU is rarely the bottleneck in point cloud workflows. I/O latency, memory f
 | LAZ vs uncompressed LAS | LAZ default | Use uncompressed LAS for iterative development (no decompress overhead per run) | 2–4× faster read on re-runs; 3–7× larger files |
 | `readers.copc` | — | Stream only the spatial region and LOD needed | Eliminates reading entire file when a spatial subset suffices |
 
-[Parallel execution](/pdal-pipeline-architecture-execution/parallel-execution/) in PDAL means orchestrating multiple independent pipeline processes — one per tile — rather than parallelising a single pipeline internally. Python's `ProcessPoolExecutor` with a pool sized to `os.cpu_count()` and a tile list as the work queue is the standard pattern for regional campaigns.
+[Parallel execution](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/parallel-execution/) in PDAL means orchestrating multiple independent pipeline processes — one per tile — rather than parallelising a single pipeline internally. Python's `ProcessPoolExecutor` with a pool sized to `os.cpu_count()` and a tile list as the work queue is the standard pattern for regional campaigns.
 
-[Memory management](/pdal-pipeline-architecture-execution/memory-management/) under constrained infrastructure requires setting `capacity` conservatively, using `--stream` mode for linear pipelines (no branching), and avoiding filters that buffer the entire point set (e.g., `filters.sort`) unless necessary.
+[Memory management](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/memory-management/) under constrained infrastructure requires setting `capacity` conservatively, using `--stream` mode for linear pipelines (no branching), and avoiding filters that buffer the entire point set (e.g., `filters.sort`) unless necessary.
 
 ## Production Deployment Patterns
 
@@ -375,11 +375,11 @@ meta = pipeline.metadata
 assert meta["metadata"]["readers.las"]["srs"]["json"]["name"] != ""
 ```
 
-Before running [pipeline validation](/pdal-pipeline-architecture-execution/pipeline-validation/) in CI, ensure the test environment has the same PDAL version as production — schema behaviour and stage parameters differ across minor versions.
+Before running [pipeline validation](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/pipeline-validation/) in CI, ensure the test environment has the same PDAL version as production — schema behaviour and stage parameters differ across minor versions.
 
 ### Containerisation
 
-Official PDAL Docker images (`ghcr.io/pdal/pdal`) bundle GDAL, PROJ, and the Python bindings, eliminating dependency drift between environments. Pin the image tag to a specific PDAL version in `docker-compose.yml` and in your Kubernetes job manifests. See [batch automation and cloud integration](/batch-automation-cloud-integration/) for running these containers at scale on AWS Batch and Airflow.
+Official PDAL Docker images (`ghcr.io/pdal/pdal`) bundle GDAL, PROJ, and the Python bindings, eliminating dependency drift between environments. Pin the image tag to a specific PDAL version in `docker-compose.yml` and in your Kubernetes job manifests. See [batch automation and cloud integration](https://www.pythonlidar.com/batch-automation-cloud-integration/) for running these containers at scale on AWS Batch and Airflow.
 
 ### Cloud object-storage readers and writers
 
@@ -410,7 +410,7 @@ Network throughput must be provisioned to match the reader's consumption rate. O
 
 **Cause:** Missing or incorrect `spatialreference` on the reader; `filters.reprojection` inserted after spatial operations that assumed the target CRS.
 
-**Fix:** Set `spatialreference` explicitly on every reader; insert `filters.reprojection` as the first filter if inputs arrive in mixed projections. See [spatial reprojection](/pdal-pipeline-architecture-execution/spatial-reprojection/) for datum-shift edge cases.
+**Fix:** Set `spatialreference` explicitly on every reader; insert `filters.reprojection` as the first filter if inputs arrive in mixed projections. See [spatial reprojection](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/spatial-reprojection/) for datum-shift edge cases.
 
 ### Out-of-memory kills
 
@@ -418,7 +418,7 @@ Network throughput must be provisioned to match the reader's consumption rate. O
 
 **Cause:** `capacity` too large for available RAM; a buffering filter (e.g., `filters.sort`) materialised the entire dataset.
 
-**Fix:** Reduce `capacity` to 32768; replace `filters.sort` with a tiled workflow; use `--stream` mode where filters support it. [Memory management](/pdal-pipeline-architecture-execution/memory-management/) covers container-specific settings.
+**Fix:** Reduce `capacity` to 32768; replace `filters.sort` with a tiled workflow; use `--stream` mode where filters support it. [Memory management](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/memory-management/) covers container-specific settings.
 
 ### Pipeline stalls at large tile counts
 
@@ -432,7 +432,7 @@ Network throughput must be provisioned to match the reader's consumption rate. O
 
 Set `pipeline.loglevel = 5` for verbose C++ trace output during development. In production, `loglevel = 3` (INFO) captures stage timings and point counts without flooding logs. After execution, inspect `pipeline.metadata` to confirm per-stage point counts are non-zero and that the output CRS matches the expected EPSG code.
 
-The [pipeline filtering logic](/pdal-pipeline-architecture-execution/pipeline-filtering-logic/) guide covers debugging specific filter-chain failures including range predicate mismatches and statistical outlier threshold selection.
+The [pipeline filtering logic](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/pipeline-filtering-logic/) guide covers debugging specific filter-chain failures including range predicate mismatches and statistical outlier threshold selection.
 
 ---
 
@@ -444,7 +444,7 @@ Pull-based execution means the writer controls flow: it requests a batch only wh
 
 **Can I run a single PDAL pipeline across multiple CPU cores?**
 
-A single pipeline instance is single-threaded except for stages that internally use OpenMP (notably `filters.smrf` and `filters.pmf`). To use all cores, run independent pipeline processes in parallel — one per spatial tile — using Python's `ProcessPoolExecutor`. See [parallel execution](/pdal-pipeline-architecture-execution/parallel-execution/) for implementation patterns.
+A single pipeline instance is single-threaded except for stages that internally use OpenMP (notably `filters.smrf` and `filters.pmf`). To use all cores, run independent pipeline processes in parallel — one per spatial tile — using Python's `ProcessPoolExecutor`. See [parallel execution](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/parallel-execution/) for implementation patterns.
 
 **What happens to custom LAS dimensions (extra bytes) when I chain filters?**
 
@@ -462,10 +462,10 @@ For final delivery or archival, LAZ (LASzip compression) reduces file size by 70
 
 ## Related
 
-- [PDAL Stage Chaining](/pdal-pipeline-architecture-execution/pdal-stage-chaining/) — how to wire readers, filters, and writers into multi-step execution graphs
-- [Pipeline Filtering Logic](/pdal-pipeline-architecture-execution/pipeline-filtering-logic/) — applying range predicates, statistical classifiers, and morphological filters
-- [Spatial Reprojection](/pdal-pipeline-architecture-execution/spatial-reprojection/) — CRS transformation, datum handling, and PROJ pipeline strings
-- [Attribute Mapping](/pdal-pipeline-architecture-execution/attribute-mapping/) — dimension propagation, extra_dims, and ferry patterns
-- [Parallel Execution](/pdal-pipeline-architecture-execution/parallel-execution/) — file-level and stage-level strategies for multi-core throughput
-- [Memory Management](/pdal-pipeline-architecture-execution/memory-management/) — capacity tuning, stream mode, and container memory limits
-- [Pipeline Validation](/pdal-pipeline-architecture-execution/pipeline-validation/) — validate-only runs, schema checks, and CI integration
+- [PDAL Stage Chaining](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/pdal-stage-chaining/) — how to wire readers, filters, and writers into multi-step execution graphs
+- [Pipeline Filtering Logic](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/pipeline-filtering-logic/) — applying range predicates, statistical classifiers, and morphological filters
+- [Spatial Reprojection](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/spatial-reprojection/) — CRS transformation, datum handling, and PROJ pipeline strings
+- [Attribute Mapping](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/attribute-mapping/) — dimension propagation, extra_dims, and ferry patterns
+- [Parallel Execution](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/parallel-execution/) — file-level and stage-level strategies for multi-core throughput
+- [Memory Management](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/memory-management/) — capacity tuning, stream mode, and container memory limits
+- [Pipeline Validation](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/pipeline-validation/) — validate-only runs, schema checks, and CI integration

@@ -2,7 +2,7 @@
 title: "Point Cloud Data Standards & Fundamentals"
 description: "The complete technical guide to LAS/LAZ file structure, coordinate reference systems, ASPRS classification codes, point density metrics, and metadata integrity for Python LiDAR engineers building production-grade pipelines."
 slug: "point-cloud-data-standards-fundamentals"
-type: "pillar"
+type: "guide"
 breadcrumb: "Point Cloud Data Standards & Fundamentals"
 datePublished: "2024-01-15"
 dateModified: "2026-06-24"
@@ -24,8 +24,8 @@ dateModified: "2026-06-24"
     {
       "@type": "BreadcrumbList",
       "itemListElement": [
-        { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://pythonlidar.com/" },
-        { "@type": "ListItem", "position": 2, "name": "Point Cloud Data Standards & Fundamentals", "item": "https://pythonlidar.com/point-cloud-data-standards-fundamentals/" }
+        { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://www.pythonlidar.com/" },
+        { "@type": "ListItem", "position": 2, "name": "Point Cloud Data Standards & Fundamentals", "item": "https://www.pythonlidar.com/point-cloud-data-standards-fundamentals/" }
       ]
     },
     {
@@ -122,11 +122,11 @@ Before diving into individual topics, it helps to understand how the five standa
   <text x="320" y="44" text-anchor="middle" font-size="11" fill="currentColor" font-family="system-ui,sans-serif" opacity="0.5" font-style="italic">Standards hierarchy — each layer depends on the one below</text>
 </svg>
 
-The architecture is a strict dependency chain. A misconfigured scale factor in the [LAS/LAZ file structure](/point-cloud-data-standards-fundamentals/laslaz-file-structure/) silently corrupts every spatial coordinate before the CRS layer even evaluates them. An incorrect [coordinate reference system](/point-cloud-data-standards-fundamentals/coordinate-reference-systems/) embed will cause classification algorithms to operate on geometrically wrong return positions. Classification errors poison density calculations. And metadata that no longer reflects the modified payload makes the final product untraceable. Fix violations at the lowest layer they originate — not where they surface.
+The architecture is a strict dependency chain. A misconfigured scale factor in the [LAS/LAZ file structure](https://www.pythonlidar.com/point-cloud-data-standards-fundamentals/laslaz-file-structure/) silently corrupts every spatial coordinate before the CRS layer even evaluates them. An incorrect [coordinate reference system](https://www.pythonlidar.com/point-cloud-data-standards-fundamentals/coordinate-reference-systems/) embed will cause classification algorithms to operate on geometrically wrong return positions. Classification errors poison density calculations. And metadata that no longer reflects the modified payload makes the final product untraceable. Fix violations at the lowest layer they originate — not where they surface.
 
 ## LAS/LAZ File Structure: The Binary Foundation
 
-A LAS file is a precisely ordered binary stream, not a general-purpose container. Its layout is defined by the [LAS/LAZ file structure specification](/point-cloud-data-standards-fundamentals/laslaz-file-structure/) and follows four sequential blocks:
+A LAS file is a precisely ordered binary stream, not a general-purpose container. Its layout is defined by the [LAS/LAZ file structure specification](https://www.pythonlidar.com/point-cloud-data-standards-fundamentals/laslaz-file-structure/) and follows four sequential blocks:
 
 **Public Header Block (PHB):** Occupies the first 227 bytes (LAS 1.0–1.2), 235 bytes (LAS 1.3), or 375 bytes (LAS 1.4). Contains the file signature `LASF`, version identifiers, global point count, bounding box extents, and the critical scale/offset parameters. The Point Data Format ID embedded here acts as the schema definition for every record that follows.
 
@@ -154,7 +154,7 @@ For `laspy`, access `las.point_format.dimension_names` to enumerate all availabl
 
 ### Python Header Inspection
 
-Always inspect the header before accessing any point data. The guide to [parsing LAS headers with Python](/point-cloud-data-standards-fundamentals/laslaz-file-structure/how-to-parse-las-headers-with-python/) covers this in depth; the essentials are:
+Always inspect the header before accessing any point data. The guide to [parsing LAS headers with Python](https://www.pythonlidar.com/point-cloud-data-standards-fundamentals/laslaz-file-structure/how-to-parse-las-headers-with-python/) covers this in depth; the essentials are:
 
 ```python
 import laspy
@@ -176,7 +176,7 @@ If `hdr.point_count` is zero and the file is LAS 1.4, check `hdr.legacy_point_co
 
 ## Coordinate Reference Systems: Spatial Integrity at Scale
 
-Raw XYZ triples are geometrically meaningless without a defined spatial reference. The [coordinate reference systems](/point-cloud-data-standards-fundamentals/coordinate-reference-systems/) topic covers the full lifecycle: reading embedded CRS definitions, validating datum alignment, and executing transformation pipelines that handle both horizontal and vertical components. Practical repair workflows for mismatched tiles are covered in [fixing CRS mismatches in point clouds](/point-cloud-data-standards-fundamentals/coordinate-reference-systems/fixing-crs-mismatches-in-point-clouds/).
+Raw XYZ triples are geometrically meaningless without a defined spatial reference. The [coordinate reference systems](https://www.pythonlidar.com/point-cloud-data-standards-fundamentals/coordinate-reference-systems/) topic covers the full lifecycle: reading embedded CRS definitions, validating datum alignment, and executing transformation pipelines that handle both horizontal and vertical components. Practical repair workflows for mismatched tiles are covered in [fixing CRS mismatches in point clouds](https://www.pythonlidar.com/point-cloud-data-standards-fundamentals/coordinate-reference-systems/fixing-crs-mismatches-in-point-clouds/).
 
 ### CRS Embedding in LAS Headers
 
@@ -215,7 +215,7 @@ Before processing any delivery, run these checks:
 
 ## ASPRS Classification Codes: Semantic Taxonomy
 
-Classification transforms raw geometry into actionable features. The [ASPRS classification codes](/point-cloud-data-standards-fundamentals/asprs-classification-codes/) define a standardized integer mapping across the full range 0–255, where codes 0–18 are standardized by the LAS specification and codes 64–255 are reserved for user-defined classes. The practical interpretation of each code — and how to correct misclassified returns — is detailed in [understanding ASPRS classification codes](/point-cloud-data-standards-fundamentals/asprs-classification-codes/understanding-asprs-classification-codes/). Code 2 (Ground) is the anchor for most terrain work: see [ground filtering and DTM/DSM generation](/ground-filtering-dtm-dsm-generation/) for how [SMRF](/ground-filtering-dtm-dsm-generation/smrf-ground-classification/) and [PMF](/ground-filtering-dtm-dsm-generation/pmf-ground-classification/) assign it.
+Classification transforms raw geometry into actionable features. The [ASPRS classification codes](https://www.pythonlidar.com/point-cloud-data-standards-fundamentals/asprs-classification-codes/) define a standardized integer mapping across the full range 0–255, where codes 0–18 are standardized by the LAS specification and codes 64–255 are reserved for user-defined classes. The practical interpretation of each code — and how to correct misclassified returns — is detailed in [understanding ASPRS classification codes](https://www.pythonlidar.com/point-cloud-data-standards-fundamentals/asprs-classification-codes/understanding-asprs-classification-codes/). Code 2 (Ground) is the anchor for most terrain work: see [ground filtering and DTM/DSM generation](https://www.pythonlidar.com/ground-filtering-dtm-dsm-generation/) for how [SMRF](https://www.pythonlidar.com/ground-filtering-dtm-dsm-generation/smrf-ground-classification/) and [PMF](https://www.pythonlidar.com/ground-filtering-dtm-dsm-generation/pmf-ground-classification/) assign it.
 
 ### Standard Code Reference
 
@@ -269,7 +269,7 @@ When merging classified tiles from multiple flight lines, enforce classification
 
 ## Point Density Metrics: Quantifying Coverage Quality
 
-[Point density metrics](/point-cloud-data-standards-fundamentals/point-density-metrics/) underpin algorithm selection, quality reporting, and contractual compliance. The nominal density figure reported in the project specification (e.g., "≥ 8 pts/m²") is a minimum average — actual density varies with terrain slope, scan overlap, and flight altitude. For drone-survey specific workflows, see [calculating point density for drone surveys](/point-cloud-data-standards-fundamentals/point-density-metrics/calculating-point-density-for-drone-surveys/).
+[Point density metrics](https://www.pythonlidar.com/point-cloud-data-standards-fundamentals/point-density-metrics/) underpin algorithm selection, quality reporting, and contractual compliance. The nominal density figure reported in the project specification (e.g., "≥ 8 pts/m²") is a minimum average — actual density varies with terrain slope, scan overlap, and flight altitude. For drone-survey specific workflows, see [calculating point density for drone surveys](https://www.pythonlidar.com/point-cloud-data-standards-fundamentals/point-density-metrics/calculating-point-density-for-drone-surveys/).
 
 ### Computing Local Density with Spatial Indexing
 
@@ -322,7 +322,7 @@ This preserves spatial representativeness across slope transitions, which random
 
 ## Metadata & Header Sync: Integrity Through the Pipeline
 
-The [metadata and header sync](/point-cloud-data-standards-fundamentals/metadata-header-sync/) process is the final guarantee that the binary payload and its descriptive envelope are mathematically consistent. Many processing tools modify point data without updating headers; the result is a file that passes a quick open but fails any conformance validator. Workflows for reconciling LAS headers with external attribute sources are in [syncing metadata between LAS and shapefiles](/point-cloud-data-standards-fundamentals/metadata-header-sync/syncing-metadata-between-las-and-shapefiles/).
+The [metadata and header sync](https://www.pythonlidar.com/point-cloud-data-standards-fundamentals/metadata-header-sync/) process is the final guarantee that the binary payload and its descriptive envelope are mathematically consistent. Many processing tools modify point data without updating headers; the result is a file that passes a quick open but fails any conformance validator. Workflows for reconciling LAS headers with external attribute sources are in [syncing metadata between LAS and shapefiles](https://www.pythonlidar.com/point-cloud-data-standards-fundamentals/metadata-header-sync/syncing-metadata-between-las-and-shapefiles/).
 
 ### Critical Header Fields That Must Be Kept in Sync
 
@@ -389,7 +389,7 @@ Use `user_id` values that are unique to your organisation to avoid collisions wi
 Three libraries cover the full standards surface area:
 
 - **`laspy` (v2.4+):** Header inspection, point attribute access, VLR read/write, chunked iteration. Best for lightweight validation scripts and attribute manipulation without PDAL overhead.
-- **PDAL:** Pipeline-based reader/filter/writer chains with built-in CRS handling, classification filters, and tiling. The [PDAL pipeline architecture](/pdal-pipeline-architecture-execution/) section covers pipeline construction and execution in depth, including [spatial reprojection](/pdal-pipeline-architecture-execution/spatial-reprojection/) and [pipeline validation](/pdal-pipeline-architecture-execution/pipeline-validation/).
+- **PDAL:** Pipeline-based reader/filter/writer chains with built-in CRS handling, classification filters, and tiling. The [PDAL pipeline architecture](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/) section covers pipeline construction and execution in depth, including [spatial reprojection](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/spatial-reprojection/) and [pipeline validation](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/pipeline-validation/).
 - **`pyproj` (v3.4+):** Authoritative CRS definitions, datum transformations, and epoch-aware network-based transforms (using PROJ network CDIST access when available).
 
 ### Annotated Reference Pipeline: Ingest → Validate → Classify → Export
@@ -515,13 +515,13 @@ Pin `lazrs` alongside `laspy` — it provides the Rust-based LAZ encoder/decoder
 
 ## Related
 
-- [LAS/LAZ File Structure](/point-cloud-data-standards-fundamentals/laslaz-file-structure/) — Binary layout deep-dive: header parsing, VLR structure, and chunked Python ingestion patterns
-- [How to Parse LAS Headers with Python](/point-cloud-data-standards-fundamentals/laslaz-file-structure/how-to-parse-las-headers-with-python/) — Step-by-step header inspection with `laspy`, VLR enumeration, and scale/offset validation
-- [Coordinate Reference Systems](/point-cloud-data-standards-fundamentals/coordinate-reference-systems/) — CRS validation, datum transforms, and pyproj production workflows
-- [Fixing CRS Mismatches in Point Clouds](/point-cloud-data-standards-fundamentals/coordinate-reference-systems/fixing-crs-mismatches-in-point-clouds/) — Diagnosing and repairing EPSG conflicts between LAZ tiles
-- [ASPRS Classification Codes](/point-cloud-data-standards-fundamentals/asprs-classification-codes/) — Integer taxonomy, reclassification scripts, and boundary seam validation
-- [Understanding ASPRS Classification Codes](/point-cloud-data-standards-fundamentals/asprs-classification-codes/understanding-asprs-classification-codes/) — Code-by-code reference with reclassification decision trees
-- [Point Density Metrics](/point-cloud-data-standards-fundamentals/point-density-metrics/) — Grid-based density computation, algorithm selection thresholds, and resampling strategies
-- [Calculating Point Density for Drone Surveys](/point-cloud-data-standards-fundamentals/point-density-metrics/calculating-point-density-for-drone-surveys/) — UAV-specific density workflows and coverage gap detection
-- [Metadata & Header Sync](/point-cloud-data-standards-fundamentals/metadata-header-sync/) — Header field reconciliation, VLR provenance embedding, and sync workflows
-- [Syncing Metadata Between LAS and Shapefiles](/point-cloud-data-standards-fundamentals/metadata-header-sync/syncing-metadata-between-las-and-shapefiles/) — Keeping external attribute tables consistent with LAS header fields
+- [LAS/LAZ File Structure](https://www.pythonlidar.com/point-cloud-data-standards-fundamentals/laslaz-file-structure/) — Binary layout deep-dive: header parsing, VLR structure, and chunked Python ingestion patterns
+- [How to Parse LAS Headers with Python](https://www.pythonlidar.com/point-cloud-data-standards-fundamentals/laslaz-file-structure/how-to-parse-las-headers-with-python/) — Step-by-step header inspection with `laspy`, VLR enumeration, and scale/offset validation
+- [Coordinate Reference Systems](https://www.pythonlidar.com/point-cloud-data-standards-fundamentals/coordinate-reference-systems/) — CRS validation, datum transforms, and pyproj production workflows
+- [Fixing CRS Mismatches in Point Clouds](https://www.pythonlidar.com/point-cloud-data-standards-fundamentals/coordinate-reference-systems/fixing-crs-mismatches-in-point-clouds/) — Diagnosing and repairing EPSG conflicts between LAZ tiles
+- [ASPRS Classification Codes](https://www.pythonlidar.com/point-cloud-data-standards-fundamentals/asprs-classification-codes/) — Integer taxonomy, reclassification scripts, and boundary seam validation
+- [Understanding ASPRS Classification Codes](https://www.pythonlidar.com/point-cloud-data-standards-fundamentals/asprs-classification-codes/understanding-asprs-classification-codes/) — Code-by-code reference with reclassification decision trees
+- [Point Density Metrics](https://www.pythonlidar.com/point-cloud-data-standards-fundamentals/point-density-metrics/) — Grid-based density computation, algorithm selection thresholds, and resampling strategies
+- [Calculating Point Density for Drone Surveys](https://www.pythonlidar.com/point-cloud-data-standards-fundamentals/point-density-metrics/calculating-point-density-for-drone-surveys/) — UAV-specific density workflows and coverage gap detection
+- [Metadata & Header Sync](https://www.pythonlidar.com/point-cloud-data-standards-fundamentals/metadata-header-sync/) — Header field reconciliation, VLR provenance embedding, and sync workflows
+- [Syncing Metadata Between LAS and Shapefiles](https://www.pythonlidar.com/point-cloud-data-standards-fundamentals/metadata-header-sync/syncing-metadata-between-las-and-shapefiles/) — Keeping external attribute tables consistent with LAS header fields

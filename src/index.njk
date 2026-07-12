@@ -26,15 +26,15 @@ eleventyExcludeFromCollections: true
           <strong>Batch &amp; Cloud Automation</strong> for containerised, S3-backed, orchestrated pipelines.
         </p>
         <div class="hero__cta">
-          <a class="cta cta--primary" href="/pdal-pipeline-architecture-execution/">
+          <a class="cta cta--primary" href="{{ site.url }}/pdal-pipeline-architecture-execution/">
             <span class="cta__icon">{% icon "layers", 20 %}</span>
             Explore PDAL pipelines
           </a>
-          <a class="cta" href="/ground-filtering-dtm-dsm-generation/">
+          <a class="cta" href="{{ site.url }}/ground-filtering-dtm-dsm-generation/">
             <span class="cta__icon">{% sectionIcon "ground-filtering-dtm-dsm-generation", 20 %}</span>
             Ground &amp; terrain models
           </a>
-          <a class="cta" href="/batch-automation-cloud-integration/">
+          <a class="cta" href="{{ site.url }}/batch-automation-cloud-integration/">
             <span class="cta__icon">{% sectionIcon "batch-automation-cloud-integration", 20 %}</span>
             Batch &amp; cloud automation
           </a>
@@ -69,49 +69,49 @@ eleventyExcludeFromCollections: true
       <p>The most-useful, code-first guides — copy-paste ready for production LiDAR pipelines.</p>
     </div>
     <div class="cards">
-      <a class="card" href="/pdal-pipeline-architecture-execution/pdal-stage-chaining/chaining-pdal-stages-for-data-cleaning/">
+      <a class="card" href="{{ site.url }}/pdal-pipeline-architecture-execution/pdal-stage-chaining/chaining-pdal-stages-for-data-cleaning/">
         <span class="card__icon">{% sectionIcon "pdal-pipeline-architecture-execution", 24 %}</span>
         <h3 class="card__title">Chaining PDAL Stages for Data Cleaning</h3>
         <p class="card__blurb">Chain readers, filters, and writers in Python for noise removal, outlier rejection, and classification refinement — with a complete runnable example.</p>
         <div class="card__chips"><span class="chip">stage chaining</span><span class="chip">data cleaning</span></div>
       </a>
-      <a class="card" href="/pdal-pipeline-architecture-execution/spatial-reprojection/reprojecting-point-clouds-from-utm-to-wgs84/">
+      <a class="card" href="{{ site.url }}/pdal-pipeline-architecture-execution/spatial-reprojection/reprojecting-point-clouds-from-utm-to-wgs84/">
         <span class="card__icon">{% sectionIcon "pdal-pipeline-architecture-execution", 24 %}</span>
         <h3 class="card__title">Reprojecting Point Clouds from UTM to WGS84</h3>
         <p class="card__blurb">Reproject LAS/LAZ from UTM to WGS84 with PDAL filters.reprojection, datum handling, header sync, and round-trip validation.</p>
         <div class="card__chips"><span class="chip">reprojection</span><span class="chip">CRS</span></div>
       </a>
-      <a class="card" href="/point-cloud-data-standards-fundamentals/laslaz-file-structure/how-to-parse-las-headers-with-python/">
+      <a class="card" href="{{ site.url }}/point-cloud-data-standards-fundamentals/laslaz-file-structure/how-to-parse-las-headers-with-python/">
         <span class="card__icon">{% sectionIcon "point-cloud-data-standards-fundamentals", 24 %}</span>
         <h3 class="card__title">How to Parse LAS Headers with Python</h3>
         <p class="card__blurb">Extract LAS/LAZ header fields with laspy and Python's struct module — version detection, VLR inspection, coordinate scale/offset, and validation.</p>
         <div class="card__chips"><span class="chip">LAS headers</span><span class="chip">laspy</span></div>
       </a>
-      <a class="card" href="/pdal-pipeline-architecture-execution/parallel-execution/optimizing-pdal-for-multi-core-processing/">
+      <a class="card" href="{{ site.url }}/pdal-pipeline-architecture-execution/parallel-execution/optimizing-pdal-for-multi-core-processing/">
         <span class="card__icon">{% sectionIcon "pdal-pipeline-architecture-execution", 24 %}</span>
         <h3 class="card__title">Optimizing PDAL for Multi-Core Processing</h3>
         <p class="card__blurb">Tune OMP_NUM_THREADS and chunk_size, then orchestrate parallel tile pipelines with Python's ProcessPoolExecutor for maximum throughput.</p>
         <div class="card__chips"><span class="chip">parallel</span><span class="chip">performance</span></div>
       </a>
-      <a class="card" href="/point-cloud-data-standards-fundamentals/asprs-classification-codes/understanding-asprs-classification-codes/">
+      <a class="card" href="{{ site.url }}/point-cloud-data-standards-fundamentals/asprs-classification-codes/understanding-asprs-classification-codes/">
         <span class="card__icon">{% sectionIcon "point-cloud-data-standards-fundamentals", 24 %}</span>
         <h3 class="card__title">Understanding ASPRS Classification Codes</h3>
         <p class="card__blurb">Complete reference for LAS classification codes 0–255: schema versions, laspy validation, vectorized remapping, and QA automation.</p>
         <div class="card__chips"><span class="chip">ASPRS</span><span class="chip">classification</span></div>
       </a>
-      <a class="card" href="/pdal-pipeline-architecture-execution/pipeline-filtering-logic/applying-statistical-outlier-filters-in-pdal/">
+      <a class="card" href="{{ site.url }}/pdal-pipeline-architecture-execution/pipeline-filtering-logic/applying-statistical-outlier-filters-in-pdal/">
         <span class="card__icon">{% sectionIcon "pdal-pipeline-architecture-execution", 24 %}</span>
         <h3 class="card__title">Applying Statistical Outlier Filters in PDAL</h3>
         <p class="card__blurb">Use filters.outlier (statistical and radius modes) to remove noise points from aerial and terrestrial LiDAR scans, with Python integration and parameter tuning.</p>
         <div class="card__chips"><span class="chip">outlier removal</span><span class="chip">filters</span></div>
       </a>
-      <a class="card" href="/ground-filtering-dtm-dsm-generation/dtm-raster-generation/generating-a-dtm-geotiff-with-writers-gdal/">
+      <a class="card" href="{{ site.url }}/ground-filtering-dtm-dsm-generation/dtm-raster-generation/generating-a-dtm-geotiff-with-writers-gdal/">
         <span class="card__icon">{% sectionIcon "ground-filtering-dtm-dsm-generation", 24 %}</span>
         <h3 class="card__title">Generating a DTM GeoTIFF with writers.gdal</h3>
         <p class="card__blurb">Rasterize classified ground returns into a bare-earth DTM GeoTIFF with PDAL writers.gdal — resolution, interpolation window, and NoData handling explained.</p>
         <div class="card__chips"><span class="chip">DTM</span><span class="chip">writers.gdal</span></div>
       </a>
-      <a class="card" href="/batch-automation-cloud-integration/pdal-docker-containers/running-pdal-pipelines-in-docker/">
+      <a class="card" href="{{ site.url }}/batch-automation-cloud-integration/pdal-docker-containers/running-pdal-pipelines-in-docker/">
         <span class="card__icon">{% sectionIcon "batch-automation-cloud-integration", 24 %}</span>
         <h3 class="card__title">Running PDAL Pipelines in Docker</h3>
         <p class="card__blurb">Pin a reproducible PDAL toolchain in a container, mount tiles, and run pipeline JSON with the official image — the foundation for AWS Batch and Airflow fan-out.</p>
@@ -131,7 +131,7 @@ eleventyExcludeFromCollections: true
     <div class="cards">
       {% for section in site.sections %}
         {%- set topicsHere = collections.topics | childrenOf("/" + section.slug + "/") -%}
-        <a class="card" href="/{{ section.slug }}/">
+        <a class="card" href="{{ site.url }}/{{ section.slug }}/">
           <span class="card__icon">{% sectionIcon section.slug, 28 %}</span>
           <h3 class="card__title">{{ section.label }}</h3>
           <p class="card__blurb">{{ section.blurb }}</p>
@@ -157,7 +157,7 @@ eleventyExcludeFromCollections: true
       <div class="cards">
         {% for t in topicsHere %}
           {%- set tutsHere = collections.tutorials | childrenOf(t.url) -%}
-          <a class="card" href="{{ t.url }}">
+          <a class="card" href="{{ site.url }}{{ t.url }}">
             <span class="card__icon">{% sectionIcon section.slug, 24 %}</span>
             <h3 class="card__title">{{ t.data.title }}</h3>
             <p class="card__blurb">{{ t.data.metaDescription | truncate(150) }}</p>

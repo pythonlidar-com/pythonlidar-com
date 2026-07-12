@@ -2,7 +2,7 @@
 title: "LAS/LAZ File Structure: Binary Layout, Python Parsing & Production Ingestion"
 description: "A practitioner's guide to the LAS/LAZ binary specification — Public Header Block, VLRs, point record formats, and coordinate reconstruction — with complete Python code, parameter tables, and production validation patterns."
 slug: "laslaz-file-structure"
-type: "cluster"
+type: "topic"
 breadcrumb: "LAS/LAZ File Structure"
 datePublished: "2024-10-01"
 dateModified: "2026-06-24"
@@ -23,9 +23,9 @@ dateModified: "2026-06-24"
     {
       "@type": "BreadcrumbList",
       "itemListElement": [
-        { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://pythonlidar.com/" },
-        { "@type": "ListItem", "position": 2, "name": "Point Cloud Data Standards & Fundamentals", "item": "https://pythonlidar.com/point-cloud-data-standards-fundamentals/" },
-        { "@type": "ListItem", "position": 3, "name": "LAS/LAZ File Structure", "item": "https://pythonlidar.com/point-cloud-data-standards-fundamentals/laslaz-file-structure/" }
+        { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://www.pythonlidar.com/" },
+        { "@type": "ListItem", "position": 2, "name": "Point Cloud Data Standards & Fundamentals", "item": "https://www.pythonlidar.com/point-cloud-data-standards-fundamentals/" },
+        { "@type": "ListItem", "position": 3, "name": "LAS/LAZ File Structure", "item": "https://www.pythonlidar.com/point-cloud-data-standards-fundamentals/laslaz-file-structure/" }
       ]
     },
     {
@@ -68,7 +68,7 @@ dateModified: "2026-06-24"
 }
 </script>
 
-Misaligned scale factors, missing CRS VLRs, or incorrect point format assumptions silently corrupt LiDAR pipelines long before errors surface in downstream models. This guide covers the complete binary architecture of the LAS/LAZ specification, provides a production-tested Python ingestion workflow using `laspy`, and delivers the parameter tables and validation checks your team needs to ingest diverse survey datasets reliably. It is part of [Point Cloud Data Standards & Fundamentals](/point-cloud-data-standards-fundamentals/), the reference section covering specifications, [coordinate reference systems](/point-cloud-data-standards-fundamentals/coordinate-reference-systems/), and classification schemes for Python-based LiDAR workflows.
+Misaligned scale factors, missing CRS VLRs, or incorrect point format assumptions silently corrupt LiDAR pipelines long before errors surface in downstream models. This guide covers the complete binary architecture of the LAS/LAZ specification, provides a production-tested Python ingestion workflow using `laspy`, and delivers the parameter tables and validation checks your team needs to ingest diverse survey datasets reliably. It is part of [Point Cloud Data Standards & Fundamentals](https://www.pythonlidar.com/point-cloud-data-standards-fundamentals/), the reference section covering specifications, [coordinate reference systems](https://www.pythonlidar.com/point-cloud-data-standards-fundamentals/coordinate-reference-systems/), and classification schemes for Python-based LiDAR workflows.
 
 ## Prerequisites
 
@@ -77,7 +77,7 @@ Before parsing binary point clouds, confirm your environment meets these require
 - **Python 3.10+** with `laspy` ≥ 2.4 and `numpy` ≥ 1.22 installed (`pip install laspy[lazrs] numpy`)
 - **lazrs or laszip backend** for LAZ decompression — `laspy[lazrs]` installs the Rust-based backend; `laspy[laszip]` uses the C++ library. Verify with `python -c "import lazrs; print(lazrs.__version__)"`
 - **Test dataset:** USGS 3DEP tiles (available via `py3dep`) or OpenTopography `.laz` downloads provide real-world diversity in point formats and VLR structures
-- **Baseline knowledge:** familiarity with little-endian binary encoding, fixed-width record layouts, and how [Coordinate Reference Systems](/point-cloud-data-standards-fundamentals/coordinate-reference-systems/) are embedded in spatial file formats
+- **Baseline knowledge:** familiarity with little-endian binary encoding, fixed-width record layouts, and how [Coordinate Reference Systems](https://www.pythonlidar.com/point-cloud-data-standards-fundamentals/coordinate-reference-systems/) are embedded in spatial file formats
 
 ## Core Workflow Architecture
 
@@ -241,7 +241,7 @@ Key fields engineers must validate at ingestion:
 | `x_min`/`x_max`, `y_min`/`y_max`, `z_min`/`z_max` | float64 | Declared bounding box; use to validate reconstructed coordinates |
 | `offset_to_point_data` | uint32 | Byte position where point records begin; skip here after parsing VLRs |
 
-Scale and offset values are stored as 64-bit doubles but are never applied to coordinates at rest — they define the round-trip formula. Choosing scale values too coarse (e.g., `0.01` instead of `0.001`) permanently degrades coordinate precision for the life of the file. For workflows that need header fields to stay in sync with external metadata files, see [Syncing Metadata Between LAS and Shapefiles](/point-cloud-data-standards-fundamentals/metadata-header-sync/).
+Scale and offset values are stored as 64-bit doubles but are never applied to coordinates at rest — they define the round-trip formula. Choosing scale values too coarse (e.g., `0.01` instead of `0.001`) permanently degrades coordinate precision for the life of the file. For workflows that need header fields to stay in sync with external metadata files, see [Syncing Metadata Between LAS and Shapefiles](https://www.pythonlidar.com/point-cloud-data-standards-fundamentals/metadata-header-sync/).
 
 ### 2. Variable Length Records (VLRs)
 
@@ -264,7 +264,7 @@ Critical VLR record IDs under `LASF_Projection`:
 | 34737 | GeoAscii Parameters |
 | 2112 | WKT2 Coordinate System (LAS 1.4, preferred) |
 
-The [Coordinate Reference Systems](/point-cloud-data-standards-fundamentals/coordinate-reference-systems/) guide details how to parse both GeoKey and WKT2 VLRs and handle files that carry neither.
+The [Coordinate Reference Systems](https://www.pythonlidar.com/point-cloud-data-standards-fundamentals/coordinate-reference-systems/) guide details how to parse both GeoKey and WKT2 VLRs and handle files that carry neither.
 
 ### 3. Point Data Records
 
@@ -293,7 +293,7 @@ For storage: `stored_integer = round((real_coordinate - offset) / scale)`
 
 Always use `float64` (not `float32`) for this arithmetic. A survey covering a UTM zone with `x_offset = 500000.0` and `x_scale = 0.001` will silently lose millimetre precision if cast to 32-bit at any intermediate step.
 
-When assessing return distributions and point spacing for downstream use, consult [Point Density Metrics](/point-cloud-data-standards-fundamentals/point-density-metrics/) before building classification or filtering routines.
+When assessing return distributions and point spacing for downstream use, consult [Point Density Metrics](https://www.pythonlidar.com/point-cloud-data-standards-fundamentals/point-density-metrics/) before building classification or filtering routines.
 
 ### 4. Extended Variable Length Records (EVLRs)
 
@@ -301,7 +301,7 @@ Introduced in LAS 1.4, EVLRs sit after the point data block. Their descriptor re
 
 ## Full Implementation: Validated LAS/LAZ Ingestion
 
-The following module covers all five phases of robust ingestion: header extraction, VLR parsing, streaming point reads, coordinate reconstruction, and bounds validation. Once point data is loaded, it can be passed directly to [PDAL pipeline stages](/pdal-pipeline-architecture-execution/) for filtering, reprojection, or ground classification.
+The following module covers all five phases of robust ingestion: header extraction, VLR parsing, streaming point reads, coordinate reconstruction, and bounds validation. Once point data is loaded, it can be passed directly to [PDAL pipeline stages](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/) for filtering, reprojection, or ground classification.
 
 ```python
 import laspy
@@ -533,7 +533,7 @@ def gate_las_file(file_path: str) -> list[str]:
 
 Run `gate_las_file` before committing any tile to your processing queue. Log failures to a dedicated quarantine table rather than letting them propagate.
 
-For per-file header edge cases — malformed EVLR pointers, truncated VLR chains in legacy 1.2 files, and GPS time epoch mismatches — the dedicated [How to Parse LAS Headers with Python](/point-cloud-data-standards-fundamentals/laslaz-file-structure/how-to-parse-las-headers-with-python/) guide covers each failure mode with corrective code.
+For per-file header edge cases — malformed EVLR pointers, truncated VLR chains in legacy 1.2 files, and GPS time epoch mismatches — the dedicated [How to Parse LAS Headers with Python](https://www.pythonlidar.com/point-cloud-data-standards-fundamentals/laslaz-file-structure/how-to-parse-las-headers-with-python/) guide covers each failure mode with corrective code.
 
 ## Performance Tuning
 
@@ -585,7 +585,7 @@ def process_tile_batch(
     return results
 ```
 
-Avoid sharing open `laspy` file handles between processes — each worker must open its own file. For [ASPRS classification](/point-cloud-data-standards-fundamentals/asprs-classification-codes/) interpretation of the classification codes written into point records, consult the ASPRS Classification Codes reference before building any filtering or ground-separation step.
+Avoid sharing open `laspy` file handles between processes — each worker must open its own file. For [ASPRS classification](https://www.pythonlidar.com/point-cloud-data-standards-fundamentals/asprs-classification-codes/) interpretation of the classification codes written into point records, consult the ASPRS Classification Codes reference before building any filtering or ground-separation step.
 
 ## Common Errors and Troubleshooting
 
@@ -602,15 +602,15 @@ Root cause: a conversion tool applied the offset twice, baking it into raw integ
 Root cause: calling `laspy.read()` instead of `laspy.open()` loads all point data at once. Fix: always use `laspy.open()` combined with `chunk_iterator`. The streaming pattern in `stream_points` above never materialises more than `chunk_size` points at once.
 
 **Silent spatial drift after CRS-aware processing**
-Root cause: the pipeline consumed the WKT2 VLR but the transformation library defaulted to the legacy GeoKey EPSG code when both were present, causing a datum mismatch. Fix: explicitly pass `always_xy=True` to `pyproj.Transformer` and prefer WKT2 over legacy GeoKeys. See [Fixing CRS Mismatches in Point Clouds](/point-cloud-data-standards-fundamentals/coordinate-reference-systems/fixing-crs-mismatches-in-point-clouds/) for the authoritative extraction order and correction workflow.
+Root cause: the pipeline consumed the WKT2 VLR but the transformation library defaulted to the legacy GeoKey EPSG code when both were present, causing a datum mismatch. Fix: explicitly pass `always_xy=True` to `pyproj.Transformer` and prefer WKT2 over legacy GeoKeys. See [Fixing CRS Mismatches in Point Clouds](https://www.pythonlidar.com/point-cloud-data-standards-fundamentals/coordinate-reference-systems/fixing-crs-mismatches-in-point-clouds/) for the authoritative extraction order and correction workflow.
 
 ---
 
 ## Related
 
-- [How to Parse LAS Headers with Python](/point-cloud-data-standards-fundamentals/laslaz-file-structure/how-to-parse-las-headers-with-python/) — deep dive on legacy 1.2 headers, malformed EVLR pointers, and edge-case VLR handling
-- [Coordinate Reference Systems](/point-cloud-data-standards-fundamentals/coordinate-reference-systems/) — extract, validate, and transform CRS data embedded in LAS VLRs
-- [ASPRS Classification Codes](/point-cloud-data-standards-fundamentals/asprs-classification-codes/) — interpret the classification integers written into each point record
-- [Point Density Metrics](/point-cloud-data-standards-fundamentals/point-density-metrics/) — verify that a parsed tile meets density requirements before downstream modelling
-- [Metadata and Header Sync](/point-cloud-data-standards-fundamentals/metadata-header-sync/) — keep LAS header fields consistent with sidecar metadata files across large tile sets
-- [Point Cloud Data Standards & Fundamentals](/point-cloud-data-standards-fundamentals/) — parent section covering LAS/LAZ, CRS management, metadata, and classification standards
+- [How to Parse LAS Headers with Python](https://www.pythonlidar.com/point-cloud-data-standards-fundamentals/laslaz-file-structure/how-to-parse-las-headers-with-python/) — deep dive on legacy 1.2 headers, malformed EVLR pointers, and edge-case VLR handling
+- [Coordinate Reference Systems](https://www.pythonlidar.com/point-cloud-data-standards-fundamentals/coordinate-reference-systems/) — extract, validate, and transform CRS data embedded in LAS VLRs
+- [ASPRS Classification Codes](https://www.pythonlidar.com/point-cloud-data-standards-fundamentals/asprs-classification-codes/) — interpret the classification integers written into each point record
+- [Point Density Metrics](https://www.pythonlidar.com/point-cloud-data-standards-fundamentals/point-density-metrics/) — verify that a parsed tile meets density requirements before downstream modelling
+- [Metadata and Header Sync](https://www.pythonlidar.com/point-cloud-data-standards-fundamentals/metadata-header-sync/) — keep LAS header fields consistent with sidecar metadata files across large tile sets
+- [Point Cloud Data Standards & Fundamentals](https://www.pythonlidar.com/point-cloud-data-standards-fundamentals/) — parent section covering LAS/LAZ, CRS management, metadata, and classification standards

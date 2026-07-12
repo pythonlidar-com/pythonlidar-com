@@ -2,7 +2,7 @@
 title: "IDW vs Mean Interpolation for DTM Gaps"
 description: "Comparing writers.gdal output_type=idw and output_type=mean for filling gaps in LiDAR DTMs — how each treats sparse cells, edge artefacts, and search radius, with a side-by-side benchmark."
 slug: "idw-vs-mean-interpolation-for-dtm-gaps"
-type: "long_tail"
+type: "howto"
 breadcrumb: "IDW vs Mean for DTM Gaps"
 datePublished: "2024-06-24"
 dateModified: "2026-07-12"
@@ -23,10 +23,10 @@ dateModified: "2026-07-12"
     {
       "@type": "BreadcrumbList",
       "itemListElement": [
-        {"@type": "ListItem", "position": 1, "name": "Home", "item": "https://pythonlidar.com/"},
-        {"@type": "ListItem", "position": 2, "name": "Ground Filtering & Terrain Models", "item": "https://pythonlidar.com/ground-filtering-dtm-dsm-generation/"},
-        {"@type": "ListItem", "position": 3, "name": "DTM Raster Generation", "item": "https://pythonlidar.com/ground-filtering-dtm-dsm-generation/dtm-raster-generation/"},
-        {"@type": "ListItem", "position": 4, "name": "IDW vs Mean for DTM Gaps", "item": "https://pythonlidar.com/ground-filtering-dtm-dsm-generation/dtm-raster-generation/idw-vs-mean-interpolation-for-dtm-gaps/"}
+        {"@type": "ListItem", "position": 1, "name": "Home", "item": "https://www.pythonlidar.com/"},
+        {"@type": "ListItem", "position": 2, "name": "Ground Filtering & Terrain Models", "item": "https://www.pythonlidar.com/ground-filtering-dtm-dsm-generation/"},
+        {"@type": "ListItem", "position": 3, "name": "DTM Raster Generation", "item": "https://www.pythonlidar.com/ground-filtering-dtm-dsm-generation/dtm-raster-generation/"},
+        {"@type": "ListItem", "position": 4, "name": "IDW vs Mean for DTM Gaps", "item": "https://www.pythonlidar.com/ground-filtering-dtm-dsm-generation/dtm-raster-generation/idw-vs-mean-interpolation-for-dtm-gaps/"}
       ]
     },
     {
@@ -62,7 +62,7 @@ dateModified: "2026-07-12"
 
 ## Context and Motivation
 
-This comparison is part of [DTM Raster Generation with PDAL](/ground-filtering-dtm-dsm-generation/dtm-raster-generation/). When a terrain grid has sparse cells — the norm at fine resolutions or in areas thinned by ground filtering — the `output_type` you hand to `writers.gdal` decides how each populated cell converts its handful of nearby points into a single elevation. The two workhorse choices are inverse-distance weighting and a plain arithmetic mean, and the difference between them is most visible precisely where the data is thin.
+This comparison is part of [DTM Raster Generation with PDAL](https://www.pythonlidar.com/ground-filtering-dtm-dsm-generation/dtm-raster-generation/). When a terrain grid has sparse cells — the norm at fine resolutions or in areas thinned by ground filtering — the `output_type` you hand to `writers.gdal` decides how each populated cell converts its handful of nearby points into a single elevation. The two workhorse choices are inverse-distance weighting and a plain arithmetic mean, and the difference between them is most visible precisely where the data is thin.
 
 The stakes are concrete. Slope, aspect, and contour products amplify small elevation errors, so a smearing artefact at a void margin or a flattened micro-ridge propagates into every derived layer. Understanding how `idw` and `mean` treat the same sparse neighbourhood lets you pick deliberately rather than accept the writer's default. The example tile used throughout is a rolling agricultural site in `EPSG:26918` (NAD83 / UTM zone 18N) rasterized at 0.5 m, a resolution fine enough to expose the interpolators' behaviour.
 
@@ -105,7 +105,7 @@ Both statistics gather the ground points that fall within `radius` of a cell cen
 - **`idw`** assigns each point a weight proportional to the inverse of its distance from the cell centre raised to a power (PDAL uses a fixed exponent internally). Near points dominate; distant points contribute only a whisper. In a sparse cell with one close point and one far point, the result sits close to the near point's elevation — which is usually the right answer on sloping ground.
 - **`mean`** ignores distance entirely and returns the arithmetic average of every point in the radius. That same sparse cell returns the midpoint of the two elevations, pulling the surface toward the more distant sample and, across many cells, flattening relief.
 
-Because both use the identical point set, they fill exactly the same cells. Neither can conjure a value for a cell whose radius contains no points — that remains NoData regardless of `output_type`, a property that matters when you plan the separate void-fill work in [Filling NoData Voids in DTM Rasters](/ground-filtering-dtm-dsm-generation/dtm-raster-generation/filling-nodata-voids-in-dtm-rasters/).
+Because both use the identical point set, they fill exactly the same cells. Neither can conjure a value for a cell whose radius contains no points — that remains NoData regardless of `output_type`, a property that matters when you plan the separate void-fill work in [Filling NoData Voids in DTM Rasters](https://www.pythonlidar.com/ground-filtering-dtm-dsm-generation/dtm-raster-generation/filling-nodata-voids-in-dtm-rasters/).
 
 ## Side-by-Side Comparison
 
@@ -268,8 +268,8 @@ A larger `radius` pulls more distant points into each cell. Under `mean`, those 
 
 ## Related
 
-- [DTM Raster Generation with PDAL](/ground-filtering-dtm-dsm-generation/dtm-raster-generation/) — parent guide to every writers.gdal option
-- [Generating a DTM GeoTIFF with writers.gdal](/ground-filtering-dtm-dsm-generation/dtm-raster-generation/generating-a-dtm-geotiff-with-writers-gdal/) — the base recipe both variants build on
-- [Filling NoData Voids in DTM Rasters](/ground-filtering-dtm-dsm-generation/dtm-raster-generation/filling-nodata-voids-in-dtm-rasters/) — the separate problem of empty cells neither interpolator solves
-- [Point Density Metrics](/point-cloud-data-standards-fundamentals/point-density-metrics/) — density determines how much the interpolators diverge
-- [Ground Filtering and DTM/DSM Generation with PDAL](/ground-filtering-dtm-dsm-generation/) — the wider terrain-modelling context
+- [DTM Raster Generation with PDAL](https://www.pythonlidar.com/ground-filtering-dtm-dsm-generation/dtm-raster-generation/) — parent guide to every writers.gdal option
+- [Generating a DTM GeoTIFF with writers.gdal](https://www.pythonlidar.com/ground-filtering-dtm-dsm-generation/dtm-raster-generation/generating-a-dtm-geotiff-with-writers-gdal/) — the base recipe both variants build on
+- [Filling NoData Voids in DTM Rasters](https://www.pythonlidar.com/ground-filtering-dtm-dsm-generation/dtm-raster-generation/filling-nodata-voids-in-dtm-rasters/) — the separate problem of empty cells neither interpolator solves
+- [Point Density Metrics](https://www.pythonlidar.com/point-cloud-data-standards-fundamentals/point-density-metrics/) — density determines how much the interpolators diverge
+- [Ground Filtering and DTM/DSM Generation with PDAL](https://www.pythonlidar.com/ground-filtering-dtm-dsm-generation/) — the wider terrain-modelling context

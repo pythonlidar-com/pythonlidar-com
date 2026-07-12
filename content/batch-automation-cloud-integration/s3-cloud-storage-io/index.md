@@ -2,7 +2,7 @@
 title: "S3 Cloud Storage I/O with PDAL"
 description: "Reading and writing LiDAR directly against Amazon S3 in PDAL — the GDAL /vsis3/ and /vsicurl/ virtual file systems, credentials and region config, streaming LAZ readers, and writing Cloud-Optimized GeoTIFFs back to a bucket."
 slug: "s3-cloud-storage-io"
-type: "cluster"
+type: "topic"
 breadcrumb: "S3 Cloud Storage I/O"
 datePublished: "2024-07-06"
 dateModified: "2026-07-12"
@@ -23,9 +23,9 @@ dateModified: "2026-07-12"
     {
       "@type": "BreadcrumbList",
       "itemListElement": [
-        {"@type": "ListItem", "position": 1, "name": "Home", "item": "https://pythonlidar.com/"},
-        {"@type": "ListItem", "position": 2, "name": "Batch Automation and Cloud Integration for PDAL", "item": "https://pythonlidar.com/batch-automation-cloud-integration/"},
-        {"@type": "ListItem", "position": 3, "name": "S3 Cloud Storage I/O", "item": "https://pythonlidar.com/batch-automation-cloud-integration/s3-cloud-storage-io/"}
+        {"@type": "ListItem", "position": 1, "name": "Home", "item": "https://www.pythonlidar.com/"},
+        {"@type": "ListItem", "position": 2, "name": "Batch Automation and Cloud Integration for PDAL", "item": "https://www.pythonlidar.com/batch-automation-cloud-integration/"},
+        {"@type": "ListItem", "position": 3, "name": "S3 Cloud Storage I/O", "item": "https://www.pythonlidar.com/batch-automation-cloud-integration/s3-cloud-storage-io/"}
       ]
     },
     {
@@ -68,7 +68,7 @@ dateModified: "2026-07-12"
 }
 </script>
 
-Moving LiDAR into the cloud changes the shape of every pipeline: the point cloud no longer lives on a local disk that PDAL can `open()` at will, it lives as an object behind an authenticated HTTP API. PDAL bridges that gap through GDAL's virtual file system layer — a family of path prefixes such as `/vsis3/`, `/vsicurl/`, and `/vsizip/` that make a remote object look, to a reader or writer stage, exactly like a filename. Get the prefix, the region, and the credential wiring right and a `readers.las` stage will pull a tile out of `s3://usgs-lidar-tiles/co_2019/tile_0421.laz` and a `writers.gdal` stage will push a finished terrain raster back to `s3://survey-deliverables/dtm/tile_0421.tif`, all without a single explicit download or upload call in your Python. This guide is part of [Batch Automation and Cloud Integration for PDAL](/batch-automation-cloud-integration/), and it focuses on the storage-access layer that every cloud workflow sits on.
+Moving LiDAR into the cloud changes the shape of every pipeline: the point cloud no longer lives on a local disk that PDAL can `open()` at will, it lives as an object behind an authenticated HTTP API. PDAL bridges that gap through GDAL's virtual file system layer — a family of path prefixes such as `/vsis3/`, `/vsicurl/`, and `/vsizip/` that make a remote object look, to a reader or writer stage, exactly like a filename. Get the prefix, the region, and the credential wiring right and a `readers.las` stage will pull a tile out of `s3://usgs-lidar-tiles/co_2019/tile_0421.laz` and a `writers.gdal` stage will push a finished terrain raster back to `s3://survey-deliverables/dtm/tile_0421.tif`, all without a single explicit download or upload call in your Python. This guide is part of [Batch Automation and Cloud Integration for PDAL](https://www.pythonlidar.com/batch-automation-cloud-integration/), and it focuses on the storage-access layer that every cloud workflow sits on.
 
 <svg viewBox="0 0 760 250" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="PDAL reading and writing S3 objects through GDAL virtual file systems" style="width:100%;max-width:760px;display:block;margin:1.5rem auto">
   <title>PDAL S3 I/O through the GDAL virtual file system layer</title>
@@ -120,7 +120,7 @@ Before wiring PDAL to a bucket, confirm the following:
 - **AWS credentials reachable by GDAL** — either environment variables, a shared `~/.aws/credentials` profile, or an attached IAM role. GDAL reads the same credential chain the AWS CLI uses.
 - **Read/write IAM permissions** — at minimum `s3:GetObject` and `s3:ListBucket` for reading, plus `s3:PutObject` for writing, scoped to the relevant bucket ARNs.
 - **The bucket's home region** — a region mismatch is the single most common cause of a signing failure, so know it before you start.
-- **Familiarity with the PDAL execution model** — see [PDAL Pipeline Architecture & Execution](/pdal-pipeline-architecture-execution/) for how readers, filters, and writers thread a point buffer together.
+- **Familiarity with the PDAL execution model** — see [PDAL Pipeline Architecture & Execution](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/) for how readers, filters, and writers thread a point buffer together.
 
 ## Core Workflow Architecture
 
@@ -134,7 +134,7 @@ Every S3-backed pipeline follows the same lifecycle. The only thing that changes
 6. **Write-back** — `writers.gdal` or `writers.las` targets another `/vsis3/` path (GDAL buffers then issues a `PutObject` on close), or writes to local scratch for a subsequent boto3 multipart upload.
 7. **Validation** — a `head_object` call confirms the object exists and reports its size and `ETag`, and a point-count or raster-dimension check confirms the payload is intact.
 
-The two child guides drill into the two halves of this cycle: [Streaming LAZ from S3 with PDAL](/batch-automation-cloud-integration/s3-cloud-storage-io/streaming-laz-from-s3-with-pdal/) covers the read side end to end, and [Writing Cloud-Optimized GeoTIFFs to S3](/batch-automation-cloud-integration/s3-cloud-storage-io/writing-cloud-optimized-geotiffs-to-s3/) covers producing and uploading a COG raster.
+The two child guides drill into the two halves of this cycle: [Streaming LAZ from S3 with PDAL](https://www.pythonlidar.com/batch-automation-cloud-integration/s3-cloud-storage-io/streaming-laz-from-s3-with-pdal/) covers the read side end to end, and [Writing Cloud-Optimized GeoTIFFs to S3](https://www.pythonlidar.com/batch-automation-cloud-integration/s3-cloud-storage-io/writing-cloud-optimized-geotiffs-to-s3/) covers producing and uploading a COG raster.
 
 ## Full Implementation
 
@@ -248,7 +248,7 @@ The three `CPL_VSIL_CURL` and GDAL variables are what separate a snappy remote r
 
 ### The writer stage
 
-`writers.gdal` rasterises the surviving ground points into a grid and hands the finished GeoTIFF to the same VSI layer for a `PutObject`. The `gdalopts` string carries the GeoTIFF creation options straight through to the GDAL driver — here internal tiling and DEFLATE compression, which are the structural precursors to a Cloud-Optimized GeoTIFF. The dedicated child guide layers overviews and the COG driver on top. Because GDAL buffers the whole raster and PUTs it once on close, a crash mid-run leaves no partial object — but it also means very large rasters are held in memory, which the [Memory Management](/pdal-pipeline-architecture-execution/memory-management/) guide addresses.
+`writers.gdal` rasterises the surviving ground points into a grid and hands the finished GeoTIFF to the same VSI layer for a `PutObject`. The `gdalopts` string carries the GeoTIFF creation options straight through to the GDAL driver — here internal tiling and DEFLATE compression, which are the structural precursors to a Cloud-Optimized GeoTIFF. The dedicated child guide layers overviews and the COG driver on top. Because GDAL buffers the whole raster and PUTs it once on close, a crash mid-run leaves no partial object — but it also means very large rasters are held in memory, which the [Memory Management](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/memory-management/) guide addresses.
 
 ## Parameter and Configuration Reference
 
@@ -299,11 +299,11 @@ AWS_REGION=us-west-2 gdalinfo /vsis3/survey-deliverables/dtm/tile_0421.tif | gre
 
 ## Performance Tuning
 
-**Prefer range-friendly formats for remote reads.** A plain LAZ object forces a whole-file transfer because its chunks are not spatially indexed; a COPC (`.copc.laz`) or an EPT tileset lets PDAL issue targeted range `GET`s for only the octree nodes a query touches. If you routinely subset large tiles from S3, converting archives to COPC pays for itself on the very first windowed read. The child guide on [streaming LAZ](/batch-automation-cloud-integration/s3-cloud-storage-io/streaming-laz-from-s3-with-pdal/) quantifies the whole-file penalty.
+**Prefer range-friendly formats for remote reads.** A plain LAZ object forces a whole-file transfer because its chunks are not spatially indexed; a COPC (`.copc.laz`) or an EPT tileset lets PDAL issue targeted range `GET`s for only the octree nodes a query touches. If you routinely subset large tiles from S3, converting archives to COPC pays for itself on the very first windowed read. The child guide on [streaming LAZ](https://www.pythonlidar.com/batch-automation-cloud-integration/s3-cloud-storage-io/streaming-laz-from-s3-with-pdal/) quantifies the whole-file penalty.
 
 **Size the curl cache to your access pattern.** Header probes, VLR reads, and COPC hierarchy fetches all benefit from `CPL_VSIL_CURL_CACHE_SIZE`. On a 4 GB container, 256 MB is a safe cache; on a fat batch node you can push it higher. Pair it with `VSI_CACHE=TRUE` so the file-handle block cache is active.
 
-**Co-locate compute and storage.** Latency to S3 dominates small-object workloads. Running PDAL in the same region as the bucket removes cross-region round-trip time and, for many workloads, cross-region data-transfer charges. This is a core reason cloud batch jobs pin their compute to the bucket's region — see [AWS Batch Processing](/batch-automation-cloud-integration/aws-batch-processing/) for the scaling pattern and [PDAL Docker Containers](/batch-automation-cloud-integration/pdal-docker-containers/) for packaging the runtime.
+**Co-locate compute and storage.** Latency to S3 dominates small-object workloads. Running PDAL in the same region as the bucket removes cross-region round-trip time and, for many workloads, cross-region data-transfer charges. This is a core reason cloud batch jobs pin their compute to the bucket's region — see [AWS Batch Processing](https://www.pythonlidar.com/batch-automation-cloud-integration/aws-batch-processing/) for the scaling pattern and [PDAL Docker Containers](https://www.pythonlidar.com/batch-automation-cloud-integration/pdal-docker-containers/) for packaging the runtime.
 
 **Batch metadata calls.** A per-tile `head_object` is cheap individually but adds up across thousands of tiles. When validating a large manifest, use `list_objects_v2` with a prefix to enumerate results in pages of up to 1,000 rather than probing each key.
 
@@ -351,15 +351,15 @@ Yes. `writers.gdal` accepts a `/vsis3/bucket/key.tif` filename and GDAL buffers 
 
 **Where should credentials live in a containerised PDAL job?**
 
-Prefer an IAM task or instance role over baked-in keys. On ECS/Fargate the task role is exposed through the container credential endpoint that both GDAL and boto3 read automatically, so no secret ever enters the image or the environment. See [PDAL Docker Containers](/batch-automation-cloud-integration/pdal-docker-containers/) for the packaging details.
+Prefer an IAM task or instance role over baked-in keys. On ECS/Fargate the task role is exposed through the container credential endpoint that both GDAL and boto3 read automatically, so no secret ever enters the image or the environment. See [PDAL Docker Containers](https://www.pythonlidar.com/batch-automation-cloud-integration/pdal-docker-containers/) for the packaging details.
 
 ---
 
 ## Related
 
-- [Batch Automation and Cloud Integration for PDAL](/batch-automation-cloud-integration/) — parent overview of running PDAL at scale in the cloud
-- [Streaming LAZ from S3 with PDAL](/batch-automation-cloud-integration/s3-cloud-storage-io/streaming-laz-from-s3-with-pdal/) — read a single tile straight from a bucket with no local copy
-- [Writing Cloud-Optimized GeoTIFFs to S3](/batch-automation-cloud-integration/s3-cloud-storage-io/writing-cloud-optimized-geotiffs-to-s3/) — produce a COG DTM and push it back to the bucket
-- [AWS Batch Processing](/batch-automation-cloud-integration/aws-batch-processing/) — fan tile jobs across a managed compute fleet in the bucket's region
-- [PDAL Docker Containers](/batch-automation-cloud-integration/pdal-docker-containers/) — package the PDAL + GDAL runtime with the credential wiring baked in
-- [Memory Management in PDAL Pipelines](/pdal-pipeline-architecture-execution/memory-management/) — control the footprint of buffered remote writes and large rasters
+- [Batch Automation and Cloud Integration for PDAL](https://www.pythonlidar.com/batch-automation-cloud-integration/) — parent overview of running PDAL at scale in the cloud
+- [Streaming LAZ from S3 with PDAL](https://www.pythonlidar.com/batch-automation-cloud-integration/s3-cloud-storage-io/streaming-laz-from-s3-with-pdal/) — read a single tile straight from a bucket with no local copy
+- [Writing Cloud-Optimized GeoTIFFs to S3](https://www.pythonlidar.com/batch-automation-cloud-integration/s3-cloud-storage-io/writing-cloud-optimized-geotiffs-to-s3/) — produce a COG DTM and push it back to the bucket
+- [AWS Batch Processing](https://www.pythonlidar.com/batch-automation-cloud-integration/aws-batch-processing/) — fan tile jobs across a managed compute fleet in the bucket's region
+- [PDAL Docker Containers](https://www.pythonlidar.com/batch-automation-cloud-integration/pdal-docker-containers/) — package the PDAL + GDAL runtime with the credential wiring baked in
+- [Memory Management in PDAL Pipelines](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/memory-management/) — control the footprint of buffered remote writes and large rasters

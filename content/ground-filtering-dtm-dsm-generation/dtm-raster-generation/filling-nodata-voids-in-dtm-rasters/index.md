@@ -2,7 +2,7 @@
 title: "Filling NoData Voids in DTM Rasters"
 description: "Techniques to fill NoData holes in a LiDAR DTM after rasterization — writers.gdal window_size, gdal_fillnodata, and rasterio fillnodata — plus how to avoid over-smoothing real terrain."
 slug: "filling-nodata-voids-in-dtm-rasters"
-type: "long_tail"
+type: "howto"
 breadcrumb: "Filling NoData Voids in DTMs"
 datePublished: "2024-06-24"
 dateModified: "2026-07-12"
@@ -23,10 +23,10 @@ dateModified: "2026-07-12"
     {
       "@type": "BreadcrumbList",
       "itemListElement": [
-        {"@type": "ListItem", "position": 1, "name": "Home", "item": "https://pythonlidar.com/"},
-        {"@type": "ListItem", "position": 2, "name": "Ground Filtering & Terrain Models", "item": "https://pythonlidar.com/ground-filtering-dtm-dsm-generation/"},
-        {"@type": "ListItem", "position": 3, "name": "DTM Raster Generation", "item": "https://pythonlidar.com/ground-filtering-dtm-dsm-generation/dtm-raster-generation/"},
-        {"@type": "ListItem", "position": 4, "name": "Filling NoData Voids in DTMs", "item": "https://pythonlidar.com/ground-filtering-dtm-dsm-generation/dtm-raster-generation/filling-nodata-voids-in-dtm-rasters/"}
+        {"@type": "ListItem", "position": 1, "name": "Home", "item": "https://www.pythonlidar.com/"},
+        {"@type": "ListItem", "position": 2, "name": "Ground Filtering & Terrain Models", "item": "https://www.pythonlidar.com/ground-filtering-dtm-dsm-generation/"},
+        {"@type": "ListItem", "position": 3, "name": "DTM Raster Generation", "item": "https://www.pythonlidar.com/ground-filtering-dtm-dsm-generation/dtm-raster-generation/"},
+        {"@type": "ListItem", "position": 4, "name": "Filling NoData Voids in DTMs", "item": "https://www.pythonlidar.com/ground-filtering-dtm-dsm-generation/dtm-raster-generation/filling-nodata-voids-in-dtm-rasters/"}
       ]
     },
     {
@@ -72,7 +72,7 @@ dateModified: "2026-07-12"
 
 ## Context and Motivation
 
-This guide is part of [DTM Raster Generation with PDAL](/ground-filtering-dtm-dsm-generation/dtm-raster-generation/). Even a well-tuned rasterization leaves gaps: ground returns thin out under dense canopy, water absorbs the laser and returns nothing, and building footprints contain no bare-earth points at all. The result is a DTM peppered with NoData cells that break contouring, leave black holes in hillshades, and trip up hydrological flow routing.
+This guide is part of [DTM Raster Generation with PDAL](https://www.pythonlidar.com/ground-filtering-dtm-dsm-generation/dtm-raster-generation/). Even a well-tuned rasterization leaves gaps: ground returns thin out under dense canopy, water absorbs the laser and returns nothing, and building footprints contain no bare-earth points at all. The result is a DTM peppered with NoData cells that break contouring, leave black holes in hillshades, and trip up hydrological flow routing.
 
 Filling those voids is a balancing act rather than a one-liner. Fill too timidly and derived products still fail on the remaining holes; fill too aggressively and you smooth invented terrain across a lake or a warehouse roof, corrupting the very measurements a survey exists to provide. This guide walks the three tools that matter — the in-writer `window_size`, GDAL's `gdal_fillnodata`, and `rasterio.fill.fillnodata` — and shows how to bound each so it closes honest gaps without manufacturing terrain. The worked raster is a coastal 2 m DTM in `EPSG:32610` (WGS 84 / UTM zone 10N), where tidal flats and forest edges create exactly the mix of small and large voids that makes this decision matter.
 
@@ -111,7 +111,7 @@ Filling those voids is a balancing act rather than a one-liner. Fill too timidly
 
 | Requirement | Detail |
 |---|---|
-| A rasterized DTM | GeoTIFF from [writers.gdal](/ground-filtering-dtm-dsm-generation/dtm-raster-generation/generating-a-dtm-geotiff-with-writers-gdal/) with a valid `nodata` tag |
+| A rasterized DTM | GeoTIFF from [writers.gdal](https://www.pythonlidar.com/ground-filtering-dtm-dsm-generation/dtm-raster-generation/generating-a-dtm-geotiff-with-writers-gdal/) with a valid `nodata` tag |
 | `rasterio` | 1.3+ (`fillnodata` lives in `rasterio.fill`) |
 | GDAL CLI | 3.x for `gdal_fillnodata` (optional; bundled with a full GDAL install) |
 | `numpy` | any recent version |
@@ -339,7 +339,7 @@ Zero outliers and a still-present largest void (the building or lake you meant t
 
 **3. window_size and post-fill can double-count.** If you set a large `window_size` and then run an aggressive `fillnodata`, you interpolate atop interpolated cells, compounding smoothing. Use `window_size` for speckle and a single bounded post-pass for the rest, not both at maximum strength.
 
-**4. Filling before deriving products, not after.** Compute slope, aspect, and hillshade from the filled DTM, but keep the unfilled DTM as the archival elevation record. Filled cells are estimates, and downstream volumetric or accuracy reporting should exclude them — a distinction worth documenting in the file's metadata, much as [Metadata & Header Sync](/point-cloud-data-standards-fundamentals/metadata-header-sync/) recommends for point clouds.
+**4. Filling before deriving products, not after.** Compute slope, aspect, and hillshade from the filled DTM, but keep the unfilled DTM as the archival elevation record. Filled cells are estimates, and downstream volumetric or accuracy reporting should exclude them — a distinction worth documenting in the file's metadata, much as [Metadata & Header Sync](https://www.pythonlidar.com/point-cloud-data-standards-fundamentals/metadata-header-sync/) recommends for point clouds.
 
 ## Frequently Asked Questions
 
@@ -363,8 +363,8 @@ No. All three techniques operate on cell values only; they preserve the grid geo
 
 ## Related
 
-- [DTM Raster Generation with PDAL](/ground-filtering-dtm-dsm-generation/dtm-raster-generation/) — parent guide covering window_size and the full rasterization workflow
-- [Generating a DTM GeoTIFF with writers.gdal](/ground-filtering-dtm-dsm-generation/dtm-raster-generation/generating-a-dtm-geotiff-with-writers-gdal/) — produces the raster this guide repairs
-- [IDW vs Mean Interpolation for DTM Gaps](/ground-filtering-dtm-dsm-generation/dtm-raster-generation/idw-vs-mean-interpolation-for-dtm-gaps/) — how the interpolator choice affects which cells stay empty
-- [Metadata & Header Sync](/point-cloud-data-standards-fundamentals/metadata-header-sync/) — documenting which cells are measured versus filled
-- [Ground Filtering and DTM/DSM Generation with PDAL](/ground-filtering-dtm-dsm-generation/) — the broader terrain-modelling context
+- [DTM Raster Generation with PDAL](https://www.pythonlidar.com/ground-filtering-dtm-dsm-generation/dtm-raster-generation/) — parent guide covering window_size and the full rasterization workflow
+- [Generating a DTM GeoTIFF with writers.gdal](https://www.pythonlidar.com/ground-filtering-dtm-dsm-generation/dtm-raster-generation/generating-a-dtm-geotiff-with-writers-gdal/) — produces the raster this guide repairs
+- [IDW vs Mean Interpolation for DTM Gaps](https://www.pythonlidar.com/ground-filtering-dtm-dsm-generation/dtm-raster-generation/idw-vs-mean-interpolation-for-dtm-gaps/) — how the interpolator choice affects which cells stay empty
+- [Metadata & Header Sync](https://www.pythonlidar.com/point-cloud-data-standards-fundamentals/metadata-header-sync/) — documenting which cells are measured versus filled
+- [Ground Filtering and DTM/DSM Generation with PDAL](https://www.pythonlidar.com/ground-filtering-dtm-dsm-generation/) — the broader terrain-modelling context

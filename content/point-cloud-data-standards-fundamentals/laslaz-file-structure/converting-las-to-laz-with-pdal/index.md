@@ -2,7 +2,7 @@
 title: "Converting LAS to LAZ with PDAL"
 description: "How to losslessly compress LAS to LAZ (and back) with PDAL writers.las compression, preserving the header, VLRs, extra dimensions, and point format, plus batch conversion and verification."
 slug: "converting-las-to-laz-with-pdal"
-type: "long_tail"
+type: "howto"
 breadcrumb: "Converting LAS to LAZ"
 datePublished: "2024-07-07"
 dateModified: "2026-07-12"
@@ -23,10 +23,10 @@ dateModified: "2026-07-12"
     {
       "@type": "BreadcrumbList",
       "itemListElement": [
-        { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://pythonlidar.com/" },
-        { "@type": "ListItem", "position": 2, "name": "Point Cloud Data Standards & Fundamentals", "item": "https://pythonlidar.com/point-cloud-data-standards-fundamentals/" },
-        { "@type": "ListItem", "position": 3, "name": "LAS/LAZ File Structure", "item": "https://pythonlidar.com/point-cloud-data-standards-fundamentals/laslaz-file-structure/" },
-        { "@type": "ListItem", "position": 4, "name": "Converting LAS to LAZ", "item": "https://pythonlidar.com/point-cloud-data-standards-fundamentals/laslaz-file-structure/converting-las-to-laz-with-pdal/" }
+        { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://www.pythonlidar.com/" },
+        { "@type": "ListItem", "position": 2, "name": "Point Cloud Data Standards & Fundamentals", "item": "https://www.pythonlidar.com/point-cloud-data-standards-fundamentals/" },
+        { "@type": "ListItem", "position": 3, "name": "LAS/LAZ File Structure", "item": "https://www.pythonlidar.com/point-cloud-data-standards-fundamentals/laslaz-file-structure/" },
+        { "@type": "ListItem", "position": 4, "name": "Converting LAS to LAZ", "item": "https://www.pythonlidar.com/point-cloud-data-standards-fundamentals/laslaz-file-structure/converting-las-to-laz-with-pdal/" }
       ]
     },
     {
@@ -73,7 +73,7 @@ dateModified: "2026-07-12"
 
 ## Context and Motivation
 
-This guide is part of [LAS/LAZ File Structure](/point-cloud-data-standards-fundamentals/laslaz-file-structure/), which lays out the binary anatomy that compression has to preserve. Conversion sounds trivial — swap an extension — but the details that get dropped along the way are what turn a routine compression into a corrupted deliverable.
+This guide is part of [LAS/LAZ File Structure](https://www.pythonlidar.com/point-cloud-data-standards-fundamentals/laslaz-file-structure/), which lays out the binary anatomy that compression has to preserve. Conversion sounds trivial — swap an extension — but the details that get dropped along the way are what turn a routine compression into a corrupted deliverable.
 
 LAZ is LAS with LASzip compression applied to the point records; the two formats share an identical header structure and point layout. Because the codec is lossless, the appeal is obvious: a survey tile shrinks to a fraction of its uncompressed size with no loss of precision, which is why almost every archive, download portal, and cloud bucket stores LiDAR as LAZ. The trap is that a careless conversion preserves the coordinates while quietly discarding the things that make the file usable — the coordinate reference system in a VLR, the custom per-point dimensions a classifier wrote into the Extra Bytes record, or the exact scale and offset that downstream tools expect. PDAL's `writers.las` handles the compression itself in one flag, but faithful conversion depends on two more settings that tell it to carry the full header and every extra dimension across the boundary. Get those right and the LAZ is a perfect stand-in for the LAS; get them wrong and the loss is invisible until something downstream fails to find its CRS or its custom attribute.
 
@@ -132,7 +132,7 @@ LAZ is LAS with LASzip compression applied to the point records; the two formats
 | Input | any LAS 1.2–1.4 file; extra dimensions declared in an Extra Bytes VLR if present |
 | Disk | space for both source and output during conversion |
 
-If your source LAS has an empty or incorrect CRS, fix it before compressing — LASzip faithfully preserves whatever VLR is present, including a wrong one. The [Coordinate Reference Systems](/point-cloud-data-standards-fundamentals/coordinate-reference-systems/) guide covers repair. For header edge cases the conversion must carry across intact, the sibling [How to Parse LAS Headers with Python](/point-cloud-data-standards-fundamentals/laslaz-file-structure/how-to-parse-las-headers-with-python/) guide is the reference.
+If your source LAS has an empty or incorrect CRS, fix it before compressing — LASzip faithfully preserves whatever VLR is present, including a wrong one. The [Coordinate Reference Systems](https://www.pythonlidar.com/point-cloud-data-standards-fundamentals/coordinate-reference-systems/) guide covers repair. For header edge cases the conversion must carry across intact, the sibling [How to Parse LAS Headers with Python](https://www.pythonlidar.com/point-cloud-data-standards-fundamentals/laslaz-file-structure/how-to-parse-las-headers-with-python/) guide is the reference.
 
 ## Step-by-Step Implementation
 
@@ -159,7 +159,7 @@ Three settings do the real work. `compression: true` triggers LASzip. `forward: 
 
 ### Step 2 — Preserve the point format and header exactly
 
-By default PDAL may pick a point format that fits the dimensions it sees, which can silently downgrade a format 6 file. `forward: "all"` pins the output format to match the source, so a format 7 file with RGB stays format 7. This matters because the point format ID governs which dimensions exist at all, as the [LAS/LAZ File Structure](/point-cloud-data-standards-fundamentals/laslaz-file-structure/) reference details. If you need to force a specific version regardless of source, add `minor_version`:
+By default PDAL may pick a point format that fits the dimensions it sees, which can silently downgrade a format 6 file. `forward: "all"` pins the output format to match the source, so a format 7 file with RGB stays format 7. This matters because the point format ID governs which dimensions exist at all, as the [LAS/LAZ File Structure](https://www.pythonlidar.com/point-cloud-data-standards-fundamentals/laslaz-file-structure/) reference details. If you need to force a specific version regardless of source, add `minor_version`:
 
 ```json
 {
@@ -355,7 +355,7 @@ Because LASzip is lossless, `np.array_equal` holds for every dimension including
 If a classifier or feature-extraction step wrote custom per-point dimensions into the Extra Bytes VLR, PDAL will not carry them into the LAZ unless you ask. The default writes only the standard dimensions for the point format, so the conversion looks fine — same point count, same coordinates — while silently dropping the data your downstream model needs. Always set `extra_dims: "all"` when converting analysed data.
 
 **2. `forward: "all"` copies a wrong CRS just as faithfully as a right one.**
-Lossless preservation cuts both ways. If the source header carries an incorrect CRS VLR, the LAZ inherits it exactly. Validate and fix the CRS in the LAS before compressing, using the [Coordinate Reference Systems](/point-cloud-data-standards-fundamentals/coordinate-reference-systems/) workflow, rather than expecting the conversion to clean it up.
+Lossless preservation cuts both ways. If the source header carries an incorrect CRS VLR, the LAZ inherits it exactly. Validate and fix the CRS in the LAS before compressing, using the [Coordinate Reference Systems](https://www.pythonlidar.com/point-cloud-data-standards-fundamentals/coordinate-reference-systems/) workflow, rather than expecting the conversion to clean it up.
 
 **3. A point-format downgrade quietly truncates dimensions.**
 Omitting `forward: "all"` lets PDAL choose a point format, and it may pick a narrower one than the source. A format 7 file (with RGB) written as format 1 loses colour with no error. Pinning the format via `forward: "all"` — or `minor_version` plus an explicit format — prevents this.
@@ -375,18 +375,18 @@ They do, but only if you tell PDAL to carry them. Set `extra_dims: "all"` on `wr
 
 **How do I keep the original header and VLRs when compressing?**
 
-Use `forward: "all"` on `writers.las`. This propagates the source header's scale, offset, point format, creation date, and every VLR — including the CRS record — into the output. Without `forward: "all"`, PDAL recomputes some header fields and may drop non-CRS VLRs that downstream tools rely on. Inspecting those fields is covered in [How to Parse LAS Headers with Python](/point-cloud-data-standards-fundamentals/laslaz-file-structure/how-to-parse-las-headers-with-python/).
+Use `forward: "all"` on `writers.las`. This propagates the source header's scale, offset, point format, creation date, and every VLR — including the CRS record — into the output. Without `forward: "all"`, PDAL recomputes some header fields and may drop non-CRS VLRs that downstream tools rely on. Inspecting those fields is covered in [How to Parse LAS Headers with Python](https://www.pythonlidar.com/point-cloud-data-standards-fundamentals/laslaz-file-structure/how-to-parse-las-headers-with-python/).
 
 **Can PDAL convert LAZ back to LAS?**
 
-Yes. The reverse is symmetric: read the `.laz` and write with `writers.las` using `compression: false` and a `.las` filename. Because compression is lossless, the decompressed LAS is identical in content to the original, which makes the round trip safe for archival verification. Whether to keep files as LAZ or LAS during active work is weighed in [LAZ vs Uncompressed LAS for Iterative Processing](/pdal-pipeline-architecture-execution/memory-management/laz-vs-uncompressed-las-for-iterative-processing/).
+Yes. The reverse is symmetric: read the `.laz` and write with `writers.las` using `compression: false` and a `.las` filename. Because compression is lossless, the decompressed LAS is identical in content to the original, which makes the round trip safe for archival verification. Whether to keep files as LAZ or LAS during active work is weighed in [LAZ vs Uncompressed LAS for Iterative Processing](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/memory-management/laz-vs-uncompressed-las-for-iterative-processing/).
 
 ---
 
 ## Related
 
-- [LAS/LAZ File Structure](/point-cloud-data-standards-fundamentals/laslaz-file-structure/) — parent guide on the binary layout that compression preserves
-- [How to Parse LAS Headers with Python](/point-cloud-data-standards-fundamentals/laslaz-file-structure/how-to-parse-las-headers-with-python/) — inspect the header and VLR fields the conversion must carry across
-- [LAZ vs Uncompressed LAS for Iterative Processing](/pdal-pipeline-architecture-execution/memory-management/laz-vs-uncompressed-las-for-iterative-processing/) — when to keep files compressed versus uncompressed during development
-- [Coordinate Reference Systems](/point-cloud-data-standards-fundamentals/coordinate-reference-systems/) — validate and fix the CRS VLR before compressing
-- [Point Cloud Data Standards & Fundamentals](/point-cloud-data-standards-fundamentals/) — parent section on LAS/LAZ, CRS, metadata, and classification standards
+- [LAS/LAZ File Structure](https://www.pythonlidar.com/point-cloud-data-standards-fundamentals/laslaz-file-structure/) — parent guide on the binary layout that compression preserves
+- [How to Parse LAS Headers with Python](https://www.pythonlidar.com/point-cloud-data-standards-fundamentals/laslaz-file-structure/how-to-parse-las-headers-with-python/) — inspect the header and VLR fields the conversion must carry across
+- [LAZ vs Uncompressed LAS for Iterative Processing](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/memory-management/laz-vs-uncompressed-las-for-iterative-processing/) — when to keep files compressed versus uncompressed during development
+- [Coordinate Reference Systems](https://www.pythonlidar.com/point-cloud-data-standards-fundamentals/coordinate-reference-systems/) — validate and fix the CRS VLR before compressing
+- [Point Cloud Data Standards & Fundamentals](https://www.pythonlidar.com/point-cloud-data-standards-fundamentals/) — parent section on LAS/LAZ, CRS, metadata, and classification standards

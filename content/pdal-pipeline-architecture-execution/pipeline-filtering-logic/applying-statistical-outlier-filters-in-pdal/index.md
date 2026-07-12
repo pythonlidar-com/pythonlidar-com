@@ -2,7 +2,7 @@
 title: "Applying Statistical Outlier Filters in PDAL"
 description: "Step-by-step guide to applying PDAL's filters.outlier stage with statistical method in Python: parameter tuning, pipeline placement, complete working example, verification, and edge cases."
 slug: "applying-statistical-outlier-filters-in-pdal"
-type: "long_tail"
+type: "howto"
 breadcrumb: "Applying Statistical Outlier Filters"
 datePublished: "2024-11-15"
 dateModified: "2026-06-24"
@@ -22,16 +22,16 @@ dateModified: "2026-06-24"
       "publisher": {"@type": "Organization", "name": "pythonlidar.com"},
       "mainEntityOfPage": {
         "@type": "WebPage",
-        "@id": "https://pythonlidar.com/pdal-pipeline-architecture-execution/pipeline-filtering-logic/applying-statistical-outlier-filters-in-pdal/"
+        "@id": "https://www.pythonlidar.com/pdal-pipeline-architecture-execution/pipeline-filtering-logic/applying-statistical-outlier-filters-in-pdal/"
       }
     },
     {
       "@type": "BreadcrumbList",
       "itemListElement": [
-        {"@type": "ListItem", "position": 1, "name": "Home", "item": "https://pythonlidar.com/"},
-        {"@type": "ListItem", "position": 2, "name": "PDAL Pipeline Architecture & Execution", "item": "https://pythonlidar.com/pdal-pipeline-architecture-execution/"},
-        {"@type": "ListItem", "position": 3, "name": "Pipeline Filtering Logic", "item": "https://pythonlidar.com/pdal-pipeline-architecture-execution/pipeline-filtering-logic/"},
-        {"@type": "ListItem", "position": 4, "name": "Applying Statistical Outlier Filters", "item": "https://pythonlidar.com/pdal-pipeline-architecture-execution/pipeline-filtering-logic/applying-statistical-outlier-filters-in-pdal/"}
+        {"@type": "ListItem", "position": 1, "name": "Home", "item": "https://www.pythonlidar.com/"},
+        {"@type": "ListItem", "position": 2, "name": "PDAL Pipeline Architecture & Execution", "item": "https://www.pythonlidar.com/pdal-pipeline-architecture-execution/"},
+        {"@type": "ListItem", "position": 3, "name": "Pipeline Filtering Logic", "item": "https://www.pythonlidar.com/pdal-pipeline-architecture-execution/pipeline-filtering-logic/"},
+        {"@type": "ListItem", "position": 4, "name": "Applying Statistical Outlier Filters", "item": "https://www.pythonlidar.com/pdal-pipeline-architecture-execution/pipeline-filtering-logic/applying-statistical-outlier-filters-in-pdal/"}
       ]
     },
     {
@@ -79,7 +79,7 @@ dateModified: "2026-06-24"
 
 **TL;DR:** Insert `filters.outlier` with `"method": "statistical"` into your PDAL pipeline immediately after the reader to remove noise points; set `mean_k` between 10 and 30 and `multiplier` between 2.0 and 3.0 for typical airborne LiDAR.
 
-This guide is part of [Pipeline Filtering Logic](/pdal-pipeline-architecture-execution/pipeline-filtering-logic/), the parent reference for sequencing and combining filter stages in a PDAL execution model. Statistical outlier removal (SOR) is the most common first cleaning pass applied to raw LiDAR returns—before ground classification, rasterization, or any measurement that depends on surface continuity.
+This guide is part of [Pipeline Filtering Logic](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/pipeline-filtering-logic/), the parent reference for sequencing and combining filter stages in a PDAL execution model. Statistical outlier removal (SOR) is the most common first cleaning pass applied to raw LiDAR returns—before ground classification, rasterization, or any measurement that depends on surface continuity.
 
 ## Context and Motivation
 
@@ -87,7 +87,7 @@ Raw LiDAR acquisitions contain returns that no classification code can meaningfu
 
 Fixed-threshold Z-range filters catch gross spikes but miss noise at mid-elevation because they have no knowledge of local point density. Statistical outlier removal solves this by measuring each point's relationship to its *k* nearest neighbors rather than checking an absolute bound. A point is an outlier only if it is unusually far from its local neighborhood—not because it exceeds a fixed threshold. This density-awareness makes SOR essential for mixed-resolution datasets where a single Z cutoff would destroy valid sparse returns in rural areas while leaving dense urban noise untouched.
 
-Within a broader [PDAL Pipeline Architecture & Execution](/pdal-pipeline-architecture-execution/) workflow, SOR sits at the boundary between raw acquisition data and analytically meaningful point clouds. Everything downstream—ground models, tree height extraction, building footprints—benefits from a clean input. The [pipeline validation](/pdal-pipeline-architecture-execution/pipeline-validation/) stage you run before deployment will flag a missing or misnamed filter immediately, catching configuration errors before they propagate to expensive downstream steps.
+Within a broader [PDAL Pipeline Architecture & Execution](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/) workflow, SOR sits at the boundary between raw acquisition data and analytically meaningful point clouds. Everything downstream—ground models, tree height extraction, building footprints—benefits from a clean input. The [pipeline validation](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/pipeline-validation/) stage you run before deployment will flag a missing or misnamed filter immediately, catching configuration errors before they propagate to expensive downstream steps.
 
 <svg viewBox="0 0 700 260" role="img" aria-label="Statistical outlier removal: k-d tree neighborhood query diagram" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:700px;display:block;margin:1.5rem auto;">
   <title>SOR algorithm: each point queries k nearest neighbours; outliers exceed mean+multiplier×stddev</title>
@@ -210,7 +210,7 @@ For a first pass on an unknown airborne dataset, `mean_k=20` and `multiplier=3.0
 
 ### Step 3 — Position the stage correctly in a real pipeline
 
-In any production pipeline that continues to [PDAL stage chaining](/pdal-pipeline-architecture-execution/pdal-stage-chaining/) for classification or surface modelling, place `filters.outlier` immediately after the reader and any CRS-setting step, but before any classification or rasterization stage:
+In any production pipeline that continues to [PDAL stage chaining](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/pdal-stage-chaining/) for classification or surface modelling, place `filters.outlier` immediately after the reader and any CRS-setting step, but before any classification or rasterization stage:
 
 ```python
 pipeline_def = [
@@ -408,11 +408,11 @@ You can also run `pdal info --stats output_clean.laz` from the command line and 
 
 ## Gotchas and Edge Cases
 
-**Stage name confusion.** The correct PDAL stage is `filters.outlier` with `"method": "statistical"`. There is no `filters.statistical` stage; using that name causes a `RuntimeError: Couldn't create stage 'filters.statistical'`. The [pipeline validation](/pdal-pipeline-architecture-execution/pipeline-validation/) workflow catches this before any data is read if you run `pdal --validate` on your JSON definition during CI.
+**Stage name confusion.** The correct PDAL stage is `filters.outlier` with `"method": "statistical"`. There is no `filters.statistical` stage; using that name causes a `RuntimeError: Couldn't create stage 'filters.statistical'`. The [pipeline validation](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/pipeline-validation/) workflow catches this before any data is read if you run `pdal --validate` on your JSON definition during CI.
 
 **Applying SOR after classification removes valid sparse classes.** Transmission towers, isolated trees, and bridge decks have far fewer neighbors than the surrounding ground; SOR sees them as outliers. If your project requires preserving classified returns, run SOR on the raw, unclassified cloud first, or apply it selectively via `filters.expression` to subset only unclassified points before the cleaning pass.
 
-**Tile-edge artifacts.** The k-d tree is built per pipeline invocation. Points at tile boundaries have artificially truncated neighborhoods because their true neighbors sit in the adjacent tile. Apply a 5–10 m overlap buffer when tiling with `filters.splitter`, then strip the buffer after SOR and before merging outputs. Alternatively, consult the [memory management](/pdal-pipeline-architecture-execution/memory-management/) strategies for processing larger in-memory chunks that span tile boundaries without splitting.
+**Tile-edge artifacts.** The k-d tree is built per pipeline invocation. Points at tile boundaries have artificially truncated neighborhoods because their true neighbors sit in the adjacent tile. Apply a 5–10 m overlap buffer when tiling with `filters.splitter`, then strip the buffer after SOR and before merging outputs. Alternatively, consult the [memory management](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/memory-management/) strategies for processing larger in-memory chunks that span tile boundaries without splitting.
 
 **k-d tree memory scaling.** Memory consumption for the neighborhood index grows with point count at roughly O(n log n). For datasets above 50 million points per tile, monitor peak RAM with `tracemalloc` during development and budget at least 16 GB for 100 M-point tiles. If processing fails with an `std::bad_alloc` error, reduce tile size before adjusting filter parameters.
 
@@ -422,8 +422,8 @@ You can also run `pdal info --stats output_clean.laz` from the command line and 
 
 ## Related
 
-- [Pipeline Filtering Logic](/pdal-pipeline-architecture-execution/pipeline-filtering-logic/) — parent reference covering filter sequencing, predicate evaluation, and spatial constraints
-- [PDAL Stage Chaining](/pdal-pipeline-architecture-execution/pdal-stage-chaining/) — how buffers propagate between stages and how to chain SOR with classification stages
-- [Chaining PDAL Stages for Data Cleaning](/pdal-pipeline-architecture-execution/pdal-stage-chaining/chaining-pdal-stages-for-data-cleaning/) — worked example combining outlier removal, range filtering, and ground classification
-- [Memory Management](/pdal-pipeline-architecture-execution/memory-management/) — tiling strategies and RAM budgeting for large airborne datasets
-- [Pipeline Validation](/pdal-pipeline-architecture-execution/pipeline-validation/) — catch stage name errors and schema violations before execution
+- [Pipeline Filtering Logic](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/pipeline-filtering-logic/) — parent reference covering filter sequencing, predicate evaluation, and spatial constraints
+- [PDAL Stage Chaining](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/pdal-stage-chaining/) — how buffers propagate between stages and how to chain SOR with classification stages
+- [Chaining PDAL Stages for Data Cleaning](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/pdal-stage-chaining/chaining-pdal-stages-for-data-cleaning/) — worked example combining outlier removal, range filtering, and ground classification
+- [Memory Management](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/memory-management/) — tiling strategies and RAM budgeting for large airborne datasets
+- [Pipeline Validation](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/pipeline-validation/) — catch stage name errors and schema violations before execution

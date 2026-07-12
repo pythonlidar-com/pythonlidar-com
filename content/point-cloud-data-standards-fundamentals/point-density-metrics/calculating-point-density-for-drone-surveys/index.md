@@ -2,7 +2,7 @@
 title: "Calculating Point Density for Drone Surveys"
 description: "Step-by-step Python guide to calculating point density for UAV LiDAR surveys using grid binning, percentile QA thresholds, and laspy — with a complete runnable code example."
 slug: "calculating-point-density-for-drone-surveys"
-type: "long_tail"
+type: "howto"
 breadcrumb: "Point Density Metrics / Calculating Point Density for Drone Surveys"
 datePublished: "2024-11-10"
 dateModified: "2026-06-24"
@@ -23,9 +23,9 @@ dateModified: "2026-06-24"
     {
       "@type": "BreadcrumbList",
       "itemListElement": [
-        {"@type": "ListItem", "position": 1, "name": "Point Cloud Data Standards & Fundamentals", "item": "https://pythonlidar.com/point-cloud-data-standards-fundamentals/"},
-        {"@type": "ListItem", "position": 2, "name": "Point Density Metrics", "item": "https://pythonlidar.com/point-cloud-data-standards-fundamentals/point-density-metrics/"},
-        {"@type": "ListItem", "position": 3, "name": "Calculating Point Density for Drone Surveys", "item": "https://pythonlidar.com/point-cloud-data-standards-fundamentals/point-density-metrics/calculating-point-density-for-drone-surveys/"}
+        {"@type": "ListItem", "position": 1, "name": "Point Cloud Data Standards & Fundamentals", "item": "https://www.pythonlidar.com/point-cloud-data-standards-fundamentals/"},
+        {"@type": "ListItem", "position": 2, "name": "Point Density Metrics", "item": "https://www.pythonlidar.com/point-cloud-data-standards-fundamentals/point-density-metrics/"},
+        {"@type": "ListItem", "position": 3, "name": "Calculating Point Density for Drone Surveys", "item": "https://www.pythonlidar.com/point-cloud-data-standards-fundamentals/point-density-metrics/calculating-point-density-for-drone-surveys/"}
       ]
     },
     {
@@ -77,7 +77,7 @@ dateModified: "2026-06-24"
 
 ## Context and Motivation
 
-This guide is part of [Point Density Metrics](/point-cloud-data-standards-fundamentals/point-density-metrics/), which covers the broader methodology for computing and validating spatial density across LiDAR datasets.
+This guide is part of [Point Density Metrics](https://www.pythonlidar.com/point-cloud-data-standards-fundamentals/point-density-metrics/), which covers the broader methodology for computing and validating spatial density across LiDAR datasets.
 
 UAV LiDAR acquisitions rarely distribute points uniformly. Multi-rotor and fixed-wing platforms generate overlapping flight swaths, creating density spikes along track centrelines and troughs in the overlap margins. A single global average — `total_points / survey_area_m²` — hides exactly the zones where surface reconstruction will fail. For operational drone workflows, target densities generally sit between 50 and 500 pts/m², with infrastructure inspection, corridor mapping, and urban asset modelling requiring the upper end to resolve fine features like utility poles, curb returns, and understory vegetation.
 
@@ -132,9 +132,9 @@ The diagram below shows the five-stage computation path from raw LAS input to a 
 
 - **Python 3.10+** with a virtual environment (`venv` or `conda`)
 - **laspy 2.4+** and **numpy 1.24+** (install: `pip install laspy[lazrs] numpy`)
-- **Input:** LAS 1.2–1.4 or LAZ file with complete coordinate records and valid scale/offset headers; understanding of the [LAS/LAZ file structure](/point-cloud-data-standards-fundamentals/laslaz-file-structure/) helps interpret header fields
-- **Projected CRS:** the file must already be in a metric coordinate system (UTM or state plane); use a [spatial reprojection](/pdal-pipeline-architecture-execution/spatial-reprojection/) stage upstream if the source data is in geographic coordinates
-- **ASPRS classification knowledge:** knowing which [ASPRS classification codes](/point-cloud-data-standards-fundamentals/asprs-classification-codes/) represent noise, ground, and vegetation allows you to pre-filter correctly before computing density
+- **Input:** LAS 1.2–1.4 or LAZ file with complete coordinate records and valid scale/offset headers; understanding of the [LAS/LAZ file structure](https://www.pythonlidar.com/point-cloud-data-standards-fundamentals/laslaz-file-structure/) helps interpret header fields
+- **Projected CRS:** the file must already be in a metric coordinate system (UTM or state plane); use a [spatial reprojection](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/spatial-reprojection/) stage upstream if the source data is in geographic coordinates
+- **ASPRS classification knowledge:** knowing which [ASPRS classification codes](https://www.pythonlidar.com/point-cloud-data-standards-fundamentals/asprs-classification-codes/) represent noise, ground, and vegetation allows you to pre-filter correctly before computing density
 
 ## Step-by-Step Implementation
 
@@ -369,7 +369,7 @@ Overlay the exported `density_map.tif` with flight-line tracks in QGIS to correl
 ## Gotchas and Edge Cases
 
 **1. Geographic CRS produces nonsensical density values.**
-If `assert_metric_crs` is skipped and the file is in EPSG:4326, the binning will treat decimal degrees as metres. A 0.0001° cell at the equator covers ~11 m × 11 m, giving counts ~121× too low. Always run the CRS guard first, then apply a [coordinate reference systems](/point-cloud-data-standards-fundamentals/coordinate-reference-systems/) correction upstream if needed.
+If `assert_metric_crs` is skipped and the file is in EPSG:4326, the binning will treat decimal degrees as metres. A 0.0001° cell at the equator covers ~11 m × 11 m, giving counts ~121× too low. Always run the CRS guard first, then apply a [coordinate reference systems](https://www.pythonlidar.com/point-cloud-data-standards-fundamentals/coordinate-reference-systems/) correction upstream if needed.
 
 **2. Classification filter removes all points.**
 This happens when the LAS file stores classifications in the LAS 1.0/1.1 legacy bit-packed format rather than the dedicated classification byte. With `laspy`, `chunk.classification` reads the full byte, which on legacy files may equal zero for everything. Use `chunk.classification & 0x1F` for files produced before LAS 1.4 if all returns appear as Class 0.
@@ -387,8 +387,8 @@ The complete working example uses `chunk_iterator(5_000_000)` in `load_filtered_
 
 ## Related
 
-- [Point Density Metrics](/point-cloud-data-standards-fundamentals/point-density-metrics/) — parent guide covering grid-based and KDE density estimation methods
-- [LAS/LAZ File Structure](/point-cloud-data-standards-fundamentals/laslaz-file-structure/) — header fields, VLRs, and scale/offset encoding that underpin coordinate accuracy
-- [Coordinate Reference Systems](/point-cloud-data-standards-fundamentals/coordinate-reference-systems/) — how to detect and correct CRS issues before spatial calculations
-- [Understanding ASPRS Classification Codes](/point-cloud-data-standards-fundamentals/asprs-classification-codes/understanding-asprs-classification-codes/) — which return classes to retain or discard for different deliverable types
-- [Point Cloud Data Standards & Fundamentals](/point-cloud-data-standards-fundamentals/) — overview covering file formats, metadata, and quality standards for LiDAR workflows
+- [Point Density Metrics](https://www.pythonlidar.com/point-cloud-data-standards-fundamentals/point-density-metrics/) — parent guide covering grid-based and KDE density estimation methods
+- [LAS/LAZ File Structure](https://www.pythonlidar.com/point-cloud-data-standards-fundamentals/laslaz-file-structure/) — header fields, VLRs, and scale/offset encoding that underpin coordinate accuracy
+- [Coordinate Reference Systems](https://www.pythonlidar.com/point-cloud-data-standards-fundamentals/coordinate-reference-systems/) — how to detect and correct CRS issues before spatial calculations
+- [Understanding ASPRS Classification Codes](https://www.pythonlidar.com/point-cloud-data-standards-fundamentals/asprs-classification-codes/understanding-asprs-classification-codes/) — which return classes to retain or discard for different deliverable types
+- [Point Cloud Data Standards & Fundamentals](https://www.pythonlidar.com/point-cloud-data-standards-fundamentals/) — overview covering file formats, metadata, and quality standards for LiDAR workflows

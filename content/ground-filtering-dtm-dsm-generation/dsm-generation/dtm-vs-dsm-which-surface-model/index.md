@@ -2,7 +2,7 @@
 title: "DTM vs DSM: Which Surface Model to Generate"
 description: "When to build a bare-earth DTM versus a first-return DSM from LiDAR — how the two surfaces differ, what each is used for (hydrology vs canopy/volumetrics), and how to derive a canopy height model from both."
 slug: "dtm-vs-dsm-which-surface-model"
-type: "long_tail"
+type: "howto"
 breadcrumb: "DTM vs DSM"
 datePublished: "2024-06-26"
 dateModified: "2026-07-12"
@@ -23,10 +23,10 @@ dateModified: "2026-07-12"
     {
       "@type": "BreadcrumbList",
       "itemListElement": [
-        {"@type": "ListItem", "position": 1, "name": "Home", "item": "https://pythonlidar.com/"},
-        {"@type": "ListItem", "position": 2, "name": "Ground Filtering and DTM/DSM Generation with PDAL", "item": "https://pythonlidar.com/ground-filtering-dtm-dsm-generation/"},
-        {"@type": "ListItem", "position": 3, "name": "DSM Generation", "item": "https://pythonlidar.com/ground-filtering-dtm-dsm-generation/dsm-generation/"},
-        {"@type": "ListItem", "position": 4, "name": "DTM vs DSM", "item": "https://pythonlidar.com/ground-filtering-dtm-dsm-generation/dsm-generation/dtm-vs-dsm-which-surface-model/"}
+        {"@type": "ListItem", "position": 1, "name": "Home", "item": "https://www.pythonlidar.com/"},
+        {"@type": "ListItem", "position": 2, "name": "Ground Filtering and DTM/DSM Generation with PDAL", "item": "https://www.pythonlidar.com/ground-filtering-dtm-dsm-generation/"},
+        {"@type": "ListItem", "position": 3, "name": "DSM Generation", "item": "https://www.pythonlidar.com/ground-filtering-dtm-dsm-generation/dsm-generation/"},
+        {"@type": "ListItem", "position": 4, "name": "DTM vs DSM", "item": "https://www.pythonlidar.com/ground-filtering-dtm-dsm-generation/dsm-generation/dtm-vs-dsm-which-surface-model/"}
       ]
     },
     {
@@ -74,9 +74,9 @@ dateModified: "2026-07-12"
 
 ## Context and Motivation
 
-This comparison is part of [DSM Generation from LiDAR with PDAL](/ground-filtering-dtm-dsm-generation/dsm-generation/), and it exists because the DTM-versus-DSM choice is the first fork every terrain-modelling project reaches — and the one most often gotten wrong. The two rasters look superficially similar, both being single-band elevation GeoTIFFs on the same footprint, yet they answer opposite questions and are built from disjoint subsets of the point cloud. Picking the wrong one does not throw an error; it quietly produces a hydrology model that drains across roofs or a viewshed blind to every tree.
+This comparison is part of [DSM Generation from LiDAR with PDAL](https://www.pythonlidar.com/ground-filtering-dtm-dsm-generation/dsm-generation/), and it exists because the DTM-versus-DSM choice is the first fork every terrain-modelling project reaches — and the one most often gotten wrong. The two rasters look superficially similar, both being single-band elevation GeoTIFFs on the same footprint, yet they answer opposite questions and are built from disjoint subsets of the point cloud. Picking the wrong one does not throw an error; it quietly produces a hydrology model that drains across roofs or a viewshed blind to every tree.
 
-The distinction is entirely about *which points become pixels*. A [DTM Raster Generation](/ground-filtering-dtm-dsm-generation/dtm-raster-generation/) surface consumes only points classified as ground, interpolating a smooth bare-earth sheet beneath the vegetation. A DSM consumes first returns and takes the maximum, tracing the outermost skin of canopy and structures. Everything downstream — the statistic you choose, the returns you keep, the way you fill voids — follows from that one decision. This page uses `EPSG:6350` (NAD83(2011) / Conus Albers) for the worked example so the numbers stay concrete.
+The distinction is entirely about *which points become pixels*. A [DTM Raster Generation](https://www.pythonlidar.com/ground-filtering-dtm-dsm-generation/dtm-raster-generation/) surface consumes only points classified as ground, interpolating a smooth bare-earth sheet beneath the vegetation. A DSM consumes first returns and takes the maximum, tracing the outermost skin of canopy and structures. Everything downstream — the statistic you choose, the returns you keep, the way you fill voids — follows from that one decision. This page uses `EPSG:6350` (NAD83(2011) / Conus Albers) for the worked example so the numbers stay concrete.
 
 <svg viewBox="0 0 760 320" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Side-by-side comparison of a DTM bare-earth surface and a DSM top surface over the same scene, with a canopy height model as their difference" style="width:100%;max-width:760px;display:block;margin:1.5rem auto">
   <title>DTM bare earth versus DSM top surface, and their difference as a canopy height model</title>
@@ -122,7 +122,7 @@ The distinction is entirely about *which points become pixels*. A [DTM Raster Ge
 | Typical uses | Hydrology, contours, earthwork, slope | Viewshed, solar, telecom, canopy, volumetrics |
 | Failure if misused | Water routes over rooftops | Ground analysis blinded by canopy |
 
-The row that matters most is the prerequisite. A DSM needs no classification at all — you keep first returns and take the maximum, which is why the [Building a DSM from First Returns](/ground-filtering-dtm-dsm-generation/dsm-generation/building-a-dsm-from-first-returns/) recipe is a three-stage pipeline. A DTM must first separate ground from non-ground using a morphological filter, which is an entire upstream workflow in its own right. That asymmetry is why teams sometimes reach for a DSM when a DTM is what they actually need: the DSM is cheaper, so it is tempting, but cheapness is not correctness.
+The row that matters most is the prerequisite. A DSM needs no classification at all — you keep first returns and take the maximum, which is why the [Building a DSM from First Returns](https://www.pythonlidar.com/ground-filtering-dtm-dsm-generation/dsm-generation/building-a-dsm-from-first-returns/) recipe is a three-stage pipeline. A DTM must first separate ground from non-ground using a morphological filter, which is an entire upstream workflow in its own right. That asymmetry is why teams sometimes reach for a DSM when a DTM is what they actually need: the DSM is cheaper, so it is tempting, but cheapness is not correctness.
 
 ## When to Choose Each
 
@@ -263,7 +263,7 @@ if __name__ == "__main__":
 | `resolution` | `writers.gdal` | identical on both | identical on both |
 | `override_srs` | `writers.gdal` | `EPSG:6350` | `EPSG:6350` |
 
-The `idw` statistic suits the DTM because classified ground is sparse under dense canopy and inverse-distance weighting bridges the gaps smoothly; the `max` statistic suits the DSM because the top surface is defined by the tallest hit. Tuning the ground classifier itself — the `filters.smrf` slope and window above — is covered in [SMRF Ground Classification](/ground-filtering-dtm-dsm-generation/smrf-ground-classification/).
+The `idw` statistic suits the DTM because classified ground is sparse under dense canopy and inverse-distance weighting bridges the gaps smoothly; the `max` statistic suits the DSM because the top surface is defined by the tallest hit. Tuning the ground classifier itself — the `filters.smrf` slope and window above — is covered in [SMRF Ground Classification](https://www.pythonlidar.com/ground-filtering-dtm-dsm-generation/smrf-ground-classification/).
 
 ## Verification
 
@@ -283,11 +283,11 @@ with rasterio.open("out_dsm.tif") as d, rasterio.open("out_dtm.tif") as g:
 
 **1. Misaligned grids ruin the CHM.** The single most common failure is subtracting a DTM and DSM that were rasterized separately with different origins. Always write both from one pipeline, or resample one onto the other's grid with `rasterio.warp.reproject` before subtracting.
 
-**2. Buildings inflate a "canopy" height model.** An nDSM does not know a roof from a tree — both are above-ground objects. If you want vegetation only, mask out building-classified areas (ASPRS class 6) before or after subtraction; see [ASPRS Classification Codes](/point-cloud-data-standards-fundamentals/asprs-classification-codes/) for the class list.
+**2. Buildings inflate a "canopy" height model.** An nDSM does not know a roof from a tree — both are above-ground objects. If you want vegetation only, mask out building-classified areas (ASPRS class 6) before or after subtraction; see [ASPRS Classification Codes](https://www.pythonlidar.com/point-cloud-data-standards-fundamentals/asprs-classification-codes/) for the class list.
 
-**3. IDW over-smooths a DTM in steep terrain.** Inverse-distance interpolation can pull ridgelines and stream banks toward their neighbours. In rugged ground consider a finer resolution or a different interpolation, as weighed in [IDW vs Mean Interpolation for DTM Gaps](/ground-filtering-dtm-dsm-generation/dtm-raster-generation/idw-vs-mean-interpolation-for-dtm-gaps/).
+**3. IDW over-smooths a DTM in steep terrain.** Inverse-distance interpolation can pull ridgelines and stream banks toward their neighbours. In rugged ground consider a finer resolution or a different interpolation, as weighed in [IDW vs Mean Interpolation for DTM Gaps](https://www.pythonlidar.com/ground-filtering-dtm-dsm-generation/dtm-raster-generation/idw-vs-mean-interpolation-for-dtm-gaps/).
 
-**4. NoData bleeds into the difference.** If either raster has voids the CHM inherits them. Fill DTM voids first — see [Filling NoData Voids in DTM Rasters](/ground-filtering-dtm-dsm-generation/dtm-raster-generation/filling-nodata-voids-in-dtm-rasters/) — so the subtraction has valid values on both sides.
+**4. NoData bleeds into the difference.** If either raster has voids the CHM inherits them. Fill DTM voids first — see [Filling NoData Voids in DTM Rasters](https://www.pythonlidar.com/ground-filtering-dtm-dsm-generation/dtm-raster-generation/filling-nodata-voids-in-dtm-rasters/) — so the subtraction has valid values on both sides.
 
 ## Frequently Asked Questions
 
@@ -297,11 +297,11 @@ A DTM is the bare-earth surface with vegetation and structures removed — built
 
 **Which model do I need for flood and hydrology work?**
 
-Use a DTM. Water flows over bare earth, so hydrological modelling, watershed delineation, and contour generation all require the ground surface with buildings and trees stripped away. A DSM would route water over rooftops and tree crowns, producing nonsense flow paths. The [DTM Raster Generation](/ground-filtering-dtm-dsm-generation/dtm-raster-generation/) guide covers building that surface.
+Use a DTM. Water flows over bare earth, so hydrological modelling, watershed delineation, and contour generation all require the ground surface with buildings and trees stripped away. A DSM would route water over rooftops and tree crowns, producing nonsense flow paths. The [DTM Raster Generation](https://www.pythonlidar.com/ground-filtering-dtm-dsm-generation/dtm-raster-generation/) guide covers building that surface.
 
 **Which model do I need for canopy height or building volumes?**
 
-You need both. Subtract the DTM from the DSM to get a normalized surface — the canopy height model or nDSM — where each cell reports height above ground. That difference raster is what feeds tree-height estimates, biomass models, and stockpile or building volume calculations. The [DSM Generation](/ground-filtering-dtm-dsm-generation/dsm-generation/) page details the top-surface half of that pair.
+You need both. Subtract the DTM from the DSM to get a normalized surface — the canopy height model or nDSM — where each cell reports height above ground. That difference raster is what feeds tree-height estimates, biomass models, and stockpile or building volume calculations. The [DSM Generation](https://www.pythonlidar.com/ground-filtering-dtm-dsm-generation/dsm-generation/) page details the top-surface half of that pair.
 
 **Can one pipeline produce both a DTM and a DSM?**
 
@@ -311,8 +311,8 @@ Yes. Classify ground once, then branch to two `writers.gdal` stages — one filt
 
 ## Related
 
-- [DSM Generation from LiDAR with PDAL](/ground-filtering-dtm-dsm-generation/dsm-generation/) — the top-surface workflow in full
-- [DTM Raster Generation](/ground-filtering-dtm-dsm-generation/dtm-raster-generation/) — the bare-earth workflow this page compares against
-- [Building a DSM from First Returns](/ground-filtering-dtm-dsm-generation/dsm-generation/building-a-dsm-from-first-returns/) — the focused first-return recipe for the DSM half
-- [SMRF Ground Classification](/ground-filtering-dtm-dsm-generation/smrf-ground-classification/) — classifying ground, the prerequisite the DTM depends on
-- [Ground Filtering and DTM/DSM Generation with PDAL](/ground-filtering-dtm-dsm-generation/) — parent overview tying terrain and surface modelling together
+- [DSM Generation from LiDAR with PDAL](https://www.pythonlidar.com/ground-filtering-dtm-dsm-generation/dsm-generation/) — the top-surface workflow in full
+- [DTM Raster Generation](https://www.pythonlidar.com/ground-filtering-dtm-dsm-generation/dtm-raster-generation/) — the bare-earth workflow this page compares against
+- [Building a DSM from First Returns](https://www.pythonlidar.com/ground-filtering-dtm-dsm-generation/dsm-generation/building-a-dsm-from-first-returns/) — the focused first-return recipe for the DSM half
+- [SMRF Ground Classification](https://www.pythonlidar.com/ground-filtering-dtm-dsm-generation/smrf-ground-classification/) — classifying ground, the prerequisite the DTM depends on
+- [Ground Filtering and DTM/DSM Generation with PDAL](https://www.pythonlidar.com/ground-filtering-dtm-dsm-generation/) — parent overview tying terrain and surface modelling together

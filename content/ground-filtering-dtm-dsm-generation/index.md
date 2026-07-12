@@ -2,7 +2,7 @@
 title: "Ground Filtering and DTM/DSM Generation with PDAL"
 description: "Complete guide to LiDAR ground classification and terrain modelling in PDAL: SMRF and PMF ground filters, bare-earth DTM and first-return DSM rasterization with writers.gdal, interpolation and void filling, and hillshade derivation."
 slug: "ground-filtering-dtm-dsm-generation"
-type: "pillar"
+type: "guide"
 breadcrumb: "Ground Filtering & Terrain Models"
 datePublished: "2024-06-15"
 dateModified: "2026-07-12"
@@ -24,8 +24,8 @@ dateModified: "2026-07-12"
     {
       "@type": "BreadcrumbList",
       "itemListElement": [
-        { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://pythonlidar.com/" },
-        { "@type": "ListItem", "position": 2, "name": "Ground Filtering & Terrain Models", "item": "https://pythonlidar.com/ground-filtering-dtm-dsm-generation/" }
+        { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://www.pythonlidar.com/" },
+        { "@type": "ListItem", "position": 2, "name": "Ground Filtering & Terrain Models", "item": "https://www.pythonlidar.com/ground-filtering-dtm-dsm-generation/" }
       ]
     },
     {
@@ -153,13 +153,13 @@ Turning a raw LiDAR scan into a usable terrain product hinges on one decision th
 
 ## Where Ground Filtering Fits in PDAL
 
-Ground filtering is not a special mode in PDAL — it is an ordinary filter stage in the same streaming directed acyclic graph described in [PDAL Pipeline Architecture & Execution](/pdal-pipeline-architecture-execution/). A ground filter reads the point buffer, evaluates each return against a terrain model it builds internally, and writes a value into the `Classification` dimension. Nothing is deleted. The cloud that leaves `filters.smrf` has exactly the same point count that entered; what changed is that ground returns now carry the ASPRS code for terrain and everything else keeps its prior code.
+Ground filtering is not a special mode in PDAL — it is an ordinary filter stage in the same streaming directed acyclic graph described in [PDAL Pipeline Architecture & Execution](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/). A ground filter reads the point buffer, evaluates each return against a terrain model it builds internally, and writes a value into the `Classification` dimension. Nothing is deleted. The cloud that leaves `filters.smrf` has exactly the same point count that entered; what changed is that ground returns now carry the ASPRS code for terrain and everything else keeps its prior code.
 
-That distinction matters for how you build the rest of the pipeline. Because classification only *labels* points, you separate the DTM and DSM paths downstream with [Pipeline Filtering Logic](/pdal-pipeline-architecture-execution/pipeline-filtering-logic/) rather than by running two different classifiers. One `filters.range` predicate selects ground for the terrain model; another selects first returns for the surface model. Both draw from the same classified buffer.
+That distinction matters for how you build the rest of the pipeline. Because classification only *labels* points, you separate the DTM and DSM paths downstream with [Pipeline Filtering Logic](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/pipeline-filtering-logic/) rather than by running two different classifiers. One `filters.range` predicate selects ground for the terrain model; another selects first returns for the surface model. Both draw from the same classified buffer.
 
 ### The Classification dimension
 
-`Classification` is a standard LAS dimension defined by the ASPRS point classification scheme. The code that matters most for terrain work is **2 = Ground**. Other frequently encountered codes are 1 (Unclassified), 3–5 (low/medium/high vegetation), 6 (Building), 7 (Low point / noise), and 9 (Water). A full treatment of the numbering and its edge cases lives in [ASPRS Classification Codes](/point-cloud-data-standards-fundamentals/asprs-classification-codes/); for this workflow the essential fact is that ground filters write code 2 and leave the choice of what to do with the rest to you.
+`Classification` is a standard LAS dimension defined by the ASPRS point classification scheme. The code that matters most for terrain work is **2 = Ground**. Other frequently encountered codes are 1 (Unclassified), 3–5 (low/medium/high vegetation), 6 (Building), 7 (Low point / noise), and 9 (Water). A full treatment of the numbering and its edge cases lives in [ASPRS Classification Codes](https://www.pythonlidar.com/point-cloud-data-standards-fundamentals/asprs-classification-codes/); for this workflow the essential fact is that ground filters write code 2 and leave the choice of what to do with the rest to you.
 
 ### Height above ground
 
@@ -325,7 +325,7 @@ The return value of `pipeline.execute()` is the count of points reaching the wri
 
 ### Classification must precede rasterization
 
-`writers.gdal` has no concept of ground; it rasterizes whatever buffer arrives. The entire correctness of a DTM therefore rests on the ordering `classify → mask → rasterize`. If you rasterize before classifying, canopy and rooftop returns land in terrain cells and inflate elevations. If you classify but forget the `filters.range` mask, every point still reaches the writer and the "DTM" is really a `min`-reduced surface model at best. Chaining these stages correctly is the same discipline covered in [PDAL Stage Chaining](/pdal-pipeline-architecture-execution/pdal-stage-chaining/): each stage must receive exactly the buffer the next one expects.
+`writers.gdal` has no concept of ground; it rasterizes whatever buffer arrives. The entire correctness of a DTM therefore rests on the ordering `classify → mask → rasterize`. If you rasterize before classifying, canopy and rooftop returns land in terrain cells and inflate elevations. If you classify but forget the `filters.range` mask, every point still reaches the writer and the "DTM" is really a `min`-reduced surface model at best. Chaining these stages correctly is the same discipline covered in [PDAL Stage Chaining](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/pdal-stage-chaining/): each stage must receive exactly the buffer the next one expects.
 
 ### Classification propagation
 
@@ -333,7 +333,7 @@ Because `filters.range` drops non-matching points rather than editing them, the 
 
 ### CRS units drive resolution and radius
 
-Every distance parameter in this workflow — `resolution`, `radius`, SMRF's `window`, PMF's `max_window_size` — is interpreted in the units of the current pipeline CRS. In a projected UTM zone those are metres and a `resolution` of 1.0 means a one-metre cell. In a geographic CRS those are degrees, and a `resolution` of 1.0 spans an entire degree of latitude while a metric value like 0.5 over degrees demands billions of cells. Always reproject to a projected metric system first; see [Spatial Reprojection](/pdal-pipeline-architecture-execution/spatial-reprojection/) for datum and vertical-component handling. Insert `filters.reprojection` before `filters.smrf` so the morphological window is in metres, not degrees.
+Every distance parameter in this workflow — `resolution`, `radius`, SMRF's `window`, PMF's `max_window_size` — is interpreted in the units of the current pipeline CRS. In a projected UTM zone those are metres and a `resolution` of 1.0 means a one-metre cell. In a geographic CRS those are degrees, and a `resolution` of 1.0 spans an entire degree of latitude while a metric value like 0.5 over degrees demands billions of cells. Always reproject to a projected metric system first; see [Spatial Reprojection](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/spatial-reprojection/) for datum and vertical-component handling. Insert `filters.reprojection` before `filters.smrf` so the morphological window is in metres, not degrees.
 
 ## Performance and Scaling
 
@@ -385,7 +385,7 @@ The `-z` vertical exaggeration, `-az` illumination azimuth, and `-alt` sun altit
 
 **Absurd resolution / runaway cell count.** A pipeline that hangs or dies allocating memory at the writer, with a bounding box spanning fractions of a unit, is running in a geographic CRS. Reproject to UTM before rasterizing so `resolution` is in metres.
 
-**Out-of-memory on high-res rasters.** `writers.gdal` accumulates the full grid in memory. A 0.25 m raster over a large tile can exhaust RAM. Split into smaller tiles, coarsen the resolution, or raise container memory limits; the [Memory Management](/pdal-pipeline-architecture-execution/memory-management/) guide covers container-specific tuning that applies equally here.
+**Out-of-memory on high-res rasters.** `writers.gdal` accumulates the full grid in memory. A 0.25 m raster over a large tile can exhaust RAM. Split into smaller tiles, coarsen the resolution, or raise container memory limits; the [Memory Management](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/memory-management/) guide covers container-specific tuning that applies equally here.
 
 ---
 
@@ -415,8 +415,8 @@ The `resolution` value is expressed in the units of the pipeline CRS. If the clo
 
 ## Related
 
-- [SMRF Ground Classification](/ground-filtering-dtm-dsm-generation/smrf-ground-classification/) — tuning the Simple Morphological Filter across forested and urban terrain
-- [PMF Ground Classification](/ground-filtering-dtm-dsm-generation/pmf-ground-classification/) — the Progressive Morphological Filter and its window and slope parameters
-- [DTM Raster Generation](/ground-filtering-dtm-dsm-generation/dtm-raster-generation/) — building bare-earth GeoTIFFs, interpolation choices, and void filling with writers.gdal
-- [DSM Generation](/ground-filtering-dtm-dsm-generation/dsm-generation/) — first-return surface models and choosing between DTM and DSM
-- [Hillshade, Slope and Aspect](/ground-filtering-dtm-dsm-generation/hillshade-slope-aspect/) — deriving shaded relief and terrain gradients from a LiDAR DTM
+- [SMRF Ground Classification](https://www.pythonlidar.com/ground-filtering-dtm-dsm-generation/smrf-ground-classification/) — tuning the Simple Morphological Filter across forested and urban terrain
+- [PMF Ground Classification](https://www.pythonlidar.com/ground-filtering-dtm-dsm-generation/pmf-ground-classification/) — the Progressive Morphological Filter and its window and slope parameters
+- [DTM Raster Generation](https://www.pythonlidar.com/ground-filtering-dtm-dsm-generation/dtm-raster-generation/) — building bare-earth GeoTIFFs, interpolation choices, and void filling with writers.gdal
+- [DSM Generation](https://www.pythonlidar.com/ground-filtering-dtm-dsm-generation/dsm-generation/) — first-return surface models and choosing between DTM and DSM
+- [Hillshade, Slope and Aspect](https://www.pythonlidar.com/ground-filtering-dtm-dsm-generation/hillshade-slope-aspect/) — deriving shaded relief and terrain gradients from a LiDAR DTM

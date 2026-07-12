@@ -2,7 +2,7 @@
 title: "Optimizing PDAL for Multi-Core Processing"
 description: "Learn how to tune PDAL for multi-core throughput: set OMP_NUM_THREADS, size chunk_size to L3 cache, and orchestrate parallel tile pipelines with Python's ProcessPoolExecutor."
 slug: "optimizing-pdal-for-multi-core-processing"
-type: "long_tail"
+type: "howto"
 breadcrumb: "Optimizing PDAL for Multi-Core Processing"
 datePublished: "2024-11-01"
 dateModified: "2026-06-24"
@@ -23,10 +23,10 @@ dateModified: "2026-06-24"
     {
       "@type": "BreadcrumbList",
       "itemListElement": [
-        { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://pythonlidar.com/" },
-        { "@type": "ListItem", "position": 2, "name": "PDAL Pipeline Architecture & Execution", "item": "https://pythonlidar.com/pdal-pipeline-architecture-execution/" },
-        { "@type": "ListItem", "position": 3, "name": "Parallel Execution", "item": "https://pythonlidar.com/pdal-pipeline-architecture-execution/parallel-execution/" },
-        { "@type": "ListItem", "position": 4, "name": "Optimizing PDAL for Multi-Core Processing", "item": "https://pythonlidar.com/pdal-pipeline-architecture-execution/parallel-execution/optimizing-pdal-for-multi-core-processing/" }
+        { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://www.pythonlidar.com/" },
+        { "@type": "ListItem", "position": 2, "name": "PDAL Pipeline Architecture & Execution", "item": "https://www.pythonlidar.com/pdal-pipeline-architecture-execution/" },
+        { "@type": "ListItem", "position": 3, "name": "Parallel Execution", "item": "https://www.pythonlidar.com/pdal-pipeline-architecture-execution/parallel-execution/" },
+        { "@type": "ListItem", "position": 4, "name": "Optimizing PDAL for Multi-Core Processing", "item": "https://www.pythonlidar.com/pdal-pipeline-architecture-execution/parallel-execution/optimizing-pdal-for-multi-core-processing/" }
       ]
     },
     {
@@ -77,7 +77,7 @@ dateModified: "2026-06-24"
 
 Set `OMP_NUM_THREADS` to your physical core count, size `chunk_size` to fit L3 cache, and wrap `pdal.Pipeline.execute()` in `ProcessPoolExecutor` — PDAL has no internal thread-pool key, so all multi-core throughput comes from process-level orchestration.
 
-This guide is part of [Parallel Execution](/pdal-pipeline-architecture-execution/parallel-execution/) within [PDAL Pipeline Architecture & Execution](/pdal-pipeline-architecture-execution/).
+This guide is part of [Parallel Execution](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/parallel-execution/) within [PDAL Pipeline Architecture & Execution](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/).
 
 ---
 
@@ -97,7 +97,7 @@ The tuning challenge is subtle. PDAL deliberately exposes no `"threads"` key in 
 - Sufficient RAM: at minimum `max_workers × tile_RAM_footprint`; for 1M-point 6-dimension tiles that is roughly `workers × 50 MB`
 - A validated sequential pipeline that processes one tile correctly before parallelization
 
-If your input is a single large LAS file rather than pre-tiled data, insert a `filters.splitter` stage with `length=500` (500-metre tiles) to partition it before dispatch — see the [PDAL stage chaining](/pdal-pipeline-architecture-execution/pdal-stage-chaining/) guide for how splitter output feeds downstream pipeline stages.
+If your input is a single large LAS file rather than pre-tiled data, insert a `filters.splitter` stage with `length=500` (500-metre tiles) to partition it before dispatch — see the [PDAL stage chaining](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/pdal-stage-chaining/) guide for how splitter output feeds downstream pipeline stages.
 
 ---
 
@@ -531,7 +531,7 @@ for out_path in summary["outputs"]:
     print(f"{'PASS' if ok else 'FAIL'}  {out_path}")
 ```
 
-Also confirm that the [spatial reprojection](/pdal-pipeline-architecture-execution/spatial-reprojection/) metadata is consistent across tiles by checking the `srs.wkt` field in each output's `pipeline.metadata` — mismatched CRS across workers is a common silent corruption that the [pipeline validation](/pdal-pipeline-architecture-execution/pipeline-validation/) stage should catch before any downstream rasterization.
+Also confirm that the [spatial reprojection](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/spatial-reprojection/) metadata is consistent across tiles by checking the `srs.wkt` field in each output's `pipeline.metadata` — mismatched CRS across workers is a common silent corruption that the [pipeline validation](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/pipeline-validation/) stage should catch before any downstream rasterization.
 
 ---
 
@@ -544,7 +544,7 @@ When `max_workers=8` and `OMP_NUM_THREADS=8`, each worker spawns 8 OpenMP thread
 If a tile holds 200,000 points and `chunk_size=1,000,000`, PDAL allocates a 1M-point buffer that is never filled. With 16 workers each holding a 48 MB buffer, you exhaust 768 MB on empty allocations. Set `chunk_size` to the median tile point count, not to a fixed ceiling.
 
 **3. filters.smrf requires a minimum point density.**
-SMRF's window search needs at least a few points per square metre to reliably distinguish ground returns. Tiles with fewer than ~0.5 pts/m² (e.g., forest interiors with heavy canopy) frequently produce zero classified ground points — a silent empty-ground-class result, not an exception. Add a post-processing check: assert that at least 5% of points carry `Classification == 2`. Refer to the [pipeline filtering logic](/pdal-pipeline-architecture-execution/pipeline-filtering-logic/) guide for strategies to handle these edge tiles with adaptive filter parameters.
+SMRF's window search needs at least a few points per square metre to reliably distinguish ground returns. Tiles with fewer than ~0.5 pts/m² (e.g., forest interiors with heavy canopy) frequently produce zero classified ground points — a silent empty-ground-class result, not an exception. Add a post-processing check: assert that at least 5% of points carry `Classification == 2`. Refer to the [pipeline filtering logic](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/pipeline-filtering-logic/) guide for strategies to handle these edge tiles with adaptive filter parameters.
 
 **4. LAZ decompression adds CPU overhead that scales non-linearly.**
 LASzip decompression is single-threaded per file. With 16 workers each decompressing a 200 MB LAZ tile, decompression becomes the bottleneck, not classification. For iterative workflows (classify → inspect → re-classify), stage intermediate results as uncompressed LAS. Reserve LAZ for final archival output only.
@@ -553,8 +553,8 @@ LASzip decompression is single-threaded per file. With 16 workers each decompres
 
 ## Related
 
-- [Parallel Execution in PDAL](/pdal-pipeline-architecture-execution/parallel-execution/) — parent page covering the full execution model and tile dispatch patterns
-- [PDAL Stage Chaining](/pdal-pipeline-architecture-execution/pdal-stage-chaining/) — how pipeline stages pass buffers and why order matters for parallel workflows
-- [Applying Statistical Outlier Filters in PDAL](/pdal-pipeline-architecture-execution/pipeline-filtering-logic/applying-statistical-outlier-filters-in-pdal/) — combining outlier removal with ground classification in a multi-stage parallel pipeline
-- [Pipeline Filtering Logic](/pdal-pipeline-architecture-execution/pipeline-filtering-logic/) — boundary handling, overlap buffers, and filter ordering for spatially partitioned data
-- [PDAL Pipeline Architecture & Execution](/pdal-pipeline-architecture-execution/) — foundational overview of stage types, execution lifecycle, and memory model
+- [Parallel Execution in PDAL](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/parallel-execution/) — parent page covering the full execution model and tile dispatch patterns
+- [PDAL Stage Chaining](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/pdal-stage-chaining/) — how pipeline stages pass buffers and why order matters for parallel workflows
+- [Applying Statistical Outlier Filters in PDAL](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/pipeline-filtering-logic/applying-statistical-outlier-filters-in-pdal/) — combining outlier removal with ground classification in a multi-stage parallel pipeline
+- [Pipeline Filtering Logic](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/pipeline-filtering-logic/) — boundary handling, overlap buffers, and filter ordering for spatially partitioned data
+- [PDAL Pipeline Architecture & Execution](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/) — foundational overview of stage types, execution lifecycle, and memory model

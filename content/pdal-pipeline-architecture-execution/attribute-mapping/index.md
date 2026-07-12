@@ -2,7 +2,7 @@
 title: "Attribute Mapping in PDAL: Translate, Compute & Persist Point Cloud Dimensions"
 description: "How to translate, derive, and persist point cloud dimensions in PDAL pipelines using filters.assign and extra_dims — covering schema auditing, type casting, validation checks, and common errors."
 slug: "attribute-mapping"
-type: "cluster"
+type: "topic"
 breadcrumb: "Attribute Mapping"
 datePublished: "2024-03-15"
 dateModified: "2026-06-24"
@@ -23,9 +23,9 @@ dateModified: "2026-06-24"
     {
       "@type": "BreadcrumbList",
       "itemListElement": [
-        {"@type": "ListItem", "position": 1, "name": "Home", "item": "/"},
-        {"@type": "ListItem", "position": 2, "name": "PDAL Pipeline Architecture & Execution", "item": "/pdal-pipeline-architecture-execution/"},
-        {"@type": "ListItem", "position": 3, "name": "Attribute Mapping", "item": "/pdal-pipeline-architecture-execution/attribute-mapping/"}
+        {"@type": "ListItem", "position": 1, "name": "Home", "item": "https://www.pythonlidar.com/"},
+        {"@type": "ListItem", "position": 2, "name": "PDAL Pipeline Architecture & Execution", "item": "https://www.pythonlidar.com/pdal-pipeline-architecture-execution/"},
+        {"@type": "ListItem", "position": 3, "name": "Attribute Mapping", "item": "https://www.pythonlidar.com/pdal-pipeline-architecture-execution/attribute-mapping/"}
       ]
     },
     {
@@ -63,7 +63,7 @@ dateModified: "2026-06-24"
 }
 </script>
 
-Raw LiDAR sensor output almost never matches the dimensional schema your downstream analysis expects. Intensity values arrive as raw 16-bit integers when your terrain classifier wants a normalized float; classification codes are absent when your vegetation filter requires them; vendor-specific extra bytes carry reflectance data that standard `writers.las` will silently discard. Attribute mapping is the systematic process of translating, computing, and persisting point cloud dimensions so that every downstream stage in the processing graph receives exactly the schema it needs. It is a foundational concern within the broader [PDAL Pipeline Architecture & Execution](/pdal-pipeline-architecture-execution/) framework — without explicit dimension contracts, silent schema violations propagate undetected through multi-stage pipelines and corrupt analytical outputs.
+Raw LiDAR sensor output almost never matches the dimensional schema your downstream analysis expects. Intensity values arrive as raw 16-bit integers when your terrain classifier wants a normalized float; classification codes are absent when your vegetation filter requires them; vendor-specific extra bytes carry reflectance data that standard `writers.las` will silently discard. Attribute mapping is the systematic process of translating, computing, and persisting point cloud dimensions so that every downstream stage in the processing graph receives exactly the schema it needs. It is a foundational concern within the broader [PDAL Pipeline Architecture & Execution](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/) framework — without explicit dimension contracts, silent schema violations propagate undetected through multi-stage pipelines and corrupt analytical outputs.
 
 ---
 
@@ -126,7 +126,7 @@ Before implementing attribute mapping, confirm your environment and input data m
 - **Python 3.10+** with `numpy`, `pyproj`, and `logging` available in the active environment
 - **Input file** conforming to LAS 1.2–1.4 or LAZ; vendor-specific formats (E57, PLY) require an additional reader stage
 - **Known input dimensions**: the workflow below assumes `X`, `Y`, `Z`, `Intensity` (uint16), `ReturnNumber`, `NumberOfReturns`, and `Classification` are present — verify with `pdal info --schema input.laz` before starting
-- **CRS metadata** present in the input file's VLR records; if missing, handle it at the reader level with an explicit `spatialreference` parameter before combining it with [spatial reprojection](/pdal-pipeline-architecture-execution/spatial-reprojection/) stages
+- **CRS metadata** present in the input file's VLR records; if missing, handle it at the reader level with an explicit `spatialreference` parameter before combining it with [spatial reprojection](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/spatial-reprojection/) stages
 - **Test dataset**: a USGS 3DEP tile or any LAZ tile from OpenTopography works well; the examples below use a 2 million-point urban scan
 
 ## Core Workflow Architecture
@@ -136,7 +136,7 @@ Attribute mapping follows a five-phase execution lifecycle inside every PDAL pip
 1. **Reader declaration with `extra_dims`**: the reader stage must name any non-standard incoming dimensions so PDAL allocates buffer space for them. Omitting `extra_dims` here causes custom bytes to be ignored before any filter sees them.
 2. **Schema audit**: after an initial `execute()` call, inspect `pipeline.arrays[0].dtype.names` to confirm which dimensions exist, their NumPy types, and their value ranges. This audit drives the mapping rule definition in phase 3.
 3. **Rule definition**: document static assignments (provenance flags, CRS identifiers), unit conversions (intensity normalization, elevation offsets), derived attributes (return ratio, height-above-ground proxy), and type casts in a version-controlled JSON configuration before writing any pipeline JSON.
-4. **Transformation pipeline construction**: translate each rule into a `filters.assign` expression. Chain multiple `filters.assign` stages when expressions are logically independent — PDAL evaluates them in declaration order, so dimensions computed in an earlier stage are available to later ones. Understanding [PDAL stage chaining](/pdal-pipeline-architecture-execution/pdal-stage-chaining/) semantics is critical here: transformation stages that compute derived dimensions must appear *before* any filter that consumes those dimensions.
+4. **Transformation pipeline construction**: translate each rule into a `filters.assign` expression. Chain multiple `filters.assign` stages when expressions are logically independent — PDAL evaluates them in declaration order, so dimensions computed in an earlier stage are available to later ones. Understanding [PDAL stage chaining](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/pdal-stage-chaining/) semantics is critical here: transformation stages that compute derived dimensions must appear *before* any filter that consumes those dimensions.
 5. **Writer declaration with `extra_dims`**: the writer must re-declare every custom dimension with its target type. Without this declaration, `writers.las` drops custom dimensions silently even when upstream filters have correctly computed them.
 
 ## Full Implementation
@@ -312,7 +312,7 @@ Running a minimal read-only pipeline before the transformation pipeline catches 
 
 ### `filters.assign` expression ordering
 
-PDAL evaluates `filters.assign` stages sequentially. In the example above, `intensity_norm` is computed before `return_ratio`. If your pipeline had a conditional `filters.range` stage that thresholds on `intensity_norm`, it must come *after* the `filters.assign` that defines it. This ordering constraint is the most common source of silent errors in attribute mapping workflows. The [pipeline filtering logic](/pdal-pipeline-architecture-execution/pipeline-filtering-logic/) section explains how PDAL evaluates expressions and propagates dimension metadata between stages.
+PDAL evaluates `filters.assign` stages sequentially. In the example above, `intensity_norm` is computed before `return_ratio`. If your pipeline had a conditional `filters.range` stage that thresholds on `intensity_norm`, it must come *after* the `filters.assign` that defines it. This ordering constraint is the most common source of silent errors in attribute mapping workflows. The [pipeline filtering logic](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/pipeline-filtering-logic/) section explains how PDAL evaluates expressions and propagates dimension metadata between stages.
 
 ### Writer with compression and format pins
 
@@ -381,7 +381,7 @@ assert set(np.unique(arr["custom_flag"])).issubset({0, 1}), "custom_flag out of 
 
 **4. CRS round-trip check**
 
-After mapping, verify the output CRS matches the expected EPSG code — especially important when the input lacks VLR metadata and you have injected a `spatialreference` parameter. Pair this with [spatial reprojection](/pdal-pipeline-architecture-execution/spatial-reprojection/) checks if the mapping stage also changes the coordinate system:
+After mapping, verify the output CRS matches the expected EPSG code — especially important when the input lacks VLR metadata and you have injected a `spatialreference` parameter. Pair this with [spatial reprojection](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/spatial-reprojection/) checks if the mapping stage also changes the coordinate system:
 
 ```python
 import subprocess, json
@@ -427,7 +427,7 @@ This collapses two buffer passes into one. Verify your PDAL version supports arr
 
 **Memory footprint for large tiles**
 
-Attribute mapping loads the entire point buffer into RAM. For tiles exceeding 50 million points, combine attribute mapping with [parallel execution](/pdal-pipeline-architecture-execution/parallel-execution/) by splitting tiles spatially with `filters.splitter` before mapping, then merging the mapped outputs. A `uint8` dimension adds 1 byte per point; a `float32` dimension adds 4 bytes. For 100 million points, adding five `float32` custom dimensions increases RAM consumption by approximately 2 GB.
+Attribute mapping loads the entire point buffer into RAM. For tiles exceeding 50 million points, combine attribute mapping with [parallel execution](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/parallel-execution/) by splitting tiles spatially with `filters.splitter` before mapping, then merging the mapped outputs. A `uint8` dimension adds 1 byte per point; a `float32` dimension adds 4 bytes. For 100 million points, adding five `float32` custom dimensions increases RAM consumption by approximately 2 GB.
 
 ## Common Errors and Troubleshooting
 
@@ -459,7 +459,7 @@ Fix: always mirror every custom dimension in both the reader and the writer `ext
 
 Cause: the dimension name in the `filters.assign` expression does not match the LAS dimension name exactly. PDAL dimension names are case-sensitive and follow the LAS specification (`ReturnNumber`, not `return_number` or `returnNumber`).
 
-Fix: run `pdal info --schema input.laz` to list the exact dimension names, then copy them verbatim into your expression strings. Cross-reference standard dimension names against the [ASPRS classification codes](/point-cloud-data-standards-fundamentals/asprs-classification-codes/) and LAS header conventions if you are unsure whether a dimension is standard or vendor-specific.
+Fix: run `pdal info --schema input.laz` to list the exact dimension names, then copy them verbatim into your expression strings. Cross-reference standard dimension names against the [ASPRS classification codes](https://www.pythonlidar.com/point-cloud-data-standards-fundamentals/asprs-classification-codes/) and LAS header conventions if you are unsure whether a dimension is standard or vendor-specific.
 
 ---
 
@@ -471,13 +471,13 @@ Fix: call `Path(output_path).parent.mkdir(parents=True, exist_ok=True)` before e
 
 ---
 
-For vendor-specific edge cases — arbitrary extra byte offsets, dynamic schema expansion for machine-learning feature vectors, and reflectance normalization for full-waveform sensors — see [Mapping Custom Attributes in PDAL Pipelines](/pdal-pipeline-architecture-execution/attribute-mapping/mapping-custom-attributes-in-pdal-pipelines/).
+For vendor-specific edge cases — arbitrary extra byte offsets, dynamic schema expansion for machine-learning feature vectors, and reflectance normalization for full-waveform sensors — see [Mapping Custom Attributes in PDAL Pipelines](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/attribute-mapping/mapping-custom-attributes-in-pdal-pipelines/).
 
 ## Related
 
-- [Mapping Custom Attributes in PDAL Pipelines](/pdal-pipeline-architecture-execution/attribute-mapping/mapping-custom-attributes-in-pdal-pipelines/) — vendor extra bytes, ML feature dimensions, and dynamic schema expansion
-- [PDAL Stage Chaining](/pdal-pipeline-architecture-execution/pdal-stage-chaining/) — how PDAL passes buffers between stages and what ordering constraints affect dimension availability
-- [Pipeline Filtering Logic](/pdal-pipeline-architecture-execution/pipeline-filtering-logic/) — conditional dimension filtering and expression evaluation that complements attribute assignment
-- [Spatial Reprojection](/pdal-pipeline-architecture-execution/spatial-reprojection/) — coordinate transformations that often accompany schema normalization in multi-source ingestion workflows
-- [Pipeline Validation](/pdal-pipeline-architecture-execution/pipeline-validation/) — pre-execution validation strategies to catch schema errors before running against large datasets
-- [PDAL Pipeline Architecture & Execution](/pdal-pipeline-architecture-execution/) — parent guide covering the full execution model, stage categories, and production deployment patterns
+- [Mapping Custom Attributes in PDAL Pipelines](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/attribute-mapping/mapping-custom-attributes-in-pdal-pipelines/) — vendor extra bytes, ML feature dimensions, and dynamic schema expansion
+- [PDAL Stage Chaining](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/pdal-stage-chaining/) — how PDAL passes buffers between stages and what ordering constraints affect dimension availability
+- [Pipeline Filtering Logic](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/pipeline-filtering-logic/) — conditional dimension filtering and expression evaluation that complements attribute assignment
+- [Spatial Reprojection](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/spatial-reprojection/) — coordinate transformations that often accompany schema normalization in multi-source ingestion workflows
+- [Pipeline Validation](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/pipeline-validation/) — pre-execution validation strategies to catch schema errors before running against large datasets
+- [PDAL Pipeline Architecture & Execution](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/) — parent guide covering the full execution model, stage categories, and production deployment patterns

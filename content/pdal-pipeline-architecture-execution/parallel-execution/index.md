@@ -2,7 +2,7 @@
 title: "Parallel Execution in PDAL: Multi-Core Point Cloud Processing with Python"
 description: "Distribute PDAL-driven LiDAR workflows across all CPU cores using Python's ProcessPoolExecutor — covering fan-out architecture, boundary-safe tiling, error recovery, and memory-aware tuning."
 slug: "parallel-execution"
-type: "cluster"
+type: "topic"
 breadcrumb: "Parallel Execution"
 datePublished: "2024-03-15"
 dateModified: "2026-06-24"
@@ -23,9 +23,9 @@ dateModified: "2026-06-24"
     {
       "@type": "BreadcrumbList",
       "itemListElement": [
-        { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://pythonlidar.com/" },
-        { "@type": "ListItem", "position": 2, "name": "PDAL Pipeline Architecture & Execution", "item": "https://pythonlidar.com/pdal-pipeline-architecture-execution/" },
-        { "@type": "ListItem", "position": 3, "name": "Parallel Execution", "item": "https://pythonlidar.com/pdal-pipeline-architecture-execution/parallel-execution/" }
+        { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://www.pythonlidar.com/" },
+        { "@type": "ListItem", "position": 2, "name": "PDAL Pipeline Architecture & Execution", "item": "https://www.pythonlidar.com/pdal-pipeline-architecture-execution/" },
+        { "@type": "ListItem", "position": 3, "name": "Parallel Execution", "item": "https://www.pythonlidar.com/pdal-pipeline-architecture-execution/parallel-execution/" }
       ]
     },
     {
@@ -80,7 +80,7 @@ dateModified: "2026-06-24"
 }
 </script>
 
-Point cloud datasets routinely exceed tens of gigabytes, and processing them one tile at a time turns overnight batch jobs into multi-day bottlenecks. This page explains how to distribute PDAL-driven workloads across all available CPU cores using Python's `ProcessPoolExecutor`, covering the worker dispatch architecture, boundary-safe spatial tiling, deterministic error handling, and memory-aware tuning. These techniques operate within the broader [PDAL Pipeline Architecture & Execution](/pdal-pipeline-architecture-execution/) model, which explains how PDAL stages chain, buffer, and write point data. If you need to push beyond a single machine, [Optimizing PDAL for Multi-Core Processing](/pdal-pipeline-architecture-execution/parallel-execution/optimizing-pdal-for-multi-core-processing/) covers cache-aware chunking and NUMA-binding strategies.
+Point cloud datasets routinely exceed tens of gigabytes, and processing them one tile at a time turns overnight batch jobs into multi-day bottlenecks. This page explains how to distribute PDAL-driven workloads across all available CPU cores using Python's `ProcessPoolExecutor`, covering the worker dispatch architecture, boundary-safe spatial tiling, deterministic error handling, and memory-aware tuning. These techniques operate within the broader [PDAL Pipeline Architecture & Execution](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/) model, which explains how PDAL stages chain, buffer, and write point data. If you need to push beyond a single machine, [Optimizing PDAL for Multi-Core Processing](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/parallel-execution/optimizing-pdal-for-multi-core-processing/) covers cache-aware chunking and NUMA-binding strategies.
 
 ## Prerequisites
 
@@ -308,7 +308,7 @@ if __name__ == "__main__":
 
 **Structured result dicts** make it straightforward to build a retry loop: filter `results` for `ok == False`, rebuild a manifest from failed tiles, and call `run_parallel_workflow` again with the subset.
 
-The pipeline template writes to `EPSG:32632` (UTM Zone 32N). Replace with the EPSG code appropriate for your survey area before production use. Understanding how [spatial reprojection](/pdal-pipeline-architecture-execution/spatial-reprojection/) interacts with PDAL's CRS metadata is essential when combining tiles from multiple acquisition zones.
+The pipeline template writes to `EPSG:32632` (UTM Zone 32N). Replace with the EPSG code appropriate for your survey area before production use. Understanding how [spatial reprojection](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/spatial-reprojection/) interacts with PDAL's CRS metadata is essential when combining tiles from multiple acquisition zones.
 
 ## Parameter Reference Table
 
@@ -374,7 +374,7 @@ print(f"Validation: {passed}/{len(tiles)} tiles passed")
 assert passed == len(tiles), "One or more output tiles failed validation"
 ```
 
-A bounding-box check can catch silent coordinate corruption: compare the union of all output bounding boxes against the known survey extent. Use `pipeline.metadata["metadata"]["readers.las"][0]["bounds"]` for each tile — it returns an object with `minx`, `miny`, `maxx`, `maxy` keys. See [pipeline validation](/pdal-pipeline-architecture-execution/pipeline-validation/) for systematic schema and metadata verification patterns.
+A bounding-box check can catch silent coordinate corruption: compare the union of all output bounding boxes against the known survey extent. Use `pipeline.metadata["metadata"]["readers.las"][0]["bounds"]` for each tile — it returns an object with `minx`, `miny`, `maxx`, `maxy` keys. See [pipeline validation](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/pipeline-validation/) for systematic schema and metadata verification patterns.
 
 ## Performance Tuning
 
@@ -388,7 +388,7 @@ Parallel point cloud processing is usually I/O- or memory-bound rather than CPU-
 | Straggler tiles | 95 % complete but blocked on one large tile | Sort manifest largest-first; set a per-future timeout and requeue oversize tiles separately |
 | Cache thrashing | Performance degrades with > N workers | Cap `max_workers` at L3 cache capacity ÷ per-tile working set; set `OMP_NUM_THREADS=1` per worker |
 
-For datasets exceeding 500 GB, consider streaming from EPT (Entwine Point Tile) sources using `readers.ept` instead of individual LAS files. EPT hierarchical indexing allows workers to request spatially bounded subsets without pre-tiling, eliminating the manifest-generation phase. Consult [Optimizing PDAL for Multi-Core Processing](/pdal-pipeline-architecture-execution/parallel-execution/optimizing-pdal-for-multi-core-processing/) for NUMA-node binding and L3 cache-aligned `chunk_size` derivation.
+For datasets exceeding 500 GB, consider streaming from EPT (Entwine Point Tile) sources using `readers.ept` instead of individual LAS files. EPT hierarchical indexing allows workers to request spatially bounded subsets without pre-tiling, eliminating the manifest-generation phase. Consult [Optimizing PDAL for Multi-Core Processing](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/parallel-execution/optimizing-pdal-for-multi-core-processing/) for NUMA-node binding and L3 cache-aligned `chunk_size` derivation.
 
 ## Common Errors and Troubleshooting
 
@@ -424,7 +424,7 @@ PDAL's Python bindings execute C++ code that holds the GIL during point buffer t
 Start with `max_workers` equal to your physical (not logical/hyperthreaded) core count. Point cloud processing is memory-bandwidth intensive; adding logical cores beyond the physical count typically increases L3 cache evictions and slows throughput. Monitor RSS per worker with `psutil.Process(pid).memory_info().rss` and reduce `max_workers` if total RSS approaches available RAM.
 
 **Can I process tiles that share boundary regions?**
-Yes, but seam artifacts from spatial filters (SMRF, outlier removal) require overlap buffers. Configure `filters.splitter` with an `"origin_x"`, `"origin_y"`, `"length"`, and `"buffer"` to emit overlapping tiles, then strip the buffer zone with `filters.crop` during the output-writing stage of each worker pipeline. The `buffer` parameter is typically 0.5–2.0 metres, depending on point density and filter window size. See [pipeline filtering logic](/pdal-pipeline-architecture-execution/pipeline-filtering-logic/) for how filter stages consume and emit dimension buffers.
+Yes, but seam artifacts from spatial filters (SMRF, outlier removal) require overlap buffers. Configure `filters.splitter` with an `"origin_x"`, `"origin_y"`, `"length"`, and `"buffer"` to emit overlapping tiles, then strip the buffer zone with `filters.crop` during the output-writing stage of each worker pipeline. The `buffer` parameter is typically 0.5–2.0 metres, depending on point density and filter window size. See [pipeline filtering logic](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/pipeline-filtering-logic/) for how filter stages consume and emit dimension buffers.
 
 **How do I resume a partial run without reprocessing completed tiles?**
 The idempotent skip check in `process_tile` already handles this — it returns early if the output file exists and exceeds 1 KB. Re-running the full manifest will skip completed tiles and only process those that are missing or zero-byte, making safe restarts after hardware failures or quota limits straightforward.
@@ -433,9 +433,9 @@ The idempotent skip check in `process_tile` already handles this — it returns 
 
 ## Related
 
-- [PDAL Pipeline Architecture & Execution](/pdal-pipeline-architecture-execution/) — parent topic covering the full PDAL execution model
-- [Optimizing PDAL for Multi-Core Processing](/pdal-pipeline-architecture-execution/parallel-execution/optimizing-pdal-for-multi-core-processing/) — cache-aware chunking, OMP settings, NUMA binding
-- [Pipeline Filtering Logic](/pdal-pipeline-architecture-execution/pipeline-filtering-logic/) — how filter stages consume and emit dimension buffers
-- [PDAL Stage Chaining](/pdal-pipeline-architecture-execution/pdal-stage-chaining/) — building multi-stage pipelines with correct buffer propagation
-- [Pipeline Validation](/pdal-pipeline-architecture-execution/pipeline-validation/) — schema and metadata verification before and after execution
-- [Memory Management](/pdal-pipeline-architecture-execution/memory-management/) — controlling heap allocation and chunk size in large-scale workflows
+- [PDAL Pipeline Architecture & Execution](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/) — parent topic covering the full PDAL execution model
+- [Optimizing PDAL for Multi-Core Processing](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/parallel-execution/optimizing-pdal-for-multi-core-processing/) — cache-aware chunking, OMP settings, NUMA binding
+- [Pipeline Filtering Logic](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/pipeline-filtering-logic/) — how filter stages consume and emit dimension buffers
+- [PDAL Stage Chaining](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/pdal-stage-chaining/) — building multi-stage pipelines with correct buffer propagation
+- [Pipeline Validation](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/pipeline-validation/) — schema and metadata verification before and after execution
+- [Memory Management](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/memory-management/) — controlling heap allocation and chunk size in large-scale workflows

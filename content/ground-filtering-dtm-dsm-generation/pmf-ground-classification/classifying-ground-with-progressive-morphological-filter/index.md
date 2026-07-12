@@ -2,7 +2,7 @@
 title: "Classifying Ground with the Progressive Morphological Filter"
 description: "Step-by-step PDAL recipe to classify bare-earth ground points with filters.pmf: from a raw LAZ tile through outlier removal to a ground-only output, with parameter choices explained."
 slug: "classifying-ground-with-progressive-morphological-filter"
-type: "long_tail"
+type: "howto"
 breadcrumb: "Classifying Ground with PMF"
 datePublished: "2024-06-24"
 dateModified: "2026-07-12"
@@ -23,10 +23,10 @@ dateModified: "2026-07-12"
     {
       "@type": "BreadcrumbList",
       "itemListElement": [
-        {"@type": "ListItem", "position": 1, "name": "Home", "item": "https://pythonlidar.com/"},
-        {"@type": "ListItem", "position": 2, "name": "Ground Filtering & Terrain Models", "item": "https://pythonlidar.com/ground-filtering-dtm-dsm-generation/"},
-        {"@type": "ListItem", "position": 3, "name": "PMF Ground Classification", "item": "https://pythonlidar.com/ground-filtering-dtm-dsm-generation/pmf-ground-classification/"},
-        {"@type": "ListItem", "position": 4, "name": "Classifying Ground with PMF", "item": "https://pythonlidar.com/ground-filtering-dtm-dsm-generation/pmf-ground-classification/classifying-ground-with-progressive-morphological-filter/"}
+        {"@type": "ListItem", "position": 1, "name": "Home", "item": "https://www.pythonlidar.com/"},
+        {"@type": "ListItem", "position": 2, "name": "Ground Filtering & Terrain Models", "item": "https://www.pythonlidar.com/ground-filtering-dtm-dsm-generation/"},
+        {"@type": "ListItem", "position": 3, "name": "PMF Ground Classification", "item": "https://www.pythonlidar.com/ground-filtering-dtm-dsm-generation/pmf-ground-classification/"},
+        {"@type": "ListItem", "position": 4, "name": "Classifying Ground with PMF", "item": "https://www.pythonlidar.com/ground-filtering-dtm-dsm-generation/pmf-ground-classification/classifying-ground-with-progressive-morphological-filter/"}
       ]
     },
     {
@@ -73,7 +73,7 @@ dateModified: "2026-07-12"
 
 ## Context and Motivation
 
-This recipe is part of [PMF Ground Classification in PDAL](/ground-filtering-dtm-dsm-generation/pmf-ground-classification/), the reference for how the Progressive Morphological Filter turns a mixed point cloud into labelled bare earth. Where the parent page explains the algorithm's window and threshold schedules, this page is the hands-on walkthrough: take one raw LAZ tile off disk and end with a ground-only LAS you can hand to a DTM stage.
+This recipe is part of [PMF Ground Classification in PDAL](https://www.pythonlidar.com/ground-filtering-dtm-dsm-generation/pmf-ground-classification/), the reference for how the Progressive Morphological Filter turns a mixed point cloud into labelled bare earth. Where the parent page explains the algorithm's window and threshold schedules, this page is the hands-on walkthrough: take one raw LAZ tile off disk and end with a ground-only LAS you can hand to a DTM stage.
 
 The task sounds simple — "keep the ground points" — but a naive single-threshold height cut fails the moment terrain has any relief. A hillside 40 m tall would erase a 3 m building only by also erasing the hill. PMF sidesteps this by never comparing points to an absolute height; it compares them to a *locally opened* surface whose tolerance widens with the window. That is what lets a single set of parameters handle a scene containing both a tall grain silo and a gentle valley. The steps below build that pipeline one stage at a time, then assemble a complete runnable script.
 
@@ -118,7 +118,7 @@ A single low return corrupts the morphological minimum around it. Add a statisti
 }
 ```
 
-The [statistical outlier filter guide](/pdal-pipeline-architecture-execution/pipeline-filtering-logic/applying-statistical-outlier-filters-in-pdal/) explains `mean_k` and `multiplier` in detail; the defaults above suit typical airborne data.
+The [statistical outlier filter guide](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/pipeline-filtering-logic/applying-statistical-outlier-filters-in-pdal/) explains `mean_k` and `multiplier` in detail; the defaults above suit typical airborne data.
 
 ### Step 3 — Run filters.pmf
 
@@ -149,7 +149,7 @@ PMF labels but does not delete. To emit a bare-earth-only cloud, keep just Class
 }
 ```
 
-This is the same [range-based filtering logic](/pdal-pipeline-architecture-execution/pipeline-filtering-logic/) used throughout PDAL — the buffer simply drops every point outside the `[2:2]` inclusive band.
+This is the same [range-based filtering logic](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/pipeline-filtering-logic/) used throughout PDAL — the buffer simply drops every point outside the `[2:2]` inclusive band.
 
 ### Step 5 — Write and confirm
 
@@ -336,7 +336,7 @@ Almost always. Morphological erosion takes the minimum elevation inside each win
 
 **Why are my rooftops classified as ground?**
 
-The largest window never spanned the roof, so no opening removed it. Increase `max_window_size` until it exceeds the widest building footprint in cells, or lower `cell_size` so the same metre count covers more cells. The [tuning guide](/ground-filtering-dtm-dsm-generation/pmf-ground-classification/tuning-pmf-window-and-slope/) works through this by terrain type.
+The largest window never spanned the roof, so no opening removed it. Increase `max_window_size` until it exceeds the widest building footprint in cells, or lower `cell_size` so the same metre count covers more cells. The [tuning guide](https://www.pythonlidar.com/ground-filtering-dtm-dsm-generation/pmf-ground-classification/tuning-pmf-window-and-slope/) works through this by terrain type.
 
 **Can I run this recipe on a whole directory of tiles?**
 
@@ -346,8 +346,8 @@ Yes. Wrap the pipeline function in a loop or a parallel map over the tile list. 
 
 ## Related
 
-- [PMF Ground Classification in PDAL](/ground-filtering-dtm-dsm-generation/pmf-ground-classification/) — parent guide to the algorithm and its full parameter set
-- [Tuning PMF Window and Slope Parameters](/ground-filtering-dtm-dsm-generation/pmf-ground-classification/tuning-pmf-window-and-slope/) — sibling guide for choosing parameters by terrain
-- [Applying Statistical Outlier Filters in PDAL](/pdal-pipeline-architecture-execution/pipeline-filtering-logic/applying-statistical-outlier-filters-in-pdal/) — the noise pre-pass this recipe depends on
-- [Pipeline Filtering Logic](/pdal-pipeline-architecture-execution/pipeline-filtering-logic/) — how `filters.range` selects and drops points in the buffer
-- [Ground Filtering and DTM/DSM Generation with PDAL](/ground-filtering-dtm-dsm-generation/) — where ground classification fits in the terrain-model workflow
+- [PMF Ground Classification in PDAL](https://www.pythonlidar.com/ground-filtering-dtm-dsm-generation/pmf-ground-classification/) — parent guide to the algorithm and its full parameter set
+- [Tuning PMF Window and Slope Parameters](https://www.pythonlidar.com/ground-filtering-dtm-dsm-generation/pmf-ground-classification/tuning-pmf-window-and-slope/) — sibling guide for choosing parameters by terrain
+- [Applying Statistical Outlier Filters in PDAL](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/pipeline-filtering-logic/applying-statistical-outlier-filters-in-pdal/) — the noise pre-pass this recipe depends on
+- [Pipeline Filtering Logic](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/pipeline-filtering-logic/) — how `filters.range` selects and drops points in the buffer
+- [Ground Filtering and DTM/DSM Generation with PDAL](https://www.pythonlidar.com/ground-filtering-dtm-dsm-generation/) — where ground classification fits in the terrain-model workflow

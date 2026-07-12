@@ -2,7 +2,7 @@
 title: "Tuning PMF Window and Slope Parameters"
 description: "How to choose max_window_size, slope, and distance thresholds for filters.pmf across flat, rolling, and steep terrain, and how point density changes the ideal cell_size."
 slug: "tuning-pmf-window-and-slope"
-type: "long_tail"
+type: "howto"
 breadcrumb: "Tuning PMF Window and Slope"
 datePublished: "2024-06-26"
 dateModified: "2026-07-12"
@@ -23,10 +23,10 @@ dateModified: "2026-07-12"
     {
       "@type": "BreadcrumbList",
       "itemListElement": [
-        {"@type": "ListItem", "position": 1, "name": "Home", "item": "https://pythonlidar.com/"},
-        {"@type": "ListItem", "position": 2, "name": "Ground Filtering & Terrain Models", "item": "https://pythonlidar.com/ground-filtering-dtm-dsm-generation/"},
-        {"@type": "ListItem", "position": 3, "name": "PMF Ground Classification", "item": "https://pythonlidar.com/ground-filtering-dtm-dsm-generation/pmf-ground-classification/"},
-        {"@type": "ListItem", "position": 4, "name": "Tuning PMF Window and Slope", "item": "https://pythonlidar.com/ground-filtering-dtm-dsm-generation/pmf-ground-classification/tuning-pmf-window-and-slope/"}
+        {"@type": "ListItem", "position": 1, "name": "Home", "item": "https://www.pythonlidar.com/"},
+        {"@type": "ListItem", "position": 2, "name": "Ground Filtering & Terrain Models", "item": "https://www.pythonlidar.com/ground-filtering-dtm-dsm-generation/"},
+        {"@type": "ListItem", "position": 3, "name": "PMF Ground Classification", "item": "https://www.pythonlidar.com/ground-filtering-dtm-dsm-generation/pmf-ground-classification/"},
+        {"@type": "ListItem", "position": 4, "name": "Tuning PMF Window and Slope", "item": "https://www.pythonlidar.com/ground-filtering-dtm-dsm-generation/pmf-ground-classification/tuning-pmf-window-and-slope/"}
       ]
     },
     {
@@ -73,7 +73,7 @@ dateModified: "2026-07-12"
 
 ## Context and Motivation
 
-This guide belongs to [PMF Ground Classification in PDAL](/ground-filtering-dtm-dsm-generation/pmf-ground-classification/) and focuses on the one thing that decides whether the Progressive Morphological Filter succeeds or fails on your data: the numbers you hand it. The default `filters.pmf` parameters were chosen for gently varied airborne scenes at roughly one-metre spacing. Feed them a coastal dune field, a forested mountain, or a dense drone survey and they will either bulldoze real relief or leave whole rooftops labelled as ground.
+This guide belongs to [PMF Ground Classification in PDAL](https://www.pythonlidar.com/ground-filtering-dtm-dsm-generation/pmf-ground-classification/) and focuses on the one thing that decides whether the Progressive Morphological Filter succeeds or fails on your data: the numbers you hand it. The default `filters.pmf` parameters were chosen for gently varied airborne scenes at roughly one-metre spacing. Feed them a coastal dune field, a forested mountain, or a dense drone survey and they will either bulldoze real relief or leave whole rooftops labelled as ground.
 
 Unlike a single-threshold classifier, PMF has two coupled schedules to reason about — how fast the window grows and how fast the height tolerance grows with it — plus a grid resolution that must match your point density. Getting them into balance is less about memorising values and more about understanding what each knob trades away. This page walks through that reasoning, gives concrete recipes for flat, rolling, and steep terrain, explains when exponential window growth helps or hurts, and ends with a small sweep harness you can point at any tile.
 
@@ -87,7 +87,7 @@ Unlike a single-threshold classifier, PMF has two coupled schedules to reason ab
 | Known point density | run `pdal info --stats` or estimate from the acquisition spec |
 | Projected CRS in metres | e.g. `EPSG:6339` (NAD83(2011) / UTM 11N) for a US Southwest tile |
 
-The core walkthrough of building the pipeline is in [classifying ground with the Progressive Morphological Filter](/ground-filtering-dtm-dsm-generation/pmf-ground-classification/classifying-ground-with-progressive-morphological-filter/); here we assume that pipeline exists and only vary its numbers.
+The core walkthrough of building the pipeline is in [classifying ground with the Progressive Morphological Filter](https://www.pythonlidar.com/ground-filtering-dtm-dsm-generation/pmf-ground-classification/classifying-ground-with-progressive-morphological-filter/); here we assume that pipeline exists and only vary its numbers.
 
 ## The Two Knobs and What They Trade
 
@@ -171,7 +171,7 @@ Fine spacing lets a small cell resolve breaklines; keep the window in metres con
 }
 ```
 
-At `cell_size: 0.35`, a `max_window_size` of 60 still only spans ~21 m — matching the objects, not the density. Point density is worth measuring properly; the [point density metrics](/point-cloud-data-standards-fundamentals/point-density-metrics/) guide shows how.
+At `cell_size: 0.35`, a `max_window_size` of 60 still only spans ~21 m — matching the objects, not the density. Point density is worth measuring properly; the [point density metrics](https://www.pythonlidar.com/point-cloud-data-standards-fundamentals/point-density-metrics/) guide shows how.
 
 ## Complete Working Example: a parameter sweep
 
@@ -268,7 +268,7 @@ g = g[g["Classification"] == 2]
 print(f"Ground Z spread: {g['Z'].max() - g['Z'].min():.2f} m over {len(g):,} points")
 ```
 
-Cross-check a suspect tile against the sibling algorithm; the parent page discusses when [SMRF ground classification](/ground-filtering-dtm-dsm-generation/smrf-ground-classification/) preserves relief that PMF planes off.
+Cross-check a suspect tile against the sibling algorithm; the parent page discusses when [SMRF ground classification](https://www.pythonlidar.com/ground-filtering-dtm-dsm-generation/smrf-ground-classification/) preserves relief that PMF planes off.
 
 ## Gotchas and Edge Cases
 
@@ -278,7 +278,7 @@ Cross-check a suspect tile against the sibling algorithm; the parent page discus
 
 **3. One parameter set rarely fits a whole survey.** A project spanning valley floor and mountain flank may need per-tile parameters. Classify by terrain zone, or accept a compromise set validated on the hardest tile.
 
-**4. Chasing the last percent of ground is a trap.** Beyond a point, loosening thresholds to recover a few more ground points admits low vegetation and clutter that a later [pipeline filtering](/pdal-pipeline-architecture-execution/pipeline-filtering-logic/) step then has to clean up. Stop when the surface is smooth, not when the count peaks.
+**4. Chasing the last percent of ground is a trap.** Beyond a point, loosening thresholds to recover a few more ground points admits low vegetation and clutter that a later [pipeline filtering](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/pipeline-filtering-logic/) step then has to clean up. Stop when the surface is smooth, not when the count peaks.
 
 ## Frequently Asked Questions
 
@@ -302,8 +302,8 @@ Turn `exponential` off when you need fine control over which object sizes are re
 
 ## Related
 
-- [PMF Ground Classification in PDAL](/ground-filtering-dtm-dsm-generation/pmf-ground-classification/) — parent guide to the algorithm and full parameter reference
-- [Classifying Ground with the Progressive Morphological Filter](/ground-filtering-dtm-dsm-generation/pmf-ground-classification/classifying-ground-with-progressive-morphological-filter/) — the end-to-end pipeline these parameters plug into
-- [Point Density Metrics](/point-cloud-data-standards-fundamentals/point-density-metrics/) — measure spacing before choosing cell_size
-- [SMRF Ground Classification](/ground-filtering-dtm-dsm-generation/smrf-ground-classification/) — the sibling filter to fall back on where PMF planes off relief
-- [Ground Filtering and DTM/DSM Generation with PDAL](/ground-filtering-dtm-dsm-generation/) — where tuned ground classification feeds the terrain-model workflow
+- [PMF Ground Classification in PDAL](https://www.pythonlidar.com/ground-filtering-dtm-dsm-generation/pmf-ground-classification/) — parent guide to the algorithm and full parameter reference
+- [Classifying Ground with the Progressive Morphological Filter](https://www.pythonlidar.com/ground-filtering-dtm-dsm-generation/pmf-ground-classification/classifying-ground-with-progressive-morphological-filter/) — the end-to-end pipeline these parameters plug into
+- [Point Density Metrics](https://www.pythonlidar.com/point-cloud-data-standards-fundamentals/point-density-metrics/) — measure spacing before choosing cell_size
+- [SMRF Ground Classification](https://www.pythonlidar.com/ground-filtering-dtm-dsm-generation/smrf-ground-classification/) — the sibling filter to fall back on where PMF planes off relief
+- [Ground Filtering and DTM/DSM Generation with PDAL](https://www.pythonlidar.com/ground-filtering-dtm-dsm-generation/) — where tuned ground classification feeds the terrain-model workflow

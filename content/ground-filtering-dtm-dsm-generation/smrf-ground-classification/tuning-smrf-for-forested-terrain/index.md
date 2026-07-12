@@ -2,7 +2,7 @@
 title: "Tuning SMRF for Forested Terrain"
 description: "Parameter tuning recipe for filters.smrf on densely vegetated LiDAR: raising window and slope, using last returns only, and elevation thresholds to recover bare earth under forest canopy."
 slug: "tuning-smrf-for-forested-terrain"
-type: "long_tail"
+type: "howto"
 breadcrumb: "Tuning SMRF for Forested Terrain"
 datePublished: "2024-06-18"
 dateModified: "2026-07-12"
@@ -23,10 +23,10 @@ dateModified: "2026-07-12"
     {
       "@type": "BreadcrumbList",
       "itemListElement": [
-        {"@type": "ListItem", "position": 1, "name": "Home", "item": "https://pythonlidar.com/"},
-        {"@type": "ListItem", "position": 2, "name": "Ground Filtering and DTM/DSM Generation with PDAL", "item": "https://pythonlidar.com/ground-filtering-dtm-dsm-generation/"},
-        {"@type": "ListItem", "position": 3, "name": "SMRF Ground Classification", "item": "https://pythonlidar.com/ground-filtering-dtm-dsm-generation/smrf-ground-classification/"},
-        {"@type": "ListItem", "position": 4, "name": "Tuning SMRF for Forested Terrain", "item": "https://pythonlidar.com/ground-filtering-dtm-dsm-generation/smrf-ground-classification/tuning-smrf-for-forested-terrain/"}
+        {"@type": "ListItem", "position": 1, "name": "Home", "item": "https://www.pythonlidar.com/"},
+        {"@type": "ListItem", "position": 2, "name": "Ground Filtering and DTM/DSM Generation with PDAL", "item": "https://www.pythonlidar.com/ground-filtering-dtm-dsm-generation/"},
+        {"@type": "ListItem", "position": 3, "name": "SMRF Ground Classification", "item": "https://www.pythonlidar.com/ground-filtering-dtm-dsm-generation/smrf-ground-classification/"},
+        {"@type": "ListItem", "position": 4, "name": "Tuning SMRF for Forested Terrain", "item": "https://www.pythonlidar.com/ground-filtering-dtm-dsm-generation/smrf-ground-classification/tuning-smrf-for-forested-terrain/"}
       ]
     },
     {
@@ -73,7 +73,7 @@ dateModified: "2026-07-12"
 
 ## Context and Motivation
 
-This guide is part of [SMRF Ground Classification in PDAL](/ground-filtering-dtm-dsm-generation/smrf-ground-classification/), which covers the algorithm and its parameters in general. Here the focus narrows to one hard case: closed-canopy forest, where the default settings that work beautifully over farmland produce a terrain model riddled with vegetation.
+This guide is part of [SMRF Ground Classification in PDAL](https://www.pythonlidar.com/ground-filtering-dtm-dsm-generation/smrf-ground-classification/), which covers the algorithm and its parameters in general. Here the focus narrows to one hard case: closed-canopy forest, where the default settings that work beautifully over farmland produce a terrain model riddled with vegetation.
 
 Forest breaks SMRF's most basic assumption — that each grid cell contains at least one return that actually touched the ground. Under a continuous canopy, most laser pulses are intercepted metres above the soil, and only a thin trickle of energy filters through gaps to the floor. When a cell holds no true bare-earth return, the minimum-elevation surface latches onto the lowest understory hit instead, and the reconstructed terrain rises into the shrub layer. The result is a digital terrain model that is systematically too high in wooded areas, with knock-on errors in slope, drainage, and canopy-height calculations. Recovering the real ground is a matter of steering SMRF toward the penetrating returns and giving it enough spatial reach to bridge the vegetation.
 
@@ -351,7 +351,7 @@ No. If almost no pulses reached the ground in an area, no parameter set can inve
 
 ## Related
 
-- [SMRF Ground Classification in PDAL](/ground-filtering-dtm-dsm-generation/smrf-ground-classification/) — parent guide to the algorithm and its full parameter set
-- [SMRF vs PMF for Dense Urban LiDAR](/ground-filtering-dtm-dsm-generation/smrf-ground-classification/smrf-vs-pmf-for-dense-urban-lidar/) — how the same filter behaves in the opposite (built-up) setting
-- [Ground Filtering and DTM/DSM Generation with PDAL](/ground-filtering-dtm-dsm-generation/) — the broader terrain-modelling workflow this feeds
-- [Applying Statistical Outlier Filters in PDAL](/pdal-pipeline-architecture-execution/pipeline-filtering-logic/applying-statistical-outlier-filters-in-pdal/) — strip sub-canopy noise before classifying
+- [SMRF Ground Classification in PDAL](https://www.pythonlidar.com/ground-filtering-dtm-dsm-generation/smrf-ground-classification/) — parent guide to the algorithm and its full parameter set
+- [SMRF vs PMF for Dense Urban LiDAR](https://www.pythonlidar.com/ground-filtering-dtm-dsm-generation/smrf-ground-classification/smrf-vs-pmf-for-dense-urban-lidar/) — how the same filter behaves in the opposite (built-up) setting
+- [Ground Filtering and DTM/DSM Generation with PDAL](https://www.pythonlidar.com/ground-filtering-dtm-dsm-generation/) — the broader terrain-modelling workflow this feeds
+- [Applying Statistical Outlier Filters in PDAL](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/pipeline-filtering-logic/applying-statistical-outlier-filters-in-pdal/) — strip sub-canopy noise before classifying

@@ -2,7 +2,7 @@
 title: "Syncing Metadata Between LAS and Shapefiles: A Python Workflow"
 description: "How to extract CRS, bounding extents, and attributes from a LAS header with laspy, normalize the spatial reference with pyproj, and write a fully synchronized shapefile with geopandas — including DBF field-limit enforcement and verification."
 slug: "syncing-metadata-between-las-and-shapefiles"
-type: "long_tail"
+type: "howto"
 breadcrumb: "Syncing Metadata Between LAS and Shapefiles"
 datePublished: "2025-01-15"
 dateModified: "2026-06-24"
@@ -23,9 +23,9 @@ dateModified: "2026-06-24"
     {
       "@type": "BreadcrumbList",
       "itemListElement": [
-        {"@type": "ListItem", "position": 1, "name": "Point Cloud Data Standards & Fundamentals", "item": "https://pythonlidar.com/point-cloud-data-standards-fundamentals/"},
-        {"@type": "ListItem", "position": 2, "name": "Metadata & Header Sync", "item": "https://pythonlidar.com/point-cloud-data-standards-fundamentals/metadata-header-sync/"},
-        {"@type": "ListItem", "position": 3, "name": "Syncing Metadata Between LAS and Shapefiles", "item": "https://pythonlidar.com/point-cloud-data-standards-fundamentals/metadata-header-sync/syncing-metadata-between-las-and-shapefiles/"}
+        {"@type": "ListItem", "position": 1, "name": "Point Cloud Data Standards & Fundamentals", "item": "https://www.pythonlidar.com/point-cloud-data-standards-fundamentals/"},
+        {"@type": "ListItem", "position": 2, "name": "Metadata & Header Sync", "item": "https://www.pythonlidar.com/point-cloud-data-standards-fundamentals/metadata-header-sync/"},
+        {"@type": "ListItem", "position": 3, "name": "Syncing Metadata Between LAS and Shapefiles", "item": "https://www.pythonlidar.com/point-cloud-data-standards-fundamentals/metadata-header-sync/syncing-metadata-between-las-and-shapefiles/"}
       ]
     },
     {
@@ -76,13 +76,13 @@ dateModified: "2026-06-24"
 
 ## Context and Motivation
 
-This guide is part of [Metadata & Header Sync](/point-cloud-data-standards-fundamentals/metadata-header-sync/), which covers the full lifecycle of validating and reconciling LAS/LAZ header fields with point data and external spatial files.
+This guide is part of [Metadata & Header Sync](https://www.pythonlidar.com/point-cloud-data-standards-fundamentals/metadata-header-sync/), which covers the full lifecycle of validating and reconciling LAS/LAZ header fields with point data and external spatial files.
 
 Point clouds and vector boundaries rarely share identical metadata pipelines. LAS files embed spatial context inside a structured binary header: generation date, software ID, bounding box extents, and a coordinate reference system stored in variable-length records (VLRs). Shapefiles split equivalent metadata across three sidecars — `.prj` (CRS as WKT), `.dbf` (tabular attributes), and optional `.xml` (extended metadata) — each with its own format constraints and legacy size limits.
 
 When engineering teams generate delivery boundaries by deriving a bounding polygon from a LiDAR survey tile, metadata typically degrades at the format handoff. CRS definitions get dropped, software ID strings exceed the 254-character DBF limit and are silently truncated, and generation timestamps disappear entirely. The result is an audit gap: the shapefile boundary can no longer be traced back unambiguously to its source scan. For infrastructure and urban-planning deliverables subject to survey-grade QA, that gap is a liability.
 
-Understanding how a LAS header is structured is covered in [LAS/LAZ File Structure](/point-cloud-data-standards-fundamentals/laslaz-file-structure/). Resolving CRS discrepancies before synchronization is covered in [Coordinate Reference Systems](/point-cloud-data-standards-fundamentals/coordinate-reference-systems/).
+Understanding how a LAS header is structured is covered in [LAS/LAZ File Structure](https://www.pythonlidar.com/point-cloud-data-standards-fundamentals/laslaz-file-structure/). Resolving CRS discrepancies before synchronization is covered in [Coordinate Reference Systems](https://www.pythonlidar.com/point-cloud-data-standards-fundamentals/coordinate-reference-systems/).
 
 <svg viewBox="0 0 720 200" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="LAS-to-shapefile metadata sync: header extraction, CRS resolution, bounding polygon, DBF attribute mapping, and shapefile export" style="width:100%;max-width:720px;display:block;margin:1.5rem auto;">
   <title>LAS to Shapefile Metadata Synchronization Flow</title>
@@ -180,7 +180,7 @@ def extract_las_crs(header: laspy.LasHeader) -> CRS | None:
     return None
 ```
 
-LAS 1.2 files store CRS only in GeoKey VLRs (record IDs 34735–34737). For those, parsing requires a GeoTIFF key decoder — or simply accepting the fallback EPSG code described in step 3. See [how to parse LAS headers with Python](/point-cloud-data-standards-fundamentals/laslaz-file-structure/how-to-parse-las-headers-with-python/) for a full GeoKey walkthrough.
+LAS 1.2 files store CRS only in GeoKey VLRs (record IDs 34735–34737). For those, parsing requires a GeoTIFF key decoder — or simply accepting the fallback EPSG code described in step 3. See [how to parse LAS headers with Python](https://www.pythonlidar.com/point-cloud-data-standards-fundamentals/laslaz-file-structure/how-to-parse-las-headers-with-python/) for a full GeoKey walkthrough.
 
 ### Step 3 — Resolve the CRS with a Safe Fallback
 
@@ -373,7 +373,7 @@ Look for any field name that has been auto-truncated (shorter than the original 
 
 **LAS 1.2 files without a WKT2 VLR.** `extract_las_crs()` above targets `record_id 2112` only. Files generated by older scanners or flight management software may embed CRS solely in GeoKey VLRs (`record_id 34735`). If the function returns `None` and you know the datum, pass the project EPSG code explicitly rather than defaulting to WGS84. Incorrect CRS assumptions compound across every downstream spatial join and can shift geometry by tens of metres when UTM zones are confused.
 
-**Bounding box header vs. actual point extents.** The LAS header `x_min` / `x_max` values are written by the generating software and may be stale after in-place edits or partial point deletions. For audit-critical deliverables, verify the header extents against actual point-array statistics — the full procedure is in [Metadata & Header Sync](/point-cloud-data-standards-fundamentals/metadata-header-sync/).
+**Bounding box header vs. actual point extents.** The LAS header `x_min` / `x_max` values are written by the generating software and may be stale after in-place edits or partial point deletions. For audit-critical deliverables, verify the header extents against actual point-array statistics — the full procedure is in [Metadata & Header Sync](https://www.pythonlidar.com/point-cloud-data-standards-fundamentals/metadata-header-sync/).
 
 **Empty system_identifier or generating_software fields.** Some encoders leave these fields as null bytes. `str(header.system_identifier).strip()` collapses a null-filled 32-byte field to an empty string, which is a valid DBF string value. Log the empty value rather than assigning a placeholder to avoid fabricating metadata.
 
@@ -389,8 +389,8 @@ Always reproject the `GeoDataFrame`, not just the CRS attribute. Changing only `
 
 ## Related
 
-- [Metadata & Header Sync](/point-cloud-data-standards-fundamentals/metadata-header-sync/) — parent guide covering the full LAS header validation and reconciliation lifecycle
-- [LAS/LAZ File Structure](/point-cloud-data-standards-fundamentals/laslaz-file-structure/) — VLR layout, point record formats, and scale/offset conventions
-- [How to Parse LAS Headers with Python](/point-cloud-data-standards-fundamentals/laslaz-file-structure/how-to-parse-las-headers-with-python/) — step-by-step extraction of every header field with `laspy`
-- [Coordinate Reference Systems](/point-cloud-data-standards-fundamentals/coordinate-reference-systems/) — diagnosing and resolving CRS ambiguity in LAS/LAZ files
-- [Point Cloud Data Standards & Fundamentals](/point-cloud-data-standards-fundamentals/) — pillar overview of ASPRS specifications, file formats, and delivery standards
+- [Metadata & Header Sync](https://www.pythonlidar.com/point-cloud-data-standards-fundamentals/metadata-header-sync/) — parent guide covering the full LAS header validation and reconciliation lifecycle
+- [LAS/LAZ File Structure](https://www.pythonlidar.com/point-cloud-data-standards-fundamentals/laslaz-file-structure/) — VLR layout, point record formats, and scale/offset conventions
+- [How to Parse LAS Headers with Python](https://www.pythonlidar.com/point-cloud-data-standards-fundamentals/laslaz-file-structure/how-to-parse-las-headers-with-python/) — step-by-step extraction of every header field with `laspy`
+- [Coordinate Reference Systems](https://www.pythonlidar.com/point-cloud-data-standards-fundamentals/coordinate-reference-systems/) — diagnosing and resolving CRS ambiguity in LAS/LAZ files
+- [Point Cloud Data Standards & Fundamentals](https://www.pythonlidar.com/point-cloud-data-standards-fundamentals/) — overview of ASPRS specifications, file formats, and delivery standards

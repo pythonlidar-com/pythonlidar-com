@@ -2,7 +2,7 @@
 title: "Point Density Metrics in Python LiDAR Workflows"
 description: "Compute, validate, and normalize point density metrics from LAS/LAZ files using Python. Grid-based binning, statistical QA, classification filtering, and CI/CD integration for production LiDAR pipelines."
 slug: "point-density-metrics"
-type: "cluster"
+type: "topic"
 breadcrumb: "Point Density Metrics"
 datePublished: "2024-01-15"
 dateModified: "2026-06-24"
@@ -24,9 +24,9 @@ dateModified: "2026-06-24"
     {
       "@type": "BreadcrumbList",
       "itemListElement": [
-        { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://pythonlidar.com/" },
-        { "@type": "ListItem", "position": 2, "name": "Point Cloud Data Standards & Fundamentals", "item": "https://pythonlidar.com/point-cloud-data-standards-fundamentals/" },
-        { "@type": "ListItem", "position": 3, "name": "Point Density Metrics", "item": "https://pythonlidar.com/point-cloud-data-standards-fundamentals/point-density-metrics/" }
+        { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://www.pythonlidar.com/" },
+        { "@type": "ListItem", "position": 2, "name": "Point Cloud Data Standards & Fundamentals", "item": "https://www.pythonlidar.com/point-cloud-data-standards-fundamentals/" },
+        { "@type": "ListItem", "position": 3, "name": "Point Density Metrics", "item": "https://www.pythonlidar.com/point-cloud-data-standards-fundamentals/point-density-metrics/" }
       ]
     },
     {
@@ -83,7 +83,7 @@ dateModified: "2026-06-24"
 }
 </script>
 
-Point density metrics quantify the spatial distribution of laser returns across a survey extent and are the primary quality gate before any downstream LiDAR analysis. When density falls below spec—or varies systematically across a tile—terrain models, canopy height estimates, and volumetric calculations all degrade in predictable ways. This guide is part of [Point Cloud Data Standards & Fundamentals](/point-cloud-data-standards-fundamentals/) and covers the complete Python workflow: header validation, classification-aware binning, statistical normalization, threshold enforcement, and metadata synchronization for production pipelines.
+Point density metrics quantify the spatial distribution of laser returns across a survey extent and are the primary quality gate before any downstream LiDAR analysis. When density falls below spec—or varies systematically across a tile—terrain models, canopy height estimates, and volumetric calculations all degrade in predictable ways. This guide is part of [Point Cloud Data Standards & Fundamentals](https://www.pythonlidar.com/point-cloud-data-standards-fundamentals/) and covers the complete Python workflow: header validation, classification-aware binning, statistical normalization, threshold enforcement, and metadata synchronization for production pipelines.
 
 <svg viewBox="0 0 780 220" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Six-stage point density workflow: validate CRS, filter classifications, grid-bin XY, normalize to pts/m², derive QA statistics, export and sync metadata" style="width:100%;max-width:780px;display:block;margin:1.5rem auto;">
   <title>Point Density Metrics Workflow — Six Stages</title>
@@ -140,8 +140,8 @@ Before implementing density calculations, confirm that your environment and inpu
 - **Python 3.10+** with a managed virtual environment (`venv` or `conda`)
 - **Core libraries:** `laspy` (v2.4+), `numpy` (≥1.24), `scipy` (≥1.11), `rasterio` (≥1.3), `pyproj` (≥3.6)
 - **Input data:** LAS 1.2–1.4 or LAZ files with populated VLRs, a consistent scale/offset header, and `Classification` dimension present
-- **CRS:** Input must be in a projected metric coordinate system (e.g., EPSG:32632 for UTM zone 32N). Geographic CRS (EPSG:4326) will produce incorrect area calculations. See [Coordinate Reference Systems](/point-cloud-data-standards-fundamentals/coordinate-reference-systems/) for reprojection guidance.
-- **LAS knowledge:** Familiarity with how the [LAS/LAZ file structure](/point-cloud-data-standards-fundamentals/laslaz-file-structure/) encodes scale/offset and VLRs — these fields are read in Stage 1
+- **CRS:** Input must be in a projected metric coordinate system (e.g., EPSG:32632 for UTM zone 32N). Geographic CRS (EPSG:4326) will produce incorrect area calculations. See [Coordinate Reference Systems](https://www.pythonlidar.com/point-cloud-data-standards-fundamentals/coordinate-reference-systems/) for reprojection guidance.
+- **LAS knowledge:** Familiarity with how the [LAS/LAZ file structure](https://www.pythonlidar.com/point-cloud-data-standards-fundamentals/laslaz-file-structure/) encodes scale/offset and VLRs — these fields are read in Stage 1
 - **Test dataset:** Any publicly available USGS 3DEP tile (`.laz`) works for development; download via the [USGS LidarExplorer](https://apps.nationalmap.gov/lidarexplorer/)
 - **System resources:** ≥ 8 GB RAM for files up to 200 M points using the chunked approach below; NVMe storage recommended for sequential reads
 
@@ -154,7 +154,7 @@ The density computation follows a six-phase execution lifecycle designed to be m
 3. **Bounding-box sweep** — first chunked pass over XY coordinates to determine `x_min`, `y_min`, `x_max`, `y_max` without loading Z or attribute dimensions
 4. **Density accumulation** — second chunked pass: bin filtered XY points into a `uint32` grid using `np.add.at`; `cell_size` defaults to 1.0 m
 5. **Normalization and statistics** — divide raw counts by `cell_size²`, then compute descriptive statistics over non-zero cells; flag cells below the project threshold
-6. **Export and metadata sync** — write the density raster as a GeoTIFF (via `rasterio`) and update the LAS VLR with the empirical density values for downstream [metadata-header synchronization](/point-cloud-data-standards-fundamentals/metadata-header-sync/)
+6. **Export and metadata sync** — write the density raster as a GeoTIFF (via `rasterio`) and update the LAS VLR with the empirical density values for downstream [metadata-header synchronization](https://www.pythonlidar.com/point-cloud-data-standards-fundamentals/metadata-header-sync/)
 
 ## Full Implementation
 
@@ -437,7 +437,7 @@ if __name__ == "__main__":
 
 **`export_density_geotiff`** — `np.flipud` reconciles the array-indexing convention (row 0 = y_min) with GeoTIFF's north-up convention (row 0 = y_max). Compression via Deflate and 256×256 tiling makes the output suitable for direct ingestion by QGIS, GDAL, and cloud raster services without post-processing.
 
-**Classification mask** — excluding [ASPRS classification codes](/point-cloud-data-standards-fundamentals/asprs-classification-codes/) 7 (low noise), 12 (overlap), 18 (high noise), and 22 (withheld) before binning is the single most impactful step for accurate density reporting. Overlap returns (class 12) in particular double-count coverage at flight-line edges and can inflate mean density by 20–40% in multi-swath acquisitions.
+**Classification mask** — excluding [ASPRS classification codes](https://www.pythonlidar.com/point-cloud-data-standards-fundamentals/asprs-classification-codes/) 7 (low noise), 12 (overlap), 18 (high noise), and 22 (withheld) before binning is the single most impactful step for accurate density reporting. Overlap returns (class 12) in particular double-count coverage at flight-line edges and can inflate mean density by 20–40% in multi-swath acquisitions.
 
 ## Parameter Reference Table
 
@@ -497,7 +497,7 @@ def validate_density_output(
 
 **Point count reconciliation** — compare the total count of binned points (sum of the raw `uint32` grid) against `laspy.open().header.point_count` minus excluded-class totals. A discrepancy of more than 0.1% indicates a bug in the classification mask logic or a corrupted file.
 
-**CRS round-trip test** — after writing the GeoTIFF, re-open it with `rasterio` and assert that `src.crs.to_epsg()` matches the EPSG code extracted from the LAS file's VLR. CRS mismatch between the source point cloud and the density raster will silently misalign any overlay analysis. See [fixing CRS mismatches in point clouds](/point-cloud-data-standards-fundamentals/coordinate-reference-systems/fixing-crs-mismatches-in-point-clouds/) for remediation steps.
+**CRS round-trip test** — after writing the GeoTIFF, re-open it with `rasterio` and assert that `src.crs.to_epsg()` matches the EPSG code extracted from the LAS file's VLR. CRS mismatch between the source point cloud and the density raster will silently misalign any overlay analysis. See [fixing CRS mismatches in point clouds](https://www.pythonlidar.com/point-cloud-data-standards-fundamentals/coordinate-reference-systems/fixing-crs-mismatches-in-point-clouds/) for remediation steps.
 
 ## Performance Tuning
 
@@ -517,7 +517,7 @@ For datasets over 50 GB or in cloud object storage (S3/GCS), replace `laspy` wit
 The file was exported without a coordinate system. Use `laspy` to add a WKT2 CRS VLR, or run `pdal translate input.las output.las --writers.las.a_srs="EPSG:32632"` to embed the projection before re-running.
 
 **`ValueError: Geographic CRS detected.`**
-The file is stored in geographic coordinates (degrees). Apply a [spatial reprojection](/pdal-pipeline-architecture-execution/spatial-reprojection/) stage to convert to a projected metric system before density computation. Using `pyproj.Transformer` directly on the coordinate arrays is an alternative for pure-Python workflows.
+The file is stored in geographic coordinates (degrees). Apply a [spatial reprojection](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/spatial-reprojection/) stage to convert to a projected metric system before density computation. Using `pyproj.Transformer` directly on the coordinate arrays is an alternative for pure-Python workflows.
 
 **`RuntimeError: No valid points remain after classification filtering.`**
 Every point in the file matches an excluded class. Inspect the file's actual class distribution with `laspy.read(path).classification.value_counts()` (laspy 2.4+) and adjust `EXCLUDE_CLASSES` accordingly. A common cause is receiving a file where all points are still class 0 (Created, never classified).
@@ -535,8 +535,8 @@ This typically means `y_max` was derived from the raw chunk maximum, which may b
 
 ## Related
 
-- [Calculating Point Density for Drone Surveys](/point-cloud-data-standards-fundamentals/point-density-metrics/calculating-point-density-for-drone-surveys/) — UAV-specific overlap requirements and empirical density cross-referencing
-- [LAS/LAZ File Structure](/point-cloud-data-standards-fundamentals/laslaz-file-structure/) — how point records, VLRs, and header fields organize the data this workflow reads
-- [ASPRS Classification Codes](/point-cloud-data-standards-fundamentals/asprs-classification-codes/) — the full class taxonomy driving the noise-exclusion masks above
-- [Coordinate Reference Systems](/point-cloud-data-standards-fundamentals/coordinate-reference-systems/) — CRS validation, reprojection strategies, and fixing projection mismatches
-- [Metadata & Header Synchronization](/point-cloud-data-standards-fundamentals/metadata-header-sync/) — updating LAS VLRs with empirical density values after pipeline completion
+- [Calculating Point Density for Drone Surveys](https://www.pythonlidar.com/point-cloud-data-standards-fundamentals/point-density-metrics/calculating-point-density-for-drone-surveys/) — UAV-specific overlap requirements and empirical density cross-referencing
+- [LAS/LAZ File Structure](https://www.pythonlidar.com/point-cloud-data-standards-fundamentals/laslaz-file-structure/) — how point records, VLRs, and header fields organize the data this workflow reads
+- [ASPRS Classification Codes](https://www.pythonlidar.com/point-cloud-data-standards-fundamentals/asprs-classification-codes/) — the full class taxonomy driving the noise-exclusion masks above
+- [Coordinate Reference Systems](https://www.pythonlidar.com/point-cloud-data-standards-fundamentals/coordinate-reference-systems/) — CRS validation, reprojection strategies, and fixing projection mismatches
+- [Metadata & Header Synchronization](https://www.pythonlidar.com/point-cloud-data-standards-fundamentals/metadata-header-sync/) — updating LAS VLRs with empirical density values after pipeline completion

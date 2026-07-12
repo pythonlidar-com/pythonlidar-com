@@ -2,7 +2,7 @@
 title: "Streaming LAZ from S3 with PDAL"
 description: "How to stream a LAZ tile straight from Amazon S3 into a PDAL pipeline using the /vsis3/ virtual file system — no local download — with credential setup and verification."
 slug: "streaming-laz-from-s3-with-pdal"
-type: "long_tail"
+type: "howto"
 breadcrumb: "Streaming LAZ from S3"
 datePublished: "2024-07-06"
 dateModified: "2026-07-12"
@@ -23,10 +23,10 @@ dateModified: "2026-07-12"
     {
       "@type": "BreadcrumbList",
       "itemListElement": [
-        {"@type": "ListItem", "position": 1, "name": "Home", "item": "https://pythonlidar.com/"},
-        {"@type": "ListItem", "position": 2, "name": "Batch Automation and Cloud Integration for PDAL", "item": "https://pythonlidar.com/batch-automation-cloud-integration/"},
-        {"@type": "ListItem", "position": 3, "name": "S3 Cloud Storage I/O", "item": "https://pythonlidar.com/batch-automation-cloud-integration/s3-cloud-storage-io/"},
-        {"@type": "ListItem", "position": 4, "name": "Streaming LAZ from S3", "item": "https://pythonlidar.com/batch-automation-cloud-integration/s3-cloud-storage-io/streaming-laz-from-s3-with-pdal/"}
+        {"@type": "ListItem", "position": 1, "name": "Home", "item": "https://www.pythonlidar.com/"},
+        {"@type": "ListItem", "position": 2, "name": "Batch Automation and Cloud Integration for PDAL", "item": "https://www.pythonlidar.com/batch-automation-cloud-integration/"},
+        {"@type": "ListItem", "position": 3, "name": "S3 Cloud Storage I/O", "item": "https://www.pythonlidar.com/batch-automation-cloud-integration/s3-cloud-storage-io/"},
+        {"@type": "ListItem", "position": 4, "name": "Streaming LAZ from S3", "item": "https://www.pythonlidar.com/batch-automation-cloud-integration/s3-cloud-storage-io/streaming-laz-from-s3-with-pdal/"}
       ]
     },
     {
@@ -73,9 +73,9 @@ dateModified: "2026-07-12"
 
 ## Context and Motivation
 
-This guide is part of [S3 Cloud Storage I/O with PDAL](/batch-automation-cloud-integration/s3-cloud-storage-io/), the parent guide to reading and writing point clouds against Amazon S3.
+This guide is part of [S3 Cloud Storage I/O with PDAL](https://www.pythonlidar.com/batch-automation-cloud-integration/s3-cloud-storage-io/), the parent guide to reading and writing point clouds against Amazon S3.
 
-The common way teams first read cloud LiDAR is clumsy: call boto3 `download_file` into a temp directory, run PDAL against the local copy, then delete it. That pattern doubles disk pressure, complicates cleanup on failure, and serialises the transfer ahead of processing. GDAL's `/vsis3/` virtual file system removes the temp file entirely — `readers.las` opens the S3 object as if it were a local path and PDAL reads through it directly. For a batch worker chewing through thousands of tiles, dropping the download-then-delete dance simplifies the code and removes an entire class of "disk full" failures. The wider [PDAL pipeline model](/pdal-pipeline-architecture-execution/) is untouched; only the reader's `filename` changes.
+The common way teams first read cloud LiDAR is clumsy: call boto3 `download_file` into a temp directory, run PDAL against the local copy, then delete it. That pattern doubles disk pressure, complicates cleanup on failure, and serialises the transfer ahead of processing. GDAL's `/vsis3/` virtual file system removes the temp file entirely — `readers.las` opens the S3 object as if it were a local path and PDAL reads through it directly. For a batch worker chewing through thousands of tiles, dropping the download-then-delete dance simplifies the code and removes an entire class of "disk full" failures. The wider [PDAL pipeline model](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/) is untouched; only the reader's `filename` changes.
 
 <svg viewBox="0 0 720 210" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Streaming a LAZ object from S3 into readers.las without a local temp file" style="width:100%;max-width:720px;display:block;margin:1.5rem auto">
   <title>Streaming LAZ from S3 versus the download-then-read pattern</title>
@@ -129,7 +129,7 @@ pdal --version           # note the linked GDAL version
 gdalinfo --formats | grep -i vsi   # confirms virtual FS support is present
 ```
 
-If the source object might carry an empty or wrong CRS in its header, handle that as you would for any file — see [fixing CRS mismatches in point clouds](/point-cloud-data-standards-fundamentals/coordinate-reference-systems/fixing-crs-mismatches-in-point-clouds/). The transport layer never rewrites the CRS.
+If the source object might carry an empty or wrong CRS in its header, handle that as you would for any file — see [fixing CRS mismatches in point clouds](https://www.pythonlidar.com/point-cloud-data-standards-fundamentals/coordinate-reference-systems/fixing-crs-mismatches-in-point-clouds/). The transport layer never rewrites the CRS.
 
 ## Step-by-Step Implementation
 
@@ -181,7 +181,7 @@ def stream_laz(vsis3_path: str) -> pdal.Pipeline:
     return pdal.Pipeline(json.dumps(pipeline))
 ```
 
-The `filters.stats` stage here simply proves the bytes flowed by summarising the `Z` dimension; in a real job you would chain classification, reprojection, or rasterisation stages after the reader following the usual [PDAL stage chaining](/pdal-pipeline-architecture-execution/pdal-stage-chaining/) rules.
+The `filters.stats` stage here simply proves the bytes flowed by summarising the `Z` dimension; in a real job you would chain classification, reprojection, or rasterisation stages after the reader following the usual [PDAL stage chaining](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/pdal-stage-chaining/) rules.
 
 ### Step 4 — Tune the range-read behaviour
 
@@ -306,9 +306,9 @@ aws s3api head-object --bucket ny-lidar-2021 --key tiles/u_18TWL_4501.laz --regi
 
 ## Gotchas and Edge Cases
 
-**1. "Streaming" LAZ still transfers the whole object.** LAZ compresses points into chunks that are not spatially indexed, so PDAL cannot fetch "just the corner" of a plain `.laz`. The `/vsis3/` handler pulls the entire object across the wire before decompression. If you need genuine partial reads — fetching only the octree nodes a bounding box touches — convert the archive to COPC (`.copc.laz`), which the parent [S3 Cloud Storage I/O](/batch-automation-cloud-integration/s3-cloud-storage-io/) guide covers. For iterative work on the same tile, weigh the transfer cost against local caching, a trade-off explored in [LAZ vs Uncompressed LAS for Iterative Processing](/pdal-pipeline-architecture-execution/memory-management/laz-vs-uncompressed-las-for-iterative-processing/).
+**1. "Streaming" LAZ still transfers the whole object.** LAZ compresses points into chunks that are not spatially indexed, so PDAL cannot fetch "just the corner" of a plain `.laz`. The `/vsis3/` handler pulls the entire object across the wire before decompression. If you need genuine partial reads — fetching only the octree nodes a bounding box touches — convert the archive to COPC (`.copc.laz`), which the parent [S3 Cloud Storage I/O](https://www.pythonlidar.com/batch-automation-cloud-integration/s3-cloud-storage-io/) guide covers. For iterative work on the same tile, weigh the transfer cost against local caching, a trade-off explored in [LAZ vs Uncompressed LAS for Iterative Processing](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/memory-management/laz-vs-uncompressed-las-for-iterative-processing/).
 
-**2. Credentials go missing inside containers.** A container that runs fine locally can fail in production because the local `~/.aws/credentials` was never mounted and no role is attached. On ECS/Fargate rely on the task role; in plain Docker, pass credentials as environment variables or mount the credentials file read-only. Never bake keys into the image — see [Running PDAL Pipelines in Docker](/batch-automation-cloud-integration/pdal-docker-containers/running-pdal-pipelines-in-docker/).
+**2. Credentials go missing inside containers.** A container that runs fine locally can fail in production because the local `~/.aws/credentials` was never mounted and no role is attached. On ECS/Fargate rely on the task role; in plain Docker, pass credentials as environment variables or mount the credentials file read-only. Never bake keys into the image — see [Running PDAL Pipelines in Docker](https://www.pythonlidar.com/batch-automation-cloud-integration/pdal-docker-containers/running-pdal-pipelines-in-docker/).
 
 **3. Region mismatch degrades silently.** If `AWS_REGION` is wrong, S3 may answer with a 301 redirect that GDAL cannot always replay for a signed request, producing an obscure failure rather than a clear "wrong region" message. Always export the bucket's home region explicitly.
 
@@ -336,8 +336,8 @@ The first open pays for the header probe, TLS handshake, and any directory listi
 
 ## Related
 
-- [S3 Cloud Storage I/O with PDAL](/batch-automation-cloud-integration/s3-cloud-storage-io/) — parent guide to reading and writing point clouds against S3
-- [Writing Cloud-Optimized GeoTIFFs to S3](/batch-automation-cloud-integration/s3-cloud-storage-io/writing-cloud-optimized-geotiffs-to-s3/) — the write-back counterpart to this read guide
-- [Running PDAL Pipelines in Docker](/batch-automation-cloud-integration/pdal-docker-containers/running-pdal-pipelines-in-docker/) — supply credentials to a containerised streaming job
-- [PDAL Stage Chaining](/pdal-pipeline-architecture-execution/pdal-stage-chaining/) — chain filters after the streaming reader
-- [Batch Automation and Cloud Integration for PDAL](/batch-automation-cloud-integration/) — the wider cloud automation picture
+- [S3 Cloud Storage I/O with PDAL](https://www.pythonlidar.com/batch-automation-cloud-integration/s3-cloud-storage-io/) — parent guide to reading and writing point clouds against S3
+- [Writing Cloud-Optimized GeoTIFFs to S3](https://www.pythonlidar.com/batch-automation-cloud-integration/s3-cloud-storage-io/writing-cloud-optimized-geotiffs-to-s3/) — the write-back counterpart to this read guide
+- [Running PDAL Pipelines in Docker](https://www.pythonlidar.com/batch-automation-cloud-integration/pdal-docker-containers/running-pdal-pipelines-in-docker/) — supply credentials to a containerised streaming job
+- [PDAL Stage Chaining](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/pdal-stage-chaining/) — chain filters after the streaming reader
+- [Batch Automation and Cloud Integration for PDAL](https://www.pythonlidar.com/batch-automation-cloud-integration/) — the wider cloud automation picture

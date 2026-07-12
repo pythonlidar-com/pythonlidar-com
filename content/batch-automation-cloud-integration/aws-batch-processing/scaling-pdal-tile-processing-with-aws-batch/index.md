@@ -2,7 +2,7 @@
 title: "Scaling PDAL Tile Processing with AWS Batch"
 description: "A worked example of fanning out a PDAL ground-to-DTM pipeline across an AWS Batch array job — building the tile manifest, submitting with boto3, and aggregating the output rasters."
 slug: "scaling-pdal-tile-processing-with-aws-batch"
-type: "long_tail"
+type: "howto"
 breadcrumb: "Scaling PDAL with AWS Batch"
 datePublished: "2024-07-04"
 dateModified: "2026-07-12"
@@ -23,10 +23,10 @@ dateModified: "2026-07-12"
     {
       "@type": "BreadcrumbList",
       "itemListElement": [
-        {"@type": "ListItem", "position": 1, "name": "Home", "item": "https://pythonlidar.com/"},
-        {"@type": "ListItem", "position": 2, "name": "Batch Automation and Cloud Integration for PDAL", "item": "https://pythonlidar.com/batch-automation-cloud-integration/"},
-        {"@type": "ListItem", "position": 3, "name": "AWS Batch Processing", "item": "https://pythonlidar.com/batch-automation-cloud-integration/aws-batch-processing/"},
-        {"@type": "ListItem", "position": 4, "name": "Scaling PDAL with AWS Batch", "item": "https://pythonlidar.com/batch-automation-cloud-integration/aws-batch-processing/scaling-pdal-tile-processing-with-aws-batch/"}
+        {"@type": "ListItem", "position": 1, "name": "Home", "item": "https://www.pythonlidar.com/"},
+        {"@type": "ListItem", "position": 2, "name": "Batch Automation and Cloud Integration for PDAL", "item": "https://www.pythonlidar.com/batch-automation-cloud-integration/"},
+        {"@type": "ListItem", "position": 3, "name": "AWS Batch Processing", "item": "https://www.pythonlidar.com/batch-automation-cloud-integration/aws-batch-processing/"},
+        {"@type": "ListItem", "position": 4, "name": "Scaling PDAL with AWS Batch", "item": "https://www.pythonlidar.com/batch-automation-cloud-integration/aws-batch-processing/scaling-pdal-tile-processing-with-aws-batch/"}
       ]
     },
     {
@@ -69,7 +69,7 @@ dateModified: "2026-07-12"
 
 ## Context and Motivation
 
-This guide is part of [AWS Batch Processing for PDAL Point Clouds](/batch-automation-cloud-integration/aws-batch-processing/), which introduces the compute environment, job queue, and array-indexing model. Here we walk one concrete acquisition all the way through: a 12,500-tile regional survey that needs a one-metre DTM per tile, produced by a ground-classification pipeline running on Spot capacity.
+This guide is part of [AWS Batch Processing for PDAL Point Clouds](https://www.pythonlidar.com/batch-automation-cloud-integration/aws-batch-processing/), which introduces the compute environment, job queue, and array-indexing model. Here we walk one concrete acquisition all the way through: a 12,500-tile regional survey that needs a one-metre DTM per tile, produced by a ground-classification pipeline running on Spot capacity.
 
 The appeal of the array-job approach is that scaling is a number, not a rewrite. Whether the acquisition is 200 tiles or 12,500, the pipeline, the job definition, and the container are identical; only the manifest length and the array size change. That property is what lets a survey team reprocess an entire county overnight without provisioning anything by hand. The single complication at this scale is the 10,000-child ceiling on a Batch array, which turns a 12,500-tile job into two shards — handled below with a small sharding loop rather than any change to the processing logic.
 
@@ -114,7 +114,7 @@ The appeal of the array-job approach is that scaling is a number, not a rewrite.
 | Input tiles | LAZ tiles under one S3 prefix, one tile per grid cell |
 | GDAL | 3.4+ available where the aggregation runs, for `gdalbuildvrt` |
 
-This walkthrough assumes the ground-to-DTM pipeline itself is settled. If you are still tuning ground classification, do that on one tile first with [SMRF ground classification](/ground-filtering-dtm-dsm-generation/smrf-ground-classification/) before scaling out; a bad parameter multiplied across 12,500 tiles is an expensive mistake.
+This walkthrough assumes the ground-to-DTM pipeline itself is settled. If you are still tuning ground classification, do that on one tile first with [SMRF ground classification](https://www.pythonlidar.com/ground-filtering-dtm-dsm-generation/smrf-ground-classification/) before scaling out; a bad parameter multiplied across 12,500 tiles is an expensive mistake.
 
 ## Step-by-Step Implementation
 
@@ -397,7 +397,7 @@ def failed_tile_keys(parent_job_id: str, size: int, manifest_rows: list) -> list
     return failed
 ```
 
-**4. Uneven tile density skews completion time.** A DTM array finishes only when its slowest child does, and a dense urban tile can take several times longer than a sparse rural one. If a few stragglers dominate the tail, pre-split the densest tiles before building the manifest so no single child is an outlier — the same footprint reasoning covered in [memory management](/pdal-pipeline-architecture-execution/memory-management/).
+**4. Uneven tile density skews completion time.** A DTM array finishes only when its slowest child does, and a dense urban tile can take several times longer than a sparse rural one. If a few stragglers dominate the tail, pre-split the densest tiles before building the manifest so no single child is an outlier — the same footprint reasoning covered in [memory management](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/memory-management/).
 
 ## Frequently Asked Questions
 
@@ -421,8 +421,8 @@ Yes — build the VRT first, then run `gdal_translate acq_2026_east_dtm.vrt merg
 
 ## Related
 
-- [AWS Batch Processing for PDAL Point Clouds](/batch-automation-cloud-integration/aws-batch-processing/) — the parent guide covering compute environments, job definitions, and array indexing in depth
-- [Batch Automation and Cloud Integration for PDAL](/batch-automation-cloud-integration/) — the wider landscape of containerised and scheduled PDAL processing
-- [S3 Cloud Storage I/O](/batch-automation-cloud-integration/s3-cloud-storage-io/) — reading tiles and writing rasters directly against S3 with `/vsis3/`
-- [SMRF Ground Classification](/ground-filtering-dtm-dsm-generation/smrf-ground-classification/) — tuning the ground-classification stage each Batch child runs
-- [Optimizing PDAL for Multi-Core Processing](/pdal-pipeline-architecture-execution/parallel-execution/optimizing-pdal-for-multi-core-processing/) — sizing vCPUs per container by measuring one tile's parallel width
+- [AWS Batch Processing for PDAL Point Clouds](https://www.pythonlidar.com/batch-automation-cloud-integration/aws-batch-processing/) — the parent guide covering compute environments, job definitions, and array indexing in depth
+- [Batch Automation and Cloud Integration for PDAL](https://www.pythonlidar.com/batch-automation-cloud-integration/) — the wider landscape of containerised and scheduled PDAL processing
+- [S3 Cloud Storage I/O](https://www.pythonlidar.com/batch-automation-cloud-integration/s3-cloud-storage-io/) — reading tiles and writing rasters directly against S3 with `/vsis3/`
+- [SMRF Ground Classification](https://www.pythonlidar.com/ground-filtering-dtm-dsm-generation/smrf-ground-classification/) — tuning the ground-classification stage each Batch child runs
+- [Optimizing PDAL for Multi-Core Processing](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/parallel-execution/optimizing-pdal-for-multi-core-processing/) — sizing vCPUs per container by measuring one tile's parallel width

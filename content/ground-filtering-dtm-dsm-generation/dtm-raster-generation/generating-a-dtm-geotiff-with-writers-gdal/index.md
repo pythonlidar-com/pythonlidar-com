@@ -2,7 +2,7 @@
 title: "Generating a DTM GeoTIFF with writers.gdal"
 description: "A complete PDAL recipe to rasterize ground-classified LiDAR into a compressed, tiled DTM GeoTIFF using writers.gdal — resolution, output_type=idw, and rasterio verification."
 slug: "generating-a-dtm-geotiff-with-writers-gdal"
-type: "long_tail"
+type: "howto"
 breadcrumb: "DTM GeoTIFF with writers.gdal"
 datePublished: "2024-06-24"
 dateModified: "2026-07-12"
@@ -23,10 +23,10 @@ dateModified: "2026-07-12"
     {
       "@type": "BreadcrumbList",
       "itemListElement": [
-        {"@type": "ListItem", "position": 1, "name": "Home", "item": "https://pythonlidar.com/"},
-        {"@type": "ListItem", "position": 2, "name": "Ground Filtering & Terrain Models", "item": "https://pythonlidar.com/ground-filtering-dtm-dsm-generation/"},
-        {"@type": "ListItem", "position": 3, "name": "DTM Raster Generation", "item": "https://pythonlidar.com/ground-filtering-dtm-dsm-generation/dtm-raster-generation/"},
-        {"@type": "ListItem", "position": 4, "name": "DTM GeoTIFF with writers.gdal", "item": "https://pythonlidar.com/ground-filtering-dtm-dsm-generation/dtm-raster-generation/generating-a-dtm-geotiff-with-writers-gdal/"}
+        {"@type": "ListItem", "position": 1, "name": "Home", "item": "https://www.pythonlidar.com/"},
+        {"@type": "ListItem", "position": 2, "name": "Ground Filtering & Terrain Models", "item": "https://www.pythonlidar.com/ground-filtering-dtm-dsm-generation/"},
+        {"@type": "ListItem", "position": 3, "name": "DTM Raster Generation", "item": "https://www.pythonlidar.com/ground-filtering-dtm-dsm-generation/dtm-raster-generation/"},
+        {"@type": "ListItem", "position": 4, "name": "DTM GeoTIFF with writers.gdal", "item": "https://www.pythonlidar.com/ground-filtering-dtm-dsm-generation/dtm-raster-generation/generating-a-dtm-geotiff-with-writers-gdal/"}
       ]
     },
     {
@@ -73,9 +73,9 @@ dateModified: "2026-07-12"
 
 ## Context and Motivation
 
-This guide is part of [DTM Raster Generation with PDAL](/ground-filtering-dtm-dsm-generation/dtm-raster-generation/), the broader treatment of turning classified ground returns into terrain surfaces. Here the goal is narrow and practical: produce one correct, compact, GIS-ready DTM GeoTIFF from a classified tile and prove it is correct.
+This guide is part of [DTM Raster Generation with PDAL](https://www.pythonlidar.com/ground-filtering-dtm-dsm-generation/dtm-raster-generation/), the broader treatment of turning classified ground returns into terrain surfaces. Here the goal is narrow and practical: produce one correct, compact, GIS-ready DTM GeoTIFF from a classified tile and prove it is correct.
 
-The reason this deserves its own recipe is that a DTM is only as trustworthy as the small set of `writers.gdal` options behind it. A pipeline that omits the ground filter silently rasterizes tree canopy; one that forgets `gdalopts` emits a file several times larger than necessary; one that runs on a cloud still in degrees produces a raster with degree-sized pixels. Getting the exact stage list right once, and verifying it, saves hours of confused debugging in downstream slope, contour, and hydrology work. The classification step this recipe depends on is produced upstream by [SMRF Ground Classification](/ground-filtering-dtm-dsm-generation/smrf-ground-classification/).
+The reason this deserves its own recipe is that a DTM is only as trustworthy as the small set of `writers.gdal` options behind it. A pipeline that omits the ground filter silently rasterizes tree canopy; one that forgets `gdalopts` emits a file several times larger than necessary; one that runs on a cloud still in degrees produces a raster with degree-sized pixels. Getting the exact stage list right once, and verifying it, saves hours of confused debugging in downstream slope, contour, and hydrology work. The classification step this recipe depends on is produced upstream by [SMRF Ground Classification](https://www.pythonlidar.com/ground-filtering-dtm-dsm-generation/smrf-ground-classification/).
 
 <svg viewBox="0 0 720 210" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Recipe flow: classified tile to ground filter to writers.gdal IDW rasterizer to compressed tiled GeoTIFF verified with rasterio" style="width:100%;max-width:720px;display:block;margin:1.5rem auto">
   <title>DTM GeoTIFF recipe stage flow</title>
@@ -119,7 +119,7 @@ Confirm the tile actually contains ground points before you rasterize anything:
 pdal info --metadata tile_utm15n.laz | python -m json.tool | grep -i classification
 ```
 
-If the classification histogram shows no class 2, the cloud is unclassified — run a ground filter first. Files whose header CRS is empty or geographic should be reprojected, since a DTM's `resolution` is only meaningful in metres; the [Spatial Reprojection](/pdal-pipeline-architecture-execution/spatial-reprojection/) guide covers that repair.
+If the classification histogram shows no class 2, the cloud is unclassified — run a ground filter first. Files whose header CRS is empty or geographic should be reprojected, since a DTM's `resolution` is only meaningful in metres; the [Spatial Reprojection](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/spatial-reprojection/) guide covers that repair.
 
 ## Step-by-Step Implementation
 
@@ -134,7 +134,7 @@ Everything hinges on removing non-ground points before rasterization. `filters.r
 }
 ```
 
-The `[2:2]` range is inclusive on both ends, so it matches exactly the ASPRS ground code. This is the same conditional selection described in [Pipeline Filtering Logic](/pdal-pipeline-architecture-execution/pipeline-filtering-logic/).
+The `[2:2]` range is inclusive on both ends, so it matches exactly the ASPRS ground code. This is the same conditional selection described in [Pipeline Filtering Logic](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/pipeline-filtering-logic/).
 
 ### Step 2 — Configure writers.gdal
 
@@ -337,7 +337,7 @@ A DTM whose 1st-to-99th-percentile band matches the site's known relief, with th
 
 **2. Degree-sized pixels.** If the header CRS is `EPSG:4326`, `resolution: 1.0` produces one-degree cells spanning roughly 111 km. Reproject to a projected CRS such as `EPSG:32615` before rasterizing.
 
-**3. Interpolation invents terrain across large voids.** `window_size` and a generous `radius` will happily fill a river channel or building footprint with fabricated ground. Keep both modest and treat genuinely large holes deliberately, as in [Filling NoData Voids in DTM Rasters](/ground-filtering-dtm-dsm-generation/dtm-raster-generation/filling-nodata-voids-in-dtm-rasters/).
+**3. Interpolation invents terrain across large voids.** `window_size` and a generous `radius` will happily fill a river channel or building footprint with fabricated ground. Keep both modest and treat genuinely large holes deliberately, as in [Filling NoData Voids in DTM Rasters](https://www.pythonlidar.com/ground-filtering-dtm-dsm-generation/dtm-raster-generation/filling-nodata-voids-in-dtm-rasters/).
 
 **4. NoData ignored downstream.** A few tools disregard the GeoTIFF NoData tag and average `-9999` into slope calculations, producing cliff artefacts at void edges. Mask explicitly with `rasterio` masked reads when feeding such tools.
 
@@ -349,7 +349,7 @@ No. PDAL links GDAL internally, so `writers.gdal` works out of the box when PDAL
 
 **What resolution should I pick for a DTM GeoTIFF?**
 
-Match the cell size to the average spacing of ground returns. For typical airborne surveys of 8 to 20 ground points per square metre, 1 m is a safe default and 0.5 m is achievable in dense areas. Going finer than the ground spacing produces a raster dominated by interpolation and NoData holes rather than measured elevation — measure spacing with [Point Density Metrics](/point-cloud-data-standards-fundamentals/point-density-metrics/).
+Match the cell size to the average spacing of ground returns. For typical airborne surveys of 8 to 20 ground points per square metre, 1 m is a safe default and 0.5 m is achievable in dense areas. Going finer than the ground spacing produces a raster dominated by interpolation and NoData holes rather than measured elevation — measure spacing with [Point Density Metrics](https://www.pythonlidar.com/point-cloud-data-standards-fundamentals/point-density-metrics/).
 
 **Why is my output GeoTIFF so large?**
 
@@ -363,8 +363,8 @@ Yes. Setting `output_type: "all"` writes a multi-band GeoTIFF containing min, ma
 
 ## Related
 
-- [DTM Raster Generation with PDAL](/ground-filtering-dtm-dsm-generation/dtm-raster-generation/) — parent guide covering every writers.gdal parameter
-- [IDW vs Mean Interpolation for DTM Gaps](/ground-filtering-dtm-dsm-generation/dtm-raster-generation/idw-vs-mean-interpolation-for-dtm-gaps/) — choosing the cell interpolator
-- [Filling NoData Voids in DTM Rasters](/ground-filtering-dtm-dsm-generation/dtm-raster-generation/filling-nodata-voids-in-dtm-rasters/) — closing holes the recipe leaves behind
-- [SMRF Ground Classification](/ground-filtering-dtm-dsm-generation/smrf-ground-classification/) — producing the Classification 2 labels this recipe consumes
-- [Ground Filtering and DTM/DSM Generation with PDAL](/ground-filtering-dtm-dsm-generation/) — the surrounding terrain-modelling overview
+- [DTM Raster Generation with PDAL](https://www.pythonlidar.com/ground-filtering-dtm-dsm-generation/dtm-raster-generation/) — parent guide covering every writers.gdal parameter
+- [IDW vs Mean Interpolation for DTM Gaps](https://www.pythonlidar.com/ground-filtering-dtm-dsm-generation/dtm-raster-generation/idw-vs-mean-interpolation-for-dtm-gaps/) — choosing the cell interpolator
+- [Filling NoData Voids in DTM Rasters](https://www.pythonlidar.com/ground-filtering-dtm-dsm-generation/dtm-raster-generation/filling-nodata-voids-in-dtm-rasters/) — closing holes the recipe leaves behind
+- [SMRF Ground Classification](https://www.pythonlidar.com/ground-filtering-dtm-dsm-generation/smrf-ground-classification/) — producing the Classification 2 labels this recipe consumes
+- [Ground Filtering and DTM/DSM Generation with PDAL](https://www.pythonlidar.com/ground-filtering-dtm-dsm-generation/) — the surrounding terrain-modelling overview

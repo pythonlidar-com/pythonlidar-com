@@ -2,7 +2,7 @@
 title: "Reprojecting Point Clouds from UTM to WGS84 with PDAL and Python"
 description: "Step-by-step guide to reprojecting LAS/LAZ point clouds from UTM to WGS84 (EPSG:4326) using PDAL filters.reprojection and a pyproj+laspy fallback, with datum handling, header sync, and validation."
 slug: "reprojecting-point-clouds-from-utm-to-wgs84"
-type: "long_tail"
+type: "howto"
 breadcrumb: "Reprojecting UTM to WGS84"
 datePublished: "2024-03-15"
 dateModified: "2026-06-24"
@@ -23,10 +23,10 @@ dateModified: "2026-06-24"
     {
       "@type": "BreadcrumbList",
       "itemListElement": [
-        { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://pythonlidar.com/" },
-        { "@type": "ListItem", "position": 2, "name": "PDAL Pipeline Architecture & Execution", "item": "https://pythonlidar.com/pdal-pipeline-architecture-execution/" },
-        { "@type": "ListItem", "position": 3, "name": "Spatial Reprojection", "item": "https://pythonlidar.com/pdal-pipeline-architecture-execution/spatial-reprojection/" },
-        { "@type": "ListItem", "position": 4, "name": "Reprojecting UTM to WGS84", "item": "https://pythonlidar.com/pdal-pipeline-architecture-execution/spatial-reprojection/reprojecting-point-clouds-from-utm-to-wgs84/" }
+        { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://www.pythonlidar.com/" },
+        { "@type": "ListItem", "position": 2, "name": "PDAL Pipeline Architecture & Execution", "item": "https://www.pythonlidar.com/pdal-pipeline-architecture-execution/" },
+        { "@type": "ListItem", "position": 3, "name": "Spatial Reprojection", "item": "https://www.pythonlidar.com/pdal-pipeline-architecture-execution/spatial-reprojection/" },
+        { "@type": "ListItem", "position": 4, "name": "Reprojecting UTM to WGS84", "item": "https://www.pythonlidar.com/pdal-pipeline-architecture-execution/spatial-reprojection/reprojecting-point-clouds-from-utm-to-wgs84/" }
       ]
     },
     {
@@ -73,11 +73,11 @@ dateModified: "2026-06-24"
 
 ## Context and Motivation
 
-This guide is part of [Spatial Reprojection in PDAL](/pdal-pipeline-architecture-execution/spatial-reprojection/), which covers the full range of coordinate system transformations available in a [PDAL pipeline](/pdal-pipeline-architecture-execution/).
+This guide is part of [Spatial Reprojection in PDAL](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/spatial-reprojection/), which covers the full range of coordinate system transformations available in a [PDAL pipeline](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/).
 
-UTM coordinates are ubiquitous in survey-grade LiDAR deliverables — they are metre-based, zone-specific, and optimised for regional accuracy. WGS84 (EPSG:4326) is the geographic coordinate system that web maps, cloud platforms, and most interoperability formats expect. The mismatch creates a routine but error-prone handoff: naive reprojection either corrupts the [LAS/LAZ file](/point-cloud-data-standards-fundamentals/laslaz-file-structure/) header CRS, silently applies approximate datum shifts, or produces unit confusion when Z values in metres are mixed with X/Y in decimal degrees.
+UTM coordinates are ubiquitous in survey-grade LiDAR deliverables — they are metre-based, zone-specific, and optimised for regional accuracy. WGS84 (EPSG:4326) is the geographic coordinate system that web maps, cloud platforms, and most interoperability formats expect. The mismatch creates a routine but error-prone handoff: naive reprojection either corrupts the [LAS/LAZ file](https://www.pythonlidar.com/point-cloud-data-standards-fundamentals/laslaz-file-structure/) header CRS, silently applies approximate datum shifts, or produces unit confusion when Z values in metres are mixed with X/Y in decimal degrees.
 
-Getting this right matters beyond aesthetics. A mismatched [coordinate reference system](/point-cloud-data-standards-fundamentals/coordinate-reference-systems/) in a production point cloud can cascade into broken ground classification, incorrect hillshade rasters, and failed API ingest. PDAL's `filters.reprojection` stage, backed by the PROJ engine, handles the inverse map projection and datum grid application in a single streaming pass — no in-memory array juggling required.
+Getting this right matters beyond aesthetics. A mismatched [coordinate reference system](https://www.pythonlidar.com/point-cloud-data-standards-fundamentals/coordinate-reference-systems/) in a production point cloud can cascade into broken ground classification, incorrect hillshade rasters, and failed API ingest. PDAL's `filters.reprojection` stage, backed by the PROJ engine, handles the inverse map projection and datum grid application in a single streaming pass — no in-memory array juggling required.
 
 <svg viewBox="0 0 760 280" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="PDAL UTM to WGS84 reprojection data flow with PROJ datum lookup" style="width:100%;max-width:760px;display:block;margin:1.5rem auto;">
   <title>UTM to WGS84 reprojection pipeline stage flow with PROJ datum grid lookup</title>
@@ -141,7 +141,7 @@ Confirm your input file's embedded CRS before writing the pipeline:
 pdal info --metadata input.laz | python -m json.tool | grep -i srs
 ```
 
-If the header reports `EPSG:0` or empty WKT, supply `in_srs` explicitly rather than relying on the file — an untagged file will silently produce incorrect output coordinates. See [fixing CRS mismatches in point clouds](/point-cloud-data-standards-fundamentals/coordinate-reference-systems/fixing-crs-mismatches-in-point-clouds/) for a full repair workflow. You can also run [pipeline validation](/pdal-pipeline-architecture-execution/pipeline-validation/) on the source pipeline JSON before executing it against real data.
+If the header reports `EPSG:0` or empty WKT, supply `in_srs` explicitly rather than relying on the file — an untagged file will silently produce incorrect output coordinates. See [fixing CRS mismatches in point clouds](https://www.pythonlidar.com/point-cloud-data-standards-fundamentals/coordinate-reference-systems/fixing-crs-mismatches-in-point-clouds/) for a full repair workflow. You can also run [pipeline validation](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/pipeline-validation/) on the source pipeline JSON before executing it against real data.
 
 ## Step-by-Step Implementation
 
@@ -151,7 +151,7 @@ UTM zones follow a deterministic pattern. For a file covering the US East Coast 
 
 ### Step 2 — Build the reprojection pipeline
 
-The minimal JSON pipeline has three stages: a reader, the reprojection filter, and a writer with explicit CRS tagging. This follows the same [PDAL stage chaining](/pdal-pipeline-architecture-execution/pdal-stage-chaining/) pattern used across all PDAL workflows — each stage passes its point buffer to the next in sequence.
+The minimal JSON pipeline has three stages: a reader, the reprojection filter, and a writer with explicit CRS tagging. This follows the same [PDAL stage chaining](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/pdal-stage-chaining/) pattern used across all PDAL workflows — each stage passes its point buffer to the next in sequence.
 
 ```json
 {
@@ -486,11 +486,11 @@ A common oversight in survey workflows: horizontal units shift to decimal degree
 
 **Does `filters.reprojection` require the input file to have a valid CRS in its header?**
 
-No. If you supply `in_srs` explicitly in the pipeline JSON, PDAL uses that value regardless of what the header says. This is the correct approach for files with empty or incorrect CRS metadata — a situation that [fixing CRS mismatches in point clouds](/point-cloud-data-standards-fundamentals/coordinate-reference-systems/fixing-crs-mismatches-in-point-clouds/) covers in depth.
+No. If you supply `in_srs` explicitly in the pipeline JSON, PDAL uses that value regardless of what the header says. This is the correct approach for files with empty or incorrect CRS metadata — a situation that [fixing CRS mismatches in point clouds](https://www.pythonlidar.com/point-cloud-data-standards-fundamentals/coordinate-reference-systems/fixing-crs-mismatches-in-point-clouds/) covers in depth.
 
 **Does PDAL automatically update the LAS header CRS after reprojection?**
 
-Yes — when you set `a_srs` on `writers.las`, PDAL writes a WKT2 VLR into the output header. Without `a_srs` the header retains the source CRS, which will confuse downstream GIS tools. Parsing and checking that VLR is covered in [how to parse LAS headers with Python](/point-cloud-data-standards-fundamentals/laslaz-file-structure/how-to-parse-las-headers-with-python/).
+Yes — when you set `a_srs` on `writers.las`, PDAL writes a WKT2 VLR into the output header. Without `a_srs` the header retains the source CRS, which will confuse downstream GIS tools. Parsing and checking that VLR is covered in [how to parse LAS headers with Python](https://www.pythonlidar.com/point-cloud-data-standards-fundamentals/laslaz-file-structure/how-to-parse-las-headers-with-python/).
 
 **Are Z values transformed when reprojecting from UTM to WGS84?**
 
@@ -498,7 +498,7 @@ Only if you include a compound CRS (e.g. `EPSG:32618+5703`) in `out_srs`. A plai
 
 **Can I chain reprojection with other filters in the same pipeline?**
 
-Yes, and that is the normal pattern. You can combine reprojection with statistical outlier removal in a single pipeline pass — see [applying statistical outlier filters in PDAL](/pdal-pipeline-architecture-execution/pipeline-filtering-logic/applying-statistical-outlier-filters-in-pdal/). Place `filters.reprojection` before any filter that operates in geographic space (e.g. spatial bounds filtering) but after filters that work on raw intensity or classification dimensions.
+Yes, and that is the normal pattern. You can combine reprojection with statistical outlier removal in a single pipeline pass — see [applying statistical outlier filters in PDAL](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/pipeline-filtering-logic/applying-statistical-outlier-filters-in-pdal/). Place `filters.reprojection` before any filter that operates in geographic space (e.g. spatial bounds filtering) but after filters that work on raw intensity or classification dimensions.
 
 **What if I need to reproject to a different UTM zone rather than WGS84?**
 
@@ -508,8 +508,8 @@ Change `out_srs` to the target UTM EPSG code (e.g. `"EPSG:32619"` for UTM Zone 1
 
 ## Related
 
-- [Spatial Reprojection in PDAL](/pdal-pipeline-architecture-execution/spatial-reprojection/) — parent guide covering CRS concepts, reprojection stage parameters, and batch reprojection patterns
-- [PDAL Pipeline Architecture & Execution](/pdal-pipeline-architecture-execution/) — how readers, filters, and writers chain together into a streaming execution model
-- [Fixing CRS Mismatches in Point Clouds](/point-cloud-data-standards-fundamentals/coordinate-reference-systems/fixing-crs-mismatches-in-point-clouds/) — diagnose and repair embedded CRS errors before reprojection
-- [Applying Statistical Outlier Filters in PDAL](/pdal-pipeline-architecture-execution/pipeline-filtering-logic/applying-statistical-outlier-filters-in-pdal/) — combine with reprojection in a single pipeline pass
-- [LAS/LAZ File Structure](/point-cloud-data-standards-fundamentals/laslaz-file-structure/) — VLR layout and header fields that carry the CRS after transformation
+- [Spatial Reprojection in PDAL](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/spatial-reprojection/) — parent guide covering CRS concepts, reprojection stage parameters, and batch reprojection patterns
+- [PDAL Pipeline Architecture & Execution](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/) — how readers, filters, and writers chain together into a streaming execution model
+- [Fixing CRS Mismatches in Point Clouds](https://www.pythonlidar.com/point-cloud-data-standards-fundamentals/coordinate-reference-systems/fixing-crs-mismatches-in-point-clouds/) — diagnose and repair embedded CRS errors before reprojection
+- [Applying Statistical Outlier Filters in PDAL](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/pipeline-filtering-logic/applying-statistical-outlier-filters-in-pdal/) — combine with reprojection in a single pipeline pass
+- [LAS/LAZ File Structure](https://www.pythonlidar.com/point-cloud-data-standards-fundamentals/laslaz-file-structure/) — VLR layout and header fields that carry the CRS after transformation

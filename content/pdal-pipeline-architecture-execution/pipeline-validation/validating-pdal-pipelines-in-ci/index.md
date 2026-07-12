@@ -2,7 +2,7 @@
 title: "Validating PDAL Pipelines in CI"
 description: "Wiring `pdal pipeline --validate` and a small sample-tile execution test into a CI workflow so broken pipeline JSON, schema violations, and CRS mistakes fail the build before production runs."
 slug: "validating-pdal-pipelines-in-ci"
-type: "long_tail"
+type: "howto"
 breadcrumb: "Validating Pipelines in CI"
 datePublished: "2024-07-05"
 dateModified: "2026-07-12"
@@ -23,10 +23,10 @@ dateModified: "2026-07-12"
     {
       "@type": "BreadcrumbList",
       "itemListElement": [
-        { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://pythonlidar.com/" },
-        { "@type": "ListItem", "position": 2, "name": "PDAL Pipeline Architecture & Execution", "item": "https://pythonlidar.com/pdal-pipeline-architecture-execution/" },
-        { "@type": "ListItem", "position": 3, "name": "Pipeline Validation", "item": "https://pythonlidar.com/pdal-pipeline-architecture-execution/pipeline-validation/" },
-        { "@type": "ListItem", "position": 4, "name": "Validating Pipelines in CI", "item": "https://pythonlidar.com/pdal-pipeline-architecture-execution/pipeline-validation/validating-pdal-pipelines-in-ci/" }
+        { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://www.pythonlidar.com/" },
+        { "@type": "ListItem", "position": 2, "name": "PDAL Pipeline Architecture & Execution", "item": "https://www.pythonlidar.com/pdal-pipeline-architecture-execution/" },
+        { "@type": "ListItem", "position": 3, "name": "Pipeline Validation", "item": "https://www.pythonlidar.com/pdal-pipeline-architecture-execution/pipeline-validation/" },
+        { "@type": "ListItem", "position": 4, "name": "Validating Pipelines in CI", "item": "https://www.pythonlidar.com/pdal-pipeline-architecture-execution/pipeline-validation/validating-pdal-pipelines-in-ci/" }
       ]
     },
     {
@@ -73,7 +73,7 @@ dateModified: "2026-07-12"
 
 ## Context and Motivation
 
-This guide is part of [Pipeline Validation](/pdal-pipeline-architecture-execution/pipeline-validation/), which builds an in-process validation harness you can call from Python. Here the goal is different: move those checks out of a developer's terminal and into continuous integration, so a broken pipeline can never reach the main branch in the first place.
+This guide is part of [Pipeline Validation](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/pipeline-validation/), which builds an in-process validation harness you can call from Python. Here the goal is different: move those checks out of a developer's terminal and into continuous integration, so a broken pipeline can never reach the main branch in the first place.
 
 A pipeline JSON file is code, but it rarely gets treated like code. It sits in a repository, someone edits a `filters.range` limit or renames an output, and the mistake is only discovered hours later when a production batch job dies mid-run or — worse — quietly writes an empty tile. The failures that hurt most are the silent ones: a classification predicate applied before the ground filter runs, a writer that drops the CRS because `forward` was set to `none`, a stage name typo that surfaces as an opaque C++ exception. Continuous integration is where these get caught cheaply. Two layers do almost all the work. A static graph check flags anything structurally wrong before a single point is read, and a sample-tile execution test proves the pipeline actually produces the output you expect against real data shaped like production. Wiring both into a pull-request gate turns pipeline definitions into reviewed, tested artefacts rather than fragile configuration that nobody dares touch.
 
@@ -126,7 +126,7 @@ A pipeline JSON file is code, but it rarely gets treated like code. It sits in a
 | Fixture tile | a decimated `.laz` (20 K–100 K points) committed to the repo |
 | CI provider | GitHub Actions (the YAML below); adaptable to GitLab or others |
 
-This page assumes your pipelines already run correctly against production data; CI is about keeping them that way. The static check leans on the same `--validate` flag described in [PDAL Stage Chaining](/pdal-pipeline-architecture-execution/pdal-stage-chaining/), which resolves stage compatibility, and the execution test extends the output-integrity assertions from the parent [Pipeline Validation](/pdal-pipeline-architecture-execution/pipeline-validation/) guide into an automated context.
+This page assumes your pipelines already run correctly against production data; CI is about keeping them that way. The static check leans on the same `--validate` flag described in [PDAL Stage Chaining](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/pdal-stage-chaining/), which resolves stage compatibility, and the execution test extends the output-integrity assertions from the parent [Pipeline Validation](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/pipeline-validation/) guide into an automated context.
 
 ## Step-by-Step Implementation
 
@@ -172,7 +172,7 @@ The execution test needs data, but pulling a multi-gigabyte production tile into
 }
 ```
 
-A `step` of 200 keeps every 200th point, turning a 10 M-point tile into a 50 K-point fixture that still round-trips every dimension. The lossless mechanics of that write are covered in [Converting LAS to LAZ with PDAL](/point-cloud-data-standards-fundamentals/laslaz-file-structure/converting-las-to-laz-with-pdal/).
+A `step` of 200 keeps every 200th point, turning a 10 M-point tile into a 50 K-point fixture that still round-trips every dimension. The lossless mechanics of that write are covered in [Converting LAS to LAZ with PDAL](https://www.pythonlidar.com/point-cloud-data-standards-fundamentals/laslaz-file-structure/converting-las-to-laz-with-pdal/).
 
 ### Step 3 — Write the execution test
 
@@ -248,7 +248,7 @@ jobs:
         run: pytest tests/test_pipeline_execution.py -v --tb=short
 ```
 
-Pinning to `pdal/pdal:2.6` rather than `latest` is the difference between a reproducible gate and one that drifts silently as the base image updates. See [Running PDAL Pipelines in Docker](/batch-automation-cloud-integration/pdal-docker-containers/running-pdal-pipelines-in-docker/) for how to build a matching production image from the same tag, and [PDAL Docker Containers](/batch-automation-cloud-integration/pdal-docker-containers/) for image selection.
+Pinning to `pdal/pdal:2.6` rather than `latest` is the difference between a reproducible gate and one that drifts silently as the base image updates. See [Running PDAL Pipelines in Docker](https://www.pythonlidar.com/batch-automation-cloud-integration/pdal-docker-containers/running-pdal-pipelines-in-docker/) for how to build a matching production image from the same tag, and [PDAL Docker Containers](https://www.pythonlidar.com/batch-automation-cloud-integration/pdal-docker-containers/) for image selection.
 
 ## Complete Working Example
 
@@ -354,7 +354,7 @@ If a pipeline references a shared parameter file or a template not covered by yo
 
 **What does `pdal pipeline --validate` catch that a pytest does not?**
 
-The `--validate` flag resolves the stage graph and rejects malformed JSON, unknown stage names, and incompatible stage ordering without reading any point data, so it runs in milliseconds on every file. A pytest execution against a fixture tile catches the runtime failures `--validate` cannot see: empty output from an over-aggressive range filter, dropped CRS metadata, and missing dimensions after a transform. The two are complementary layers, mirroring the structure of the parent [Pipeline Validation](/pdal-pipeline-architecture-execution/pipeline-validation/) harness.
+The `--validate` flag resolves the stage graph and rejects malformed JSON, unknown stage names, and incompatible stage ordering without reading any point data, so it runs in milliseconds on every file. A pytest execution against a fixture tile catches the runtime failures `--validate` cannot see: empty output from an over-aggressive range filter, dropped CRS metadata, and missing dimensions after a transform. The two are complementary layers, mirroring the structure of the parent [Pipeline Validation](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/pipeline-validation/) harness.
 
 **How small should the CI fixture tile be?**
 
@@ -362,7 +362,7 @@ Aim for 20,000 to 100,000 points — small enough to commit to the repository an
 
 **Why pin the PDAL version in CI?**
 
-PDAL's metadata structure, default parameters, and available stages shift between releases, so a pipeline that validates on one version can fail on another. Running CI inside a pinned PDAL Docker image freezes the toolchain, making a green build a reliable signal that the same pipeline will behave identically in production containers built from the same tag — see [PDAL Docker Containers](/batch-automation-cloud-integration/pdal-docker-containers/).
+PDAL's metadata structure, default parameters, and available stages shift between releases, so a pipeline that validates on one version can fail on another. Running CI inside a pinned PDAL Docker image freezes the toolchain, making a green build a reliable signal that the same pipeline will behave identically in production containers built from the same tag — see [PDAL Docker Containers](https://www.pythonlidar.com/batch-automation-cloud-integration/pdal-docker-containers/).
 
 **Should CI validation run on every commit or only when pipelines change?**
 
@@ -372,8 +372,8 @@ Scope the workflow to trigger only on changes to pipeline JSON and the test file
 
 ## Related
 
-- [Pipeline Validation](/pdal-pipeline-architecture-execution/pipeline-validation/) — parent guide building the in-process five-phase validation harness this workflow automates
-- [PDAL Pipeline Architecture & Execution](/pdal-pipeline-architecture-execution/) — the execution model that both CI gates exercise
-- [PDAL Stage Chaining](/pdal-pipeline-architecture-execution/pdal-stage-chaining/) — stage compatibility rules that `--validate` resolves
-- [PDAL Docker Containers](/batch-automation-cloud-integration/pdal-docker-containers/) — building the pinned image that keeps CI reproducible
-- [Running PDAL Pipelines in Docker](/batch-automation-cloud-integration/pdal-docker-containers/running-pdal-pipelines-in-docker/) — matching the CI toolchain to production execution
+- [Pipeline Validation](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/pipeline-validation/) — parent guide building the in-process five-phase validation harness this workflow automates
+- [PDAL Pipeline Architecture & Execution](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/) — the execution model that both CI gates exercise
+- [PDAL Stage Chaining](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/pdal-stage-chaining/) — stage compatibility rules that `--validate` resolves
+- [PDAL Docker Containers](https://www.pythonlidar.com/batch-automation-cloud-integration/pdal-docker-containers/) — building the pinned image that keeps CI reproducible
+- [Running PDAL Pipelines in Docker](https://www.pythonlidar.com/batch-automation-cloud-integration/pdal-docker-containers/running-pdal-pipelines-in-docker/) — matching the CI toolchain to production execution

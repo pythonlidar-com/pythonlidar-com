@@ -2,7 +2,7 @@
 title: "PDAL Docker Containers for Reproducible Pipelines"
 description: "Packaging PDAL, GDAL, PROJ, and the Python bindings into a pinned Docker image for reproducible LiDAR processing — the official pdal/pdal image, custom Dockerfiles, volume mounts, and running pipeline JSON in a container."
 slug: "pdal-docker-containers"
-type: "cluster"
+type: "topic"
 breadcrumb: "PDAL Docker Containers"
 datePublished: "2024-07-02"
 dateModified: "2026-07-12"
@@ -23,9 +23,9 @@ dateModified: "2026-07-12"
     {
       "@type": "BreadcrumbList",
       "itemListElement": [
-        {"@type": "ListItem", "position": 1, "name": "Home", "item": "https://pythonlidar.com/"},
-        {"@type": "ListItem", "position": 2, "name": "Batch Automation and Cloud Integration for PDAL", "item": "https://pythonlidar.com/batch-automation-cloud-integration/"},
-        {"@type": "ListItem", "position": 3, "name": "PDAL Docker Containers", "item": "https://pythonlidar.com/batch-automation-cloud-integration/pdal-docker-containers/"}
+        {"@type": "ListItem", "position": 1, "name": "Home", "item": "https://www.pythonlidar.com/"},
+        {"@type": "ListItem", "position": 2, "name": "Batch Automation and Cloud Integration for PDAL", "item": "https://www.pythonlidar.com/batch-automation-cloud-integration/"},
+        {"@type": "ListItem", "position": 3, "name": "PDAL Docker Containers", "item": "https://www.pythonlidar.com/batch-automation-cloud-integration/pdal-docker-containers/"}
       ]
     },
     {
@@ -68,7 +68,7 @@ dateModified: "2026-07-12"
 }
 </script>
 
-Reproducibility is the hardest guarantee to make in a LiDAR processing stack. A pipeline that classifies ground and writes a clean DTM depends not only on the PDAL version but on the exact GDAL and PROJ builds underneath it, the datum grids installed alongside PROJ, and the Python packages wrapped around the whole thing. Move that pipeline to a colleague's laptop or a fresh cloud worker and a subtly different PROJ can shift coordinates by metres. Packaging PDAL into a pinned Docker image collapses that entire native stack into a single immutable artifact you can pull, run, and archive — the same bytes producing the same output everywhere. This guide is part of [Batch Automation and Cloud Integration for PDAL](/batch-automation-cloud-integration/), and it establishes the container foundation that the batch and cloud workflows build on.
+Reproducibility is the hardest guarantee to make in a LiDAR processing stack. A pipeline that classifies ground and writes a clean DTM depends not only on the PDAL version but on the exact GDAL and PROJ builds underneath it, the datum grids installed alongside PROJ, and the Python packages wrapped around the whole thing. Move that pipeline to a colleague's laptop or a fresh cloud worker and a subtly different PROJ can shift coordinates by metres. Packaging PDAL into a pinned Docker image collapses that entire native stack into a single immutable artifact you can pull, run, and archive — the same bytes producing the same output everywhere. This guide is part of [Batch Automation and Cloud Integration for PDAL](https://www.pythonlidar.com/batch-automation-cloud-integration/), and it establishes the container foundation that the batch and cloud workflows build on.
 
 <svg viewBox="0 0 760 300" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="PDAL Docker image layer and volume mount architecture" style="width:100%;max-width:760px;display:block;margin:1.5rem auto">
   <title>PDAL Docker image layers and host bind mounts</title>
@@ -109,7 +109,7 @@ Have these in place before building a PDAL image:
 
 - **Docker Engine 24 or later** (or a compatible runtime such as Podman) with permission to run `docker build` and `docker run`.
 - **A pinned target PDAL version** — this guide uses `ghcr.io/pdal/pdal:2.6`, which bundles PDAL 2.6, GDAL 3.8, and PROJ 9.
-- **A pipeline JSON file** you already run locally — see [PDAL Pipeline Architecture & Execution](/pdal-pipeline-architecture-execution/) for the execution model and [PDAL Stage Chaining](/pdal-pipeline-architecture-execution/pdal-stage-chaining/) for how reader, filter, and writer stages connect.
+- **A pipeline JSON file** you already run locally — see [PDAL Pipeline Architecture & Execution](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/) for the execution model and [PDAL Stage Chaining](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/pdal-stage-chaining/) for how reader, filter, and writer stages connect.
 - **Test LiDAR tiles** in LAZ or LAS, staged in a host directory you can bind mount.
 - **Basic familiarity with bind mounts and image tags** — you do not need Kubernetes or a registry account to follow along, though pushing the finished image to a registry is a natural next step.
 
@@ -124,7 +124,7 @@ Containerising PDAL follows a predictable lifecycle. Each stage exists to remove
 5. **Bind mount data at run time.** Data never goes into the image. Mount the host tile directory and an output directory with `-v` when you `docker run`, and reference the container-side paths inside the pipeline JSON.
 6. **Execute and collect.** Run `pdal pipeline` directly or hand control to the Python entrypoint, then read results back from the mounted output directory on the host.
 
-Keeping the image immutable and the data external is the central discipline: the same image tag processes any tile set, and any tile set can be reprocessed by any archived image tag. That separation is what makes downstream [AWS Batch Processing](/batch-automation-cloud-integration/aws-batch-processing/) and [S3 Cloud Storage I/O](/batch-automation-cloud-integration/s3-cloud-storage-io/) tractable — both simply run this same image with different mounts and credentials.
+Keeping the image immutable and the data external is the central discipline: the same image tag processes any tile set, and any tile set can be reprocessed by any archived image tag. That separation is what makes downstream [AWS Batch Processing](https://www.pythonlidar.com/batch-automation-cloud-integration/aws-batch-processing/) and [S3 Cloud Storage I/O](https://www.pythonlidar.com/batch-automation-cloud-integration/s3-cloud-storage-io/) tractable — both simply run this same image with different mounts and credentials.
 
 ### Choosing and pinning the official image
 
@@ -296,7 +296,7 @@ A representative `pipelines/dtm.json` referencing container paths:
 
 **The non-root user.** `useradd -u ${UID}` bakes a fixed uid into the image, and `--build-arg UID=$(id -u)` aligns it to the host caller. Combined with `USER lidar`, every file the container writes to `/data/out` lands on the host owned by you, not root — the single most common Docker friction point for data teams.
 
-**`validate()` before `execute()`.** The entrypoint calls `pipeline.validate()` first, which parses the stage graph and checks dimensions and CRS without doing I/O. This surfaces bad container paths or schema errors instantly; see [Pipeline Validation](/pdal-pipeline-architecture-execution/pipeline-validation/) for the full check set. The non-zero exit on failure lets Docker, CI, or a scheduler treat a failed tile as a failed job.
+**`validate()` before `execute()`.** The entrypoint calls `pipeline.validate()` first, which parses the stage graph and checks dimensions and CRS without doing I/O. This surfaces bad container paths or schema errors instantly; see [Pipeline Validation](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/pipeline-validation/) for the full check set. The non-zero exit on failure lets Docker, CI, or a scheduler treat a failed tile as a failed job.
 
 **Read-only input mounts.** Mounting tiles with `:ro` guarantees the container cannot mutate source data — a cheap safety net when the same directory feeds many parallel jobs.
 
@@ -348,7 +348,7 @@ After a real run, check the output on the host: the GeoTIFF should exist, be own
 
 **Pin a slim requirements file, not a broad environment.** Installing only the three packages the entrypoint imports avoids dragging in SciPy, Matplotlib, and JupyterLab that a catch-all `environment.yml` would pull. Fewer packages mean smaller images, faster cold pulls on cloud workers, and a smaller attack surface.
 
-**Match `OMP_NUM_THREADS` to the container's CPU quota.** PDAL filters such as `filters.smrf` parallelise across threads. When you cap the container with `--cpus=4`, set `-e OMP_NUM_THREADS=4` so the thread pool matches the quota; otherwise the runtime spawns a thread per host core and thrashes. The [Parallel Execution](/pdal-pipeline-architecture-execution/parallel-execution/) guide covers how PDAL distributes work across cores, and [Memory Management](/pdal-pipeline-architecture-execution/memory-management/) explains chunk sizing for large tiles inside constrained containers.
+**Match `OMP_NUM_THREADS` to the container's CPU quota.** PDAL filters such as `filters.smrf` parallelise across threads. When you cap the container with `--cpus=4`, set `-e OMP_NUM_THREADS=4` so the thread pool matches the quota; otherwise the runtime spawns a thread per host core and thrashes. The [Parallel Execution](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/parallel-execution/) guide covers how PDAL distributes work across cores, and [Memory Management](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/memory-management/) explains chunk sizing for large tiles inside constrained containers.
 
 **Cache the base pull in CI.** In continuous integration, pull `ghcr.io/pdal/pdal:2.6` once and reuse it across jobs. The base is the largest layer; re-pulling it per job dominates pipeline wall time.
 
@@ -367,7 +367,7 @@ Root cause: the container ran as uid 0 and wrote to the bind mount as root. Fix:
 Root cause: the pipeline JSON references a host path that does not exist inside the container, because the bind mount changed the path. Fix: always reference the container-side path (`/data/tiles/...`) in the JSON, and confirm the mount with `docker run --rm -v "$PWD/data/tiles":/data/tiles:ro pythonlidar/pdal:2.6-app --entrypoint ls /data/tiles`.
 
 **`Killed` mid-run with no traceback**
-Root cause: the container exceeded its memory limit and the kernel OOM-killer terminated it. Fix: raise `--memory`, lower the reader `chunk_size` so fewer points are resident at once, or split the tile. See [Memory Management](/pdal-pipeline-architecture-execution/memory-management/) for chunk-size strategy in constrained environments.
+Root cause: the container exceeded its memory limit and the kernel OOM-killer terminated it. Fix: raise `--memory`, lower the reader `chunk_size` so fewer points are resident at once, or split the tile. See [Memory Management](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/memory-management/) for chunk-size strategy in constrained environments.
 
 ## Frequently Asked Questions
 
@@ -395,9 +395,9 @@ Yes. The image ships the `pdal` CLI and a full Python interpreter. Override the 
 
 ## Related
 
-- [Batch Automation and Cloud Integration for PDAL](/batch-automation-cloud-integration/) — parent overview of scaling PDAL beyond a single workstation
-- [Running PDAL Pipelines in Docker](/batch-automation-cloud-integration/pdal-docker-containers/running-pdal-pipelines-in-docker/) — a focused, step-by-step walkthrough of mounting data and executing one pipeline
-- [AWS Batch Processing](/batch-automation-cloud-integration/aws-batch-processing/) — run this image as a job definition to fan tiles across a compute fleet
-- [S3 Cloud Storage I/O](/batch-automation-cloud-integration/s3-cloud-storage-io/) — read and write LAZ and COG directly from object storage inside the container
-- [PDAL Pipeline Architecture & Execution](/pdal-pipeline-architecture-execution/) — the reader/filter/writer execution model the container runs
-- [Pipeline Validation](/pdal-pipeline-architecture-execution/pipeline-validation/) — catch schema, dimension, and CRS errors before a container job spends I/O
+- [Batch Automation and Cloud Integration for PDAL](https://www.pythonlidar.com/batch-automation-cloud-integration/) — parent overview of scaling PDAL beyond a single workstation
+- [Running PDAL Pipelines in Docker](https://www.pythonlidar.com/batch-automation-cloud-integration/pdal-docker-containers/running-pdal-pipelines-in-docker/) — a focused, step-by-step walkthrough of mounting data and executing one pipeline
+- [AWS Batch Processing](https://www.pythonlidar.com/batch-automation-cloud-integration/aws-batch-processing/) — run this image as a job definition to fan tiles across a compute fleet
+- [S3 Cloud Storage I/O](https://www.pythonlidar.com/batch-automation-cloud-integration/s3-cloud-storage-io/) — read and write LAZ and COG directly from object storage inside the container
+- [PDAL Pipeline Architecture & Execution](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/) — the reader/filter/writer execution model the container runs
+- [Pipeline Validation](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/pipeline-validation/) — catch schema, dimension, and CRS errors before a container job spends I/O

@@ -2,7 +2,7 @@
 title: "AWS Batch Processing for PDAL Point Clouds"
 description: "Running thousands of PDAL tile jobs on AWS Batch — job definitions, array jobs indexed over a tile manifest, compute environments and Spot instances, IAM roles for S3 access, and collecting results."
 slug: "aws-batch-processing"
-type: "cluster"
+type: "topic"
 breadcrumb: "AWS Batch Processing"
 datePublished: "2024-07-04"
 dateModified: "2026-07-12"
@@ -23,9 +23,9 @@ dateModified: "2026-07-12"
     {
       "@type": "BreadcrumbList",
       "itemListElement": [
-        {"@type": "ListItem", "position": 1, "name": "Home", "item": "https://pythonlidar.com/"},
-        {"@type": "ListItem", "position": 2, "name": "Batch Automation and Cloud Integration for PDAL", "item": "https://pythonlidar.com/batch-automation-cloud-integration/"},
-        {"@type": "ListItem", "position": 3, "name": "AWS Batch Processing", "item": "https://pythonlidar.com/batch-automation-cloud-integration/aws-batch-processing/"}
+        {"@type": "ListItem", "position": 1, "name": "Home", "item": "https://www.pythonlidar.com/"},
+        {"@type": "ListItem", "position": 2, "name": "Batch Automation and Cloud Integration for PDAL", "item": "https://www.pythonlidar.com/batch-automation-cloud-integration/"},
+        {"@type": "ListItem", "position": 3, "name": "AWS Batch Processing", "item": "https://www.pythonlidar.com/batch-automation-cloud-integration/aws-batch-processing/"}
       ]
     },
     {
@@ -68,7 +68,7 @@ dateModified: "2026-07-12"
 }
 </script>
 
-A regional LiDAR acquisition arrives as tens of thousands of LAZ tiles sitting in an S3 bucket, and the deliverable is a matching set of derived rasters or cleaned point clouds. Running that conversion one tile at a time on a workstation would take weeks; standing up and babysitting a permanent cluster wastes money between jobs. AWS Batch resolves the tension by treating the whole acquisition as a single array job — you submit once, Batch provisions Spot capacity on demand, fans one container out per tile, and tears the fleet down when the queue drains. This page shows how to wire PDAL into that model: the job definition, the array indexing that maps a tile to a container, the IAM role that lets the container reach S3, and the retry logic that makes Spot interruptions a non-event. It is part of the broader [Batch Automation and Cloud Integration for PDAL](/batch-automation-cloud-integration/) guide.
+A regional LiDAR acquisition arrives as tens of thousands of LAZ tiles sitting in an S3 bucket, and the deliverable is a matching set of derived rasters or cleaned point clouds. Running that conversion one tile at a time on a workstation would take weeks; standing up and babysitting a permanent cluster wastes money between jobs. AWS Batch resolves the tension by treating the whole acquisition as a single array job — you submit once, Batch provisions Spot capacity on demand, fans one container out per tile, and tears the fleet down when the queue drains. This page shows how to wire PDAL into that model: the job definition, the array indexing that maps a tile to a container, the IAM role that lets the container reach S3, and the retry logic that makes Spot interruptions a non-event. It is part of the broader [Batch Automation and Cloud Integration for PDAL](https://www.pythonlidar.com/batch-automation-cloud-integration/) guide.
 
 <svg viewBox="0 0 760 300" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="AWS Batch array job fanning PDAL tile containers out over an S3 tile manifest" style="width:100%;max-width:760px;display:block;margin:1.5rem auto">
   <title>AWS Batch array job architecture for PDAL tile processing</title>
@@ -116,11 +116,11 @@ A regional LiDAR acquisition arrives as tens of thousands of LAZ tiles sitting i
 Confirm these before submitting your first array job:
 
 - **An AWS account with AWS Batch, ECS, EC2, and S3 access** — Batch schedules containers onto an ECS-backed compute environment running on EC2 (or Fargate).
-- **A container image with PDAL installed**, pushed to Amazon ECR or another registry the compute environment can pull from. Building that image is covered in [PDAL Docker Containers](/batch-automation-cloud-integration/pdal-docker-containers/); this page assumes the image already exists and focuses on scheduling it.
+- **A container image with PDAL installed**, pushed to Amazon ECR or another registry the compute environment can pull from. Building that image is covered in [PDAL Docker Containers](https://www.pythonlidar.com/batch-automation-cloud-integration/pdal-docker-containers/); this page assumes the image already exists and focuses on scheduling it.
 - **`boto3` 1.28 or later** in your submitting environment (`pip install boto3`), configured with credentials that allow `batch:SubmitJob` and `batch:DescribeJobs`.
 - **Two IAM roles**: an *instance role* for the compute environment (usually `ecsInstanceRole`) and a *job role* that your container assumes to reach S3.
 - **Input tiles and a manifest in S3** — the LAZ tiles under one prefix and a newline-delimited or JSON manifest listing their keys under another.
-- **A validated PDAL pipeline** that runs correctly on one tile locally. Do not debug pipeline logic and Batch plumbing at the same time; get the pipeline right first using [PDAL stage chaining](/pdal-pipeline-architecture-execution/pdal-stage-chaining/).
+- **A validated PDAL pipeline** that runs correctly on one tile locally. Do not debug pipeline logic and Batch plumbing at the same time; get the pipeline right first using [PDAL stage chaining](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/pdal-stage-chaining/).
 
 ## Core Workflow Architecture
 
@@ -130,7 +130,7 @@ AWS Batch has four objects that must exist before a single tile runs, and they n
 2. **Job queue** — an ordered landing zone bound to one or more compute environments. Submitted jobs sit here until the environment has capacity to place them.
 3. **Job definition** — the reusable template: which container image to run, how many vCPUs and how much memory each container gets, the command, the `jobRoleArn` for S3 access, and the retry strategy. Registering it returns a versioned ARN.
 4. **Array job submission** — a single `submit_job` call with `arrayProperties.size = N` creates one parent job and `N` children. Batch sets `AWS_BATCH_JOB_ARRAY_INDEX` to a distinct integer `0..N-1` in each child. That index is the only thing that differs between containers.
-5. **Per-tile execution** — each container reads its index, looks up row `index` in the manifest, downloads that tile from S3, runs the PDAL pipeline, and uploads the output object. Because every child is identical apart from the index, the work is embarrassingly parallel — the same property exploited by [parallel execution in PDAL](/pdal-pipeline-architecture-execution/parallel-execution/) on a single host, now spread across a fleet.
+5. **Per-tile execution** — each container reads its index, looks up row `index` in the manifest, downloads that tile from S3, runs the PDAL pipeline, and uploads the output object. Because every child is identical apart from the index, the work is embarrassingly parallel — the same property exploited by [parallel execution in PDAL](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/parallel-execution/) on a single host, now spread across a fleet.
 6. **Aggregation and teardown** — once the array parent reports `SUCCEEDED`, a downstream step counts output objects and stitches or indexes them. Batch scales the compute environment back to `minvCpus` automatically, so idle cost returns to zero.
 
 The mapping in step 4 is the heart of the design. You never pass a filename to a job; you pass an index, and the index resolves to a tile through the manifest. This keeps the job definition completely generic — the same definition processes any acquisition, and the manifest is the only thing that changes between runs.
@@ -409,9 +409,9 @@ Two independent levers govern both wall-clock time and dollar cost: how much eac
 
 Practical guidance:
 
-- **Size memory to the densest tile, not the average.** A 2 vCPU / 8 GB container comfortably handles typical airborne tiles at 8–20 pts/m². TLS or dense urban tiles above 500 pts/m² may need 16 GB; the alternative is pre-splitting them, as covered in [memory management](/pdal-pipeline-architecture-execution/memory-management/).
+- **Size memory to the densest tile, not the average.** A 2 vCPU / 8 GB container comfortably handles typical airborne tiles at 8–20 pts/m². TLS or dense urban tiles above 500 pts/m² may need 16 GB; the alternative is pre-splitting them, as covered in [memory management](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/memory-management/).
 - **`maxvCpus` sets your parallelism, not your bill.** Total vCPU-hours are fixed by the work; raising `maxvCpus` from 128 to 512 finishes a 4,000-tile run roughly four times faster at the same total cost, minus a little Spot price variance.
-- **Match vCPUs to the pipeline's real parallel width.** SMRF and `writers.gdal` interpolation parallelise well; a serial-heavy pipeline gains nothing from 4 vCPUs and wastes the reservation. Benchmark one tile at 1, 2, and 4 vCPUs before committing, the same way you would when [optimizing PDAL for multi-core processing](/pdal-pipeline-architecture-execution/parallel-execution/optimizing-pdal-for-multi-core-processing/).
+- **Match vCPUs to the pipeline's real parallel width.** SMRF and `writers.gdal` interpolation parallelise well; a serial-heavy pipeline gains nothing from 4 vCPUs and wastes the reservation. Benchmark one tile at 1, 2, and 4 vCPUs before committing, the same way you would when [optimizing PDAL for multi-core processing](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/parallel-execution/optimizing-pdal-for-multi-core-processing/).
 - **Spot is the default for idempotent tiles.** With a retry strategy in place, reclamations cost a restart, not a failure. Keep On-Demand for a single aggregation job that must not be interrupted.
 
 ## Common Errors and Troubleshooting
@@ -429,7 +429,7 @@ The job role is missing a permission or was not attached. Confirm `jobRoleArn` i
 This is normal at scale and is exactly what array jobs are built for. Read the failed children's index values from `describe_jobs` (append `:index` to the parent job ID to inspect one child), map them back to tile keys through the manifest, write those keys into a new smaller manifest, and resubmit a small array. Never rerun the whole array to recover a handful of tiles.
 
 **`submit_job` rejected with an array size error.**
-AWS Batch caps an array at 10,000 children. A larger acquisition must be split into several array jobs over manifest shards — the [scaling PDAL tile processing with AWS Batch](/batch-automation-cloud-integration/aws-batch-processing/scaling-pdal-tile-processing-with-aws-batch/) walkthrough shows the sharding loop end to end.
+AWS Batch caps an array at 10,000 children. A larger acquisition must be split into several array jobs over manifest shards — the [scaling PDAL tile processing with AWS Batch](https://www.pythonlidar.com/batch-automation-cloud-integration/aws-batch-processing/scaling-pdal-tile-processing-with-aws-batch/) walkthrough shows the sharding loop end to end.
 
 ## Frequently Asked Questions
 
@@ -457,9 +457,9 @@ Yes. Keep the pipeline-agnostic bits — image, role, retries — in the job def
 
 ## Related
 
-- [Batch Automation and Cloud Integration for PDAL](/batch-automation-cloud-integration/) — parent overview of containerised and cloud-scheduled PDAL workflows
-- [Scaling PDAL Tile Processing with AWS Batch](/batch-automation-cloud-integration/aws-batch-processing/scaling-pdal-tile-processing-with-aws-batch/) — a full worked ground-to-DTM fan-out with manifest sharding and failure recovery
-- [PDAL Docker Containers](/batch-automation-cloud-integration/pdal-docker-containers/) — building the PDAL image that each Batch child runs
-- [S3 Cloud Storage I/O](/batch-automation-cloud-integration/s3-cloud-storage-io/) — reading and writing point clouds and rasters directly against S3
-- [Airflow DAG Orchestration](/batch-automation-cloud-integration/airflow-dag-orchestration/) — coordinating Batch submissions and aggregation as a scheduled DAG
-- [Parallel Execution](/pdal-pipeline-architecture-execution/parallel-execution/) — the single-host parallelism model that Batch spreads across a fleet
+- [Batch Automation and Cloud Integration for PDAL](https://www.pythonlidar.com/batch-automation-cloud-integration/) — parent overview of containerised and cloud-scheduled PDAL workflows
+- [Scaling PDAL Tile Processing with AWS Batch](https://www.pythonlidar.com/batch-automation-cloud-integration/aws-batch-processing/scaling-pdal-tile-processing-with-aws-batch/) — a full worked ground-to-DTM fan-out with manifest sharding and failure recovery
+- [PDAL Docker Containers](https://www.pythonlidar.com/batch-automation-cloud-integration/pdal-docker-containers/) — building the PDAL image that each Batch child runs
+- [S3 Cloud Storage I/O](https://www.pythonlidar.com/batch-automation-cloud-integration/s3-cloud-storage-io/) — reading and writing point clouds and rasters directly against S3
+- [Airflow DAG Orchestration](https://www.pythonlidar.com/batch-automation-cloud-integration/airflow-dag-orchestration/) — coordinating Batch submissions and aggregation as a scheduled DAG
+- [Parallel Execution](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/parallel-execution/) — the single-host parallelism model that Batch spreads across a fleet

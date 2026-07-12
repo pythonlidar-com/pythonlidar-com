@@ -2,7 +2,7 @@
 title: "Spatial Reprojection in PDAL: Coordinate Transformations for LiDAR Pipelines"
 description: "How to reproject LAS/LAZ point clouds between coordinate reference systems using PDAL's filters.reprojection stage in Python — covering datum shifts, vertical references, parameter tuning, and post-transform validation."
 slug: "spatial-reprojection"
-type: "cluster"
+type: "topic"
 breadcrumb: "Spatial Reprojection"
 datePublished: "2024-03-15"
 dateModified: "2026-06-24"
@@ -23,9 +23,9 @@ dateModified: "2026-06-24"
     {
       "@type": "BreadcrumbList",
       "itemListElement": [
-        {"@type": "ListItem", "position": 1, "name": "Home", "item": "https://pythonlidar.com/"},
-        {"@type": "ListItem", "position": 2, "name": "PDAL Pipeline Architecture & Execution", "item": "https://pythonlidar.com/pdal-pipeline-architecture-execution/"},
-        {"@type": "ListItem", "position": 3, "name": "Spatial Reprojection", "item": "https://pythonlidar.com/pdal-pipeline-architecture-execution/spatial-reprojection/"}
+        {"@type": "ListItem", "position": 1, "name": "Home", "item": "https://www.pythonlidar.com/"},
+        {"@type": "ListItem", "position": 2, "name": "PDAL Pipeline Architecture & Execution", "item": "https://www.pythonlidar.com/pdal-pipeline-architecture-execution/"},
+        {"@type": "ListItem", "position": 3, "name": "Spatial Reprojection", "item": "https://www.pythonlidar.com/pdal-pipeline-architecture-execution/spatial-reprojection/"}
       ]
     },
     {
@@ -62,7 +62,7 @@ dateModified: "2026-06-24"
 }
 </script>
 
-Spatial reprojection transforms point cloud coordinates from one [coordinate reference system](/point-cloud-data-standards-fundamentals/coordinate-reference-systems/) to another — a foundational step whenever LiDAR datasets from different acquisition campaigns, sensors, or national grids must be integrated into a common spatial framework. For LiDAR analysts, Python GIS developers, and surveying teams, this is not a trivial coordinate swap: it demands datum-shift awareness, geoid-model availability, and careful stage ordering within a processing graph. PDAL delegates all coordinate mathematics to the PROJ library and exposes a single `filters.reprojection` stage that recalculates X, Y, and Z while preserving every other point attribute unchanged. This topic is one component of the broader [PDAL Pipeline Architecture & Execution](/pdal-pipeline-architecture-execution/) model, which covers streaming execution, stage ordering, memory management, and production deployment patterns.
+Spatial reprojection transforms point cloud coordinates from one [coordinate reference system](https://www.pythonlidar.com/point-cloud-data-standards-fundamentals/coordinate-reference-systems/) to another — a foundational step whenever LiDAR datasets from different acquisition campaigns, sensors, or national grids must be integrated into a common spatial framework. For LiDAR analysts, Python GIS developers, and surveying teams, this is not a trivial coordinate swap: it demands datum-shift awareness, geoid-model availability, and careful stage ordering within a processing graph. PDAL delegates all coordinate mathematics to the PROJ library and exposes a single `filters.reprojection` stage that recalculates X, Y, and Z while preserving every other point attribute unchanged. This topic is one component of the broader [PDAL Pipeline Architecture & Execution](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/) model, which covers streaming execution, stage ordering, memory management, and production deployment patterns.
 
 ---
 
@@ -150,7 +150,7 @@ Spatial reprojection in PDAL follows a deterministic four-phase execution lifecy
 
 **Phase 2 — Transformation Path Resolution.** When `filters.reprojection` initialises, PROJ evaluates all available transformation paths between `in_srs` and `out_srs`. It ranks paths by expected accuracy and selects the most precise one whose grid files are locally available. You can audit the chosen path with `projinfo -s EPSG:32618 -t EPSG:4326 --summary`.
 
-**Phase 3 — Streaming Coordinate Recalculation.** PDAL streams the point buffer through `filters.reprojection` in chunks. Each point's X, Y, and Z are recalculated; all other dimensions (Intensity, ReturnNumber, Classification, RGB, custom extra dimensions) pass through unmodified. The `forward` parameter on the writer stage ensures these survive serialisation. Ordering matters: any [pipeline filtering logic](/pdal-pipeline-architecture-execution/pipeline-filtering-logic/) stages that should operate on original projected coordinates (such as range filters using easting/northing bounds) must run before this phase.
+**Phase 3 — Streaming Coordinate Recalculation.** PDAL streams the point buffer through `filters.reprojection` in chunks. Each point's X, Y, and Z are recalculated; all other dimensions (Intensity, ReturnNumber, Classification, RGB, custom extra dimensions) pass through unmodified. The `forward` parameter on the writer stage ensures these survive serialisation. Ordering matters: any [pipeline filtering logic](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/pipeline-filtering-logic/) stages that should operate on original projected coordinates (such as range filters using easting/northing bounds) must run before this phase.
 
 **Phase 4 — Header Update and CRS Embedding.** The writer stage writes the new CRS into the output LAS/LAZ header's VLRs. Setting `forward="all"` on `writers.las` copies all input VLRs forward and then overwrites the spatial reference records with the transformed CRS, so the output file is self-describing.
 
@@ -263,7 +263,7 @@ if __name__ == "__main__":
 
 **Reader stage and `source_srs` injection.** `readers.las` automatically detects the embedded CRS from VLRs. The optional `spatialreference` override is essential when processing legacy files from scanners that omit or mis-encode the spatial reference. Injecting the wrong source CRS produces coordinates that appear plausible but are silently offset by dozens of metres — always cross-check against a known control point before assuming the header is correct.
 
-**`chunk_size` on the reader.** PDAL streams data in chunks rather than loading the entire file into RAM. The 2 M default is a conservative starting point for machines with 16 GB RAM; on a 32 GB workstation processing a 1-billion-point tiling job, raising this to 5 M or 10 M reduces Python/C++ boundary crossings and improves throughput. See the performance table below for measured trade-offs. For context on how chunk-based streaming interacts with [memory management](/pdal-pipeline-architecture-execution/memory-management/) across the full pipeline, that topic covers the broader buffer-passing lifecycle.
+**`chunk_size` on the reader.** PDAL streams data in chunks rather than loading the entire file into RAM. The 2 M default is a conservative starting point for machines with 16 GB RAM; on a 32 GB workstation processing a 1-billion-point tiling job, raising this to 5 M or 10 M reduces Python/C++ boundary crossings and improves throughput. See the performance table below for measured trade-offs. For context on how chunk-based streaming interacts with [memory management](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/memory-management/) across the full pipeline, that topic covers the broader buffer-passing lifecycle.
 
 **`filters.reprojection` with `out_srs` only.** Specifying only `out_srs` tells PDAL to read `in_srs` from the pipeline's propagated CRS state (set by the reader). You can also set both explicitly for extra defensive clarity: `"in_srs": "EPSG:6347", "out_srs": "EPSG:4326"`. When you need to include a vertical datum transformation (e.g., NAVD88 → EGM2008), supply a compound CRS or a PROJ pipeline string in `out_srs` rather than a simple EPSG code.
 
@@ -378,7 +378,7 @@ def assert_wgs84_bounds(bounds_str: str) -> None:
 
 **CRS round-trip test.** For high-accuracy workflows, reproject back to the original CRS and compare a sample of X/Y/Z triples against the input. Sub-millimetre differences are expected from floating-point arithmetic; centimetre differences indicate an incorrect datum shift; metre differences indicate the wrong CRS was specified.
 
-**Dimension preservation check.** Verify that [ASPRS classification codes](/point-cloud-data-standards-fundamentals/asprs-classification-codes/), intensity values, and any custom extra dimensions survived the transformation:
+**Dimension preservation check.** Verify that [ASPRS classification codes](https://www.pythonlidar.com/point-cloud-data-standards-fundamentals/asprs-classification-codes/), intensity values, and any custom extra dimensions survived the transformation:
 
 {% raw %}
 ```python
@@ -408,7 +408,7 @@ Spatial reprojection is CPU-bound at the PROJ level and I/O-bound at the file le
 | 5 000 000 | 16.4 | 18 | Recommended for 32 GB+ workstations |
 | 10 000 000 | 31.2 | 17 | Diminishing returns beyond this point |
 
-**File-level parallelism.** PDAL does not parallelise a single pipeline internally. For tiled datasets, use [parallel execution](/pdal-pipeline-architecture-execution/parallel-execution/) patterns — one pipeline per tile via `concurrent.futures.ProcessPoolExecutor`. Each worker process independently holds a PROJ context, so there are no shared-state hazards:
+**File-level parallelism.** PDAL does not parallelise a single pipeline internally. For tiled datasets, use [parallel execution](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/parallel-execution/) patterns — one pipeline per tile via `concurrent.futures.ProcessPoolExecutor`. Each worker process independently holds a PROJ context, so there are no shared-state hazards:
 
 ```python
 from concurrent.futures import ProcessPoolExecutor, as_completed
@@ -449,7 +449,7 @@ Root cause: `PROJ_DATA` environment variable points to the wrong directory, or t
 Fix: run `import pyproj; print(pyproj.datadir.get_data_dir())` to locate the PROJ data directory, then verify the `proj.db` SQLite file exists there. Reinstall `proj-data` via `conda install -c conda-forge proj-data`.
 
 **Output file point count is less than input**
-Root cause: if [pipeline filtering logic](/pdal-pipeline-architecture-execution/pipeline-filtering-logic/) stages (e.g., `filters.outlier`, `filters.range`) are present in the pipeline before `filters.reprojection`, they will remove points. This is only a problem if reprojection is supposed to be non-destructive.
+Root cause: if [pipeline filtering logic](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/pipeline-filtering-logic/) stages (e.g., `filters.outlier`, `filters.range`) are present in the pipeline before `filters.reprojection`, they will remove points. This is only a problem if reprojection is supposed to be non-destructive.
 Fix: move `filters.reprojection` before any filter stages, or remove unintended filters from the pipeline.
 
 **`filters.reprojection` produces NaN coordinates for some points**
@@ -460,9 +460,9 @@ Fix: apply `filters.range` before reprojection to clip points to the expected bo
 
 ## Related
 
-- [Reprojecting Point Clouds from UTM to WGS84](/pdal-pipeline-architecture-execution/spatial-reprojection/reprojecting-point-clouds-from-utm-to-wgs84/) — concrete parameter configurations and accuracy benchmarks for this common projection pair
-- [PDAL Stage Chaining](/pdal-pipeline-architecture-execution/pdal-stage-chaining/) — how to position reprojection correctly within a multi-stage processing graph
-- [Pipeline Filtering Logic](/pdal-pipeline-architecture-execution/pipeline-filtering-logic/) — ordering filters relative to reprojection to avoid operating on un-projected coordinates
-- [Parallel Execution](/pdal-pipeline-architecture-execution/parallel-execution/) — file-level parallelism patterns for batch reprojection of tiled datasets
-- [Coordinate Reference Systems](/point-cloud-data-standards-fundamentals/coordinate-reference-systems/) — CRS fundamentals, EPSG codes, and how spatial references are stored in LAS/LAZ headers
-- [PDAL Pipeline Architecture & Execution](/pdal-pipeline-architecture-execution/) — parent section covering the full execution model, memory management, and production patterns
+- [Reprojecting Point Clouds from UTM to WGS84](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/spatial-reprojection/reprojecting-point-clouds-from-utm-to-wgs84/) — concrete parameter configurations and accuracy benchmarks for this common projection pair
+- [PDAL Stage Chaining](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/pdal-stage-chaining/) — how to position reprojection correctly within a multi-stage processing graph
+- [Pipeline Filtering Logic](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/pipeline-filtering-logic/) — ordering filters relative to reprojection to avoid operating on un-projected coordinates
+- [Parallel Execution](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/parallel-execution/) — file-level parallelism patterns for batch reprojection of tiled datasets
+- [Coordinate Reference Systems](https://www.pythonlidar.com/point-cloud-data-standards-fundamentals/coordinate-reference-systems/) — CRS fundamentals, EPSG codes, and how spatial references are stored in LAS/LAZ headers
+- [PDAL Pipeline Architecture & Execution](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/) — parent section covering the full execution model, memory management, and production patterns

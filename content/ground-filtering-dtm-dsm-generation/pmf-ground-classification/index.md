@@ -2,7 +2,7 @@
 title: "PMF Ground Classification in PDAL"
 description: "Using the Progressive Morphological Filter (filters.pmf) in PDAL to classify ground returns — the growing-window morphological opening, max_window_size / slope / initial_distance / max_distance parameters, a runnable Python workflow, and validation."
 slug: "pmf-ground-classification"
-type: "cluster"
+type: "topic"
 breadcrumb: "PMF Ground Classification"
 datePublished: "2024-06-20"
 dateModified: "2026-07-12"
@@ -23,9 +23,9 @@ dateModified: "2026-07-12"
     {
       "@type": "BreadcrumbList",
       "itemListElement": [
-        {"@type": "ListItem", "position": 1, "name": "Home", "item": "https://pythonlidar.com/"},
-        {"@type": "ListItem", "position": 2, "name": "Ground Filtering & Terrain Models", "item": "https://pythonlidar.com/ground-filtering-dtm-dsm-generation/"},
-        {"@type": "ListItem", "position": 3, "name": "PMF Ground Classification", "item": "https://pythonlidar.com/ground-filtering-dtm-dsm-generation/pmf-ground-classification/"}
+        {"@type": "ListItem", "position": 1, "name": "Home", "item": "https://www.pythonlidar.com/"},
+        {"@type": "ListItem", "position": 2, "name": "Ground Filtering & Terrain Models", "item": "https://www.pythonlidar.com/ground-filtering-dtm-dsm-generation/"},
+        {"@type": "ListItem", "position": 3, "name": "PMF Ground Classification", "item": "https://www.pythonlidar.com/ground-filtering-dtm-dsm-generation/pmf-ground-classification/"}
       ]
     },
     {
@@ -70,7 +70,7 @@ dateModified: "2026-07-12"
 
 # PMF Ground Classification in PDAL
 
-Separating bare-earth returns from everything a laser also struck — canopy, rooftops, parked vehicles, power lines — is the first analytical step in almost every terrain product. The Progressive Morphological Filter, introduced by Zhang, Chen, Zhang, Gong and Yan in 2003, solves this by treating the point cloud as an elevation surface and repeatedly opening it with a structuring element that grows a little larger on every pass. Small windows shave off cars and shrubs; larger windows strip away tree crowns and building blocks; a height-difference threshold that scales with the window prevents genuine hill slopes from being cut away with the objects. PDAL exposes this algorithm as `filters.pmf`, and this guide sits under [Ground Filtering and DTM/DSM Generation with PDAL](/ground-filtering-dtm-dsm-generation/) as the reference for driving it from Python.
+Separating bare-earth returns from everything a laser also struck — canopy, rooftops, parked vehicles, power lines — is the first analytical step in almost every terrain product. The Progressive Morphological Filter, introduced by Zhang, Chen, Zhang, Gong and Yan in 2003, solves this by treating the point cloud as an elevation surface and repeatedly opening it with a structuring element that grows a little larger on every pass. Small windows shave off cars and shrubs; larger windows strip away tree crowns and building blocks; a height-difference threshold that scales with the window prevents genuine hill slopes from being cut away with the objects. PDAL exposes this algorithm as `filters.pmf`, and this guide sits under [Ground Filtering and DTM/DSM Generation with PDAL](https://www.pythonlidar.com/ground-filtering-dtm-dsm-generation/) as the reference for driving it from Python.
 
 <svg viewBox="0 0 780 300" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Progressive morphological filter growing-window opening across four iterations" style="width:100%;max-width:780px;display:block;margin:1.5rem auto">
   <title>PMF growing-window morphological opening</title>
@@ -120,7 +120,7 @@ Have these in place before wiring up a PMF pipeline:
 - **Python 3.10+** with `numpy` available for post-run inspection of the point buffer.
 - **A test tile with a known CRS** — a USGS 3DEP or OpenTopography LAZ works. Confirm the projected coordinate system (metres, not degrees) because PMF thresholds are expressed in ground units.
 - **An idea of the largest non-ground object** in the scene. If the biggest building footprint is ~30 m, `max_window_size` should be able to span it. This single decision drives most of the parameter set.
-- **A noise-aware input.** A single spurious low point can anchor a whole window to a false minimum. Pair PMF with [statistical outlier removal](/pdal-pipeline-architecture-execution/pipeline-filtering-logic/applying-statistical-outlier-filters-in-pdal/) upstream.
+- **A noise-aware input.** A single spurious low point can anchor a whole window to a false minimum. Pair PMF with [statistical outlier removal](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/pipeline-filtering-logic/applying-statistical-outlier-filters-in-pdal/) upstream.
 
 ## How the Progressive Morphological Filter Works
 
@@ -132,17 +132,17 @@ Two schedules govern that sequence, and both are exposed as PDAL parameters:
 
 2. **Elevation-difference threshold.** After each opening PDAL compares every point to the opened surface. A point is flagged non-ground when its height above that surface exceeds the current threshold `dh`. For the smallest window `dh` equals `initial_distance`. As the window widens, `dh` increases by `slope` multiplied by the window growth (in ground units), so a real hillside — where elevation legitimately changes across a wide window — is not shaved off along with the buildings. The value is clamped at `max_distance` so a genuinely large object cannot slip through simply because the window got big.
 
-The two schedules interact: `slope` and `max_distance` protect true terrain relief, while `max_window_size` and `cell_size` decide which object sizes get removed. A point that survives *every* iteration is bare earth and keeps ASPRS Classification code 2. Everything else retains its incoming class (usually 1, Unclassified). If you are new to those numeric codes, the [ASPRS classification codes reference](/point-cloud-data-standards-fundamentals/asprs-classification-codes/) explains what 1, 2, 7 and 9 mean and how downstream tools read them.
+The two schedules interact: `slope` and `max_distance` protect true terrain relief, while `max_window_size` and `cell_size` decide which object sizes get removed. A point that survives *every* iteration is bare earth and keeps ASPRS Classification code 2. Everything else retains its incoming class (usually 1, Unclassified). If you are new to those numeric codes, the [ASPRS classification codes reference](https://www.pythonlidar.com/point-cloud-data-standards-fundamentals/asprs-classification-codes/) explains what 1, 2, 7 and 9 mean and how downstream tools read them.
 
 ## Core Workflow Architecture
 
-A production PMF run is a short, ordered [chain of PDAL stages](/pdal-pipeline-architecture-execution/pdal-stage-chaining/). The lifecycle has five deterministic phases:
+A production PMF run is a short, ordered [chain of PDAL stages](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/pdal-stage-chaining/). The lifecycle has five deterministic phases:
 
-1. **Ingest and CRS anchor** — `readers.las` loads the tile and pins its `spatialreference` so thresholds are interpreted in metres. If the tile arrives in a geographic CRS it must be reprojected first via [spatial reprojection](/pdal-pipeline-architecture-execution/spatial-reprojection/); running PMF on degrees produces nonsense thresholds.
+1. **Ingest and CRS anchor** — `readers.las` loads the tile and pins its `spatialreference` so thresholds are interpreted in metres. If the tile arrives in a geographic CRS it must be reprojected first via [spatial reprojection](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/spatial-reprojection/); running PMF on degrees produces nonsense thresholds.
 2. **Pre-clean** — a `filters.outlier` pass in statistical mode strips isolated low points that would otherwise anchor a window to a false ground minimum, and optionally a `filters.range` to drop points already flagged as noise (Classification 7).
 3. **Classify** — `filters.pmf` runs the growing-window opening and stamps Classification 2 on the survivors.
 4. **Isolate or keep** — optionally a `filters.range` with `limits: "Classification[2:2]"` to emit a ground-only cloud, or leave the full cloud with ground labelled for later DTM work.
-5. **Write** — `writers.las` with `forward: "all"` persists the Classification dimension so nothing is lost. See how the buffer threads through these stages under [pipeline filtering logic](/pdal-pipeline-architecture-execution/pipeline-filtering-logic/).
+5. **Write** — `writers.las` with `forward: "all"` persists the Classification dimension so nothing is lost. See how the buffer threads through these stages under [pipeline filtering logic](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/pipeline-filtering-logic/).
 
 ## Full Implementation
 
@@ -285,7 +285,7 @@ if __name__ == "__main__":
 
 ### Outlier pre-pass — protecting the morphological minimum
 
-Morphological erosion takes the *minimum* elevation inside each window. A single multipath return five metres below true ground will therefore drag the opened surface down and cause real ground around it to be flagged as non-ground on the next dilation. Running `filters.outlier` in statistical mode (`mean_k: 12`, `multiplier: 2.5`) and then dropping Classification 7 with `filters.range` removes those anchors before PMF ever sees them. This is why the [statistical outlier filter](/pdal-pipeline-architecture-execution/pipeline-filtering-logic/applying-statistical-outlier-filters-in-pdal/) is almost always paired with PMF.
+Morphological erosion takes the *minimum* elevation inside each window. A single multipath return five metres below true ground will therefore drag the opened surface down and cause real ground around it to be flagged as non-ground on the next dilation. Running `filters.outlier` in statistical mode (`mean_k: 12`, `multiplier: 2.5`) and then dropping Classification 7 with `filters.range` removes those anchors before PMF ever sees them. This is why the [statistical outlier filter](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/pipeline-filtering-logic/applying-statistical-outlier-filters-in-pdal/) is almost always paired with PMF.
 
 ### filters.pmf — the parameter rationale
 
@@ -300,7 +300,7 @@ Morphological erosion takes the *minimum* elevation inside each window. A single
 
 ### Extracting ground with `filters.range`
 
-PMF does not delete non-ground points; it only re-labels ground as Classification 2. To produce the bare-earth cloud a downstream [DTM raster](/ground-filtering-dtm-dsm-generation/dtm-raster-generation/) expects, a second `filters.range` with `limits: "Classification[2:2]"` keeps only the ground returns. Tagging that branch (`"tag": "ground_only"`) and referencing it from the second writer's `inputs` lets one pipeline emit both a labelled full cloud and a ground-only file in a single execution.
+PMF does not delete non-ground points; it only re-labels ground as Classification 2. To produce the bare-earth cloud a downstream [DTM raster](https://www.pythonlidar.com/ground-filtering-dtm-dsm-generation/dtm-raster-generation/) expects, a second `filters.range` with `limits: "Classification[2:2]"` keeps only the ground returns. Tagging that branch (`"tag": "ground_only"`) and referencing it from the second writer's `inputs` lets one pipeline emit both a labelled full cloud and a ground-only file in a single execution.
 
 ### Writer stage — do not drop the label
 
@@ -319,7 +319,7 @@ PMF does not delete non-ground points; it only re-labels ground as Classificatio
 | `ignore` | range | — | e.g. `Classification[7:7]` | Points matching the range are excluded from the surface entirely |
 | `last` | bool | true | true / false | Consider only last returns when building the surface |
 
-The `ignore` and `last` options are how PMF avoids canopy contamination without a separate stage: `last: true` prefers last-of-many returns (more likely to reach the ground), and `ignore` lets you exclude already-known noise. Choosing these values by terrain type is covered in depth in [tuning PMF window and slope parameters](/ground-filtering-dtm-dsm-generation/pmf-ground-classification/tuning-pmf-window-and-slope/).
+The `ignore` and `last` options are how PMF avoids canopy contamination without a separate stage: `last: true` prefers last-of-many returns (more likely to reach the ground), and `ignore` lets you exclude already-known noise. Choosing these values by terrain type is covered in depth in [tuning PMF window and slope parameters](https://www.pythonlidar.com/ground-filtering-dtm-dsm-generation/pmf-ground-classification/tuning-pmf-window-and-slope/).
 
 ## Validation and Integrity Checks
 
@@ -367,7 +367,7 @@ Takeaways:
 
 - **`exponential: true` is far cheaper.** Linear growth needs roughly three times the iterations to reach the same `max_window_size`. Use linear growth only when you need the finer object-size granularity described in the tuning guide.
 - **`cell_size` dominates memory and time.** Halving it quadruples the grid. Match `cell_size` to point spacing — going finer than the data density buys nothing but cost.
-- **Tile before you go dense.** For multi-hundred-million-point regional jobs, split into tiles with a buffer and run PMF per tile; see the buffering guidance in [pipeline filtering logic](/pdal-pipeline-architecture-execution/pipeline-filtering-logic/).
+- **Tile before you go dense.** For multi-hundred-million-point regional jobs, split into tiles with a buffer and run PMF per tile; see the buffering guidance in [pipeline filtering logic](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/pipeline-filtering-logic/).
 
 ## Common Errors and Troubleshooting
 
@@ -375,7 +375,7 @@ Takeaways:
 Root cause: `max_window_size` is smaller than the building footprint, so no opening ever spans it. Fix: raise `max_window_size` until it exceeds the widest roof in cells (`footprint_metres / cell_size`), or reduce `cell_size` so the same metre count covers more cells.
 
 **Hilltops and ridgelines are stripped away.**
-Root cause: on wide windows the height threshold is too tight, so real relief is read as an object. Fix: increase `slope` (more height tolerance per window step) and/or `max_distance`. This is the classic flat-vs-steep trade-off detailed in [tuning PMF window and slope parameters](/ground-filtering-dtm-dsm-generation/pmf-ground-classification/tuning-pmf-window-and-slope/).
+Root cause: on wide windows the height threshold is too tight, so real relief is read as an object. Fix: increase `slope` (more height tolerance per window step) and/or `max_distance`. This is the classic flat-vs-steep trade-off detailed in [tuning PMF window and slope parameters](https://www.pythonlidar.com/ground-filtering-dtm-dsm-generation/pmf-ground-classification/tuning-pmf-window-and-slope/).
 
 **Ground fraction collapses to a few percent.**
 Root cause: an undetected low outlier anchored the surface, or `initial_distance` is far too small. Fix: confirm the outlier pre-pass ran, then relax `initial_distance` toward 0.3–0.5 m.
@@ -398,20 +398,20 @@ They bound the elevation-difference threshold that decides whether a point survi
 
 **Does filters.pmf write ASPRS Classification code 2?**
 
-Yes. Points that survive every morphological opening iteration keep Classification 2 (Ground); everything else is left at its prior class, typically 1 (Unclassified). Set the writer to `forward: "all"` so the Classification dimension reaches the output file intact. The [ASPRS classification codes guide](/point-cloud-data-standards-fundamentals/asprs-classification-codes/) covers the full code list.
+Yes. Points that survive every morphological opening iteration keep Classification 2 (Ground); everything else is left at its prior class, typically 1 (Unclassified). Set the writer to `forward: "all"` so the Classification dimension reaches the output file intact. The [ASPRS classification codes guide](https://www.pythonlidar.com/point-cloud-data-standards-fundamentals/asprs-classification-codes/) covers the full code list.
 
 **When should I choose PMF over SMRF?**
 
-PMF is the older, more transparent algorithm from Zhang et al. 2003 and behaves predictably on flat-to-rolling bare earth where object sizes are well understood. [SMRF ground classification](/ground-filtering-dtm-dsm-generation/smrf-ground-classification/) tends to preserve more terrain detail on steep or forested ground. Because PMF exposes the window schedule directly, it is easier to reason about when you must guarantee that objects up to a known footprint are removed.
+PMF is the older, more transparent algorithm from Zhang et al. 2003 and behaves predictably on flat-to-rolling bare earth where object sizes are well understood. [SMRF ground classification](https://www.pythonlidar.com/ground-filtering-dtm-dsm-generation/smrf-ground-classification/) tends to preserve more terrain detail on steep or forested ground. Because PMF exposes the window schedule directly, it is easier to reason about when you must guarantee that objects up to a known footprint are removed.
 
 ---
 
 ## Related
 
-- [Ground Filtering and DTM/DSM Generation with PDAL](/ground-filtering-dtm-dsm-generation/) — parent overview of bare-earth extraction and terrain-model generation
-- [Classifying Ground with the Progressive Morphological Filter](/ground-filtering-dtm-dsm-generation/pmf-ground-classification/classifying-ground-with-progressive-morphological-filter/) — the end-to-end recipe from raw LAZ to a ground-only file
-- [Tuning PMF Window and Slope Parameters](/ground-filtering-dtm-dsm-generation/pmf-ground-classification/tuning-pmf-window-and-slope/) — terrain-specific parameter recipes and exponential vs linear growth
-- [SMRF Ground Classification](/ground-filtering-dtm-dsm-generation/smrf-ground-classification/) — the sibling scalar/threshold ground filter and when to prefer it
-- [Pipeline Filtering Logic](/pdal-pipeline-architecture-execution/pipeline-filtering-logic/) — how `filters.range` and buffer passing route ground and non-ground points
-- [Applying Statistical Outlier Filters in PDAL](/pdal-pipeline-architecture-execution/pipeline-filtering-logic/applying-statistical-outlier-filters-in-pdal/) — the noise pre-pass that protects the morphological surface
-- [ASPRS Classification Codes](/point-cloud-data-standards-fundamentals/asprs-classification-codes/) — what Classification 2 and the other numeric codes mean
+- [Ground Filtering and DTM/DSM Generation with PDAL](https://www.pythonlidar.com/ground-filtering-dtm-dsm-generation/) — parent overview of bare-earth extraction and terrain-model generation
+- [Classifying Ground with the Progressive Morphological Filter](https://www.pythonlidar.com/ground-filtering-dtm-dsm-generation/pmf-ground-classification/classifying-ground-with-progressive-morphological-filter/) — the end-to-end recipe from raw LAZ to a ground-only file
+- [Tuning PMF Window and Slope Parameters](https://www.pythonlidar.com/ground-filtering-dtm-dsm-generation/pmf-ground-classification/tuning-pmf-window-and-slope/) — terrain-specific parameter recipes and exponential vs linear growth
+- [SMRF Ground Classification](https://www.pythonlidar.com/ground-filtering-dtm-dsm-generation/smrf-ground-classification/) — the sibling scalar/threshold ground filter and when to prefer it
+- [Pipeline Filtering Logic](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/pipeline-filtering-logic/) — how `filters.range` and buffer passing route ground and non-ground points
+- [Applying Statistical Outlier Filters in PDAL](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/pipeline-filtering-logic/applying-statistical-outlier-filters-in-pdal/) — the noise pre-pass that protects the morphological surface
+- [ASPRS Classification Codes](https://www.pythonlidar.com/point-cloud-data-standards-fundamentals/asprs-classification-codes/) — what Classification 2 and the other numeric codes mean

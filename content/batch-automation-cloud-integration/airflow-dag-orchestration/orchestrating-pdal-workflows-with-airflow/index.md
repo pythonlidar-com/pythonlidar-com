@@ -2,7 +2,7 @@
 title: "Orchestrating PDAL Workflows with Airflow"
 description: "A worked Airflow DAG that runs a PDAL LiDAR pipeline per tile with dynamic task mapping — discovering tiles from S3, classifying ground, and writing DTMs, with retries and XCom result passing."
 slug: "orchestrating-pdal-workflows-with-airflow"
-type: "long_tail"
+type: "howto"
 breadcrumb: "Orchestrating PDAL with Airflow"
 datePublished: "2024-07-08"
 dateModified: "2026-07-12"
@@ -23,10 +23,10 @@ dateModified: "2026-07-12"
     {
       "@type": "BreadcrumbList",
       "itemListElement": [
-        {"@type": "ListItem", "position": 1, "name": "Home", "item": "https://pythonlidar.com/"},
-        {"@type": "ListItem", "position": 2, "name": "Batch Automation and Cloud Integration for PDAL", "item": "https://pythonlidar.com/batch-automation-cloud-integration/"},
-        {"@type": "ListItem", "position": 3, "name": "Airflow DAG Orchestration", "item": "https://pythonlidar.com/batch-automation-cloud-integration/airflow-dag-orchestration/"},
-        {"@type": "ListItem", "position": 4, "name": "Orchestrating PDAL with Airflow", "item": "https://pythonlidar.com/batch-automation-cloud-integration/airflow-dag-orchestration/orchestrating-pdal-workflows-with-airflow/"}
+        {"@type": "ListItem", "position": 1, "name": "Home", "item": "https://www.pythonlidar.com/"},
+        {"@type": "ListItem", "position": 2, "name": "Batch Automation and Cloud Integration for PDAL", "item": "https://www.pythonlidar.com/batch-automation-cloud-integration/"},
+        {"@type": "ListItem", "position": 3, "name": "Airflow DAG Orchestration", "item": "https://www.pythonlidar.com/batch-automation-cloud-integration/airflow-dag-orchestration/"},
+        {"@type": "ListItem", "position": 4, "name": "Orchestrating PDAL with Airflow", "item": "https://www.pythonlidar.com/batch-automation-cloud-integration/airflow-dag-orchestration/orchestrating-pdal-workflows-with-airflow/"}
       ]
     },
     {
@@ -69,9 +69,9 @@ dateModified: "2026-07-12"
 
 ## Context and Motivation
 
-This guide is part of [Airflow DAG Orchestration](/batch-automation-cloud-integration/airflow-dag-orchestration/), which explains the design patterns; here we build one concrete DAG end to end and run it. If you have ever kicked off a `for tile in tiles: subprocess.run(...)` loop and then watched it die on tile 340 with no way to resume, this is the fix. Airflow turns that loop into a graph where every tile is an independently scheduled, independently retryable unit of work, and where a single failed tile does not discard the 339 that already succeeded.
+This guide is part of [Airflow DAG Orchestration](https://www.pythonlidar.com/batch-automation-cloud-integration/airflow-dag-orchestration/), which explains the design patterns; here we build one concrete DAG end to end and run it. If you have ever kicked off a `for tile in tiles: subprocess.run(...)` loop and then watched it die on tile 340 with no way to resume, this is the fix. Airflow turns that loop into a graph where every tile is an independently scheduled, independently retryable unit of work, and where a single failed tile does not discard the 339 that already succeeded.
 
-The workload is deliberately narrow: given a prefix full of LAZ tiles in object storage, produce one 1-metre DTM GeoTIFF per tile. Each tile runs the same two-part PDAL pipeline — classify ground with SMRF, then interpolate a raster with `writers.gdal` — the same operations covered in depth by [SMRF Ground Classification](/ground-filtering-dtm-dsm-generation/smrf-ground-classification/) and [DTM Raster Generation](/ground-filtering-dtm-dsm-generation/dtm-raster-generation/). What Airflow adds is the scheduling, retry, and result-tracking scaffolding around that pipeline.
+The workload is deliberately narrow: given a prefix full of LAZ tiles in object storage, produce one 1-metre DTM GeoTIFF per tile. Each tile runs the same two-part PDAL pipeline — classify ground with SMRF, then interpolate a raster with `writers.gdal` — the same operations covered in depth by [SMRF Ground Classification](https://www.pythonlidar.com/ground-filtering-dtm-dsm-generation/smrf-ground-classification/) and [DTM Raster Generation](https://www.pythonlidar.com/ground-filtering-dtm-dsm-generation/dtm-raster-generation/). What Airflow adds is the scheduling, retry, and result-tracking scaffolding around that pipeline.
 
 <svg viewBox="0 0 720 250" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="TaskFlow DAG expanding a single process_tile task into mapped per-tile instances" style="width:100%;max-width:720px;display:block;margin:1.5rem auto">
   <title>Dynamic task mapping expands one process_tile task over a discovered tile list</title>
@@ -304,13 +304,13 @@ Spot-check one raster's validity with `pdal info` on its source, or open it in Q
 `.expand()` needs a real `list`. If `discover_tiles` returns a generator, a `dict`, or a single string, Airflow either errors or produces one oddly-shaped instance. Always materialise the keys with a list comprehension, as the example does, and raise on empty results so an empty prefix fails loudly instead of expanding to zero instances.
 
 **2. The worker must actually have PDAL.**
-A DAG that parses fine can still fail every task with `ModuleNotFoundError: No module named 'pdal'` because the *scheduler* parsed it but the *worker* lacks the library. PDAL, GDAL, and PROJ must live in the worker's environment. If your workers are heterogeneous, run the pipeline through [PDAL Docker Containers](/batch-automation-cloud-integration/pdal-docker-containers/) via `DockerOperator` so the runtime travels with the task instead of depending on each host.
+A DAG that parses fine can still fail every task with `ModuleNotFoundError: No module named 'pdal'` because the *scheduler* parsed it but the *worker* lacks the library. PDAL, GDAL, and PROJ must live in the worker's environment. If your workers are heterogeneous, run the pipeline through [PDAL Docker Containers](https://www.pythonlidar.com/batch-automation-cloud-integration/pdal-docker-containers/) via `DockerOperator` so the runtime travels with the task instead of depending on each host.
 
 **3. Top-level code throttles the scheduler.**
 Anything outside a task body runs on every DAG parse. A `boto3.client("s3").list_objects_v2(...)` at module scope will hammer S3 and slow the scheduler for every DAG in the deployment. Keep the module body to declarations; push all I/O and heavy imports inside `@task` functions. This is the single most common performance mistake when porting a script to Airflow.
 
 **4. Mapped instance count has a ceiling.**
-Dynamic mapping is capped at `max_map_length` (default 1024). A national dataset with 40,000 tiles will hit that wall. Batch the tile list into groups of, say, 200 and map `process_batch` over the groups, looping the tiles inside each task — trading some per-tile granularity for a mapping count Airflow can track comfortably. The same fan-out logic then scales through [AWS Batch Processing](/batch-automation-cloud-integration/aws-batch-processing/) when the compute exceeds one cluster.
+Dynamic mapping is capped at `max_map_length` (default 1024). A national dataset with 40,000 tiles will hit that wall. Batch the tile list into groups of, say, 200 and map `process_batch` over the groups, looping the tiles inside each task — trading some per-tile granularity for a mapping count Airflow can track comfortably. The same fan-out logic then scales through [AWS Batch Processing](https://www.pythonlidar.com/batch-automation-cloud-integration/aws-batch-processing/) when the compute exceeds one cluster.
 
 ## Frequently Asked Questions
 
@@ -328,7 +328,7 @@ The scheduler re-parses every DAG file on a short interval. Any expensive code a
 
 **Can I add a reprojection or validation step to each tile?**
 
-Yes. Insert extra PDAL stages into the `pipeline` list inside `process_tile` — for example a `filters.reprojection` before `writers.gdal`, following the [PDAL stage chaining](/pdal-pipeline-architecture-execution/pdal-stage-chaining/) order. Everything stays within one task, so the mapping and retry behaviour is unchanged.
+Yes. Insert extra PDAL stages into the `pipeline` list inside `process_tile` — for example a `filters.reprojection` before `writers.gdal`, following the [PDAL stage chaining](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/pdal-stage-chaining/) order. Everything stays within one task, so the mapping and retry behaviour is unchanged.
 
 **How do I re-run only the tiles that failed?**
 
@@ -338,8 +338,8 @@ In the grid view, select the failed `process_tile` instances and clear them; Air
 
 ## Related
 
-- [Airflow DAG Orchestration](/batch-automation-cloud-integration/airflow-dag-orchestration/) — parent guide to modelling PDAL workflows as DAGs
-- [Batch Automation and Cloud Integration for PDAL](/batch-automation-cloud-integration/) — running PDAL beyond a single workstation
-- [SMRF Ground Classification](/ground-filtering-dtm-dsm-generation/smrf-ground-classification/) — the classification stage each tile runs
-- [DTM Raster Generation](/ground-filtering-dtm-dsm-generation/dtm-raster-generation/) — the `writers.gdal` step that produces each DTM
-- [PDAL Docker Containers](/batch-automation-cloud-integration/pdal-docker-containers/) — package PDAL so any worker can run the task
+- [Airflow DAG Orchestration](https://www.pythonlidar.com/batch-automation-cloud-integration/airflow-dag-orchestration/) — parent guide to modelling PDAL workflows as DAGs
+- [Batch Automation and Cloud Integration for PDAL](https://www.pythonlidar.com/batch-automation-cloud-integration/) — running PDAL beyond a single workstation
+- [SMRF Ground Classification](https://www.pythonlidar.com/ground-filtering-dtm-dsm-generation/smrf-ground-classification/) — the classification stage each tile runs
+- [DTM Raster Generation](https://www.pythonlidar.com/ground-filtering-dtm-dsm-generation/dtm-raster-generation/) — the `writers.gdal` step that produces each DTM
+- [PDAL Docker Containers](https://www.pythonlidar.com/batch-automation-cloud-integration/pdal-docker-containers/) — package PDAL so any worker can run the task

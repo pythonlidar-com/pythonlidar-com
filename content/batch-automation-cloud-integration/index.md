@@ -2,7 +2,7 @@
 title: "Batch Automation and Cloud Integration for PDAL"
 description: "Scaling PDAL point cloud processing beyond one machine: containerised pipelines, AWS Batch tile fan-out, streaming LAZ and Cloud-Optimized GeoTIFF I/O against S3, and Airflow DAG orchestration for reproducible production workflows."
 slug: "batch-automation-cloud-integration"
-type: "pillar"
+type: "guide"
 breadcrumb: "Batch & Cloud Automation"
 datePublished: "2024-07-01"
 dateModified: "2026-07-12"
@@ -24,8 +24,8 @@ dateModified: "2026-07-12"
     {
       "@type": "BreadcrumbList",
       "itemListElement": [
-        { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://pythonlidar.com/" },
-        { "@type": "ListItem", "position": 2, "name": "Batch Automation and Cloud Integration for PDAL", "item": "https://pythonlidar.com/batch-automation-cloud-integration/" }
+        { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://www.pythonlidar.com/" },
+        { "@type": "ListItem", "position": 2, "name": "Batch Automation and Cloud Integration for PDAL", "item": "https://www.pythonlidar.com/batch-automation-cloud-integration/" }
       ]
     },
     {
@@ -149,7 +149,7 @@ The economics of point cloud processing change completely once a dataset crosses
 
 Cloud-backed batch processing dissolves both problems. Because the tiles are spatially independent, the work is embarrassingly parallel: a hundred containers each processing forty tiles finish in roughly one-hundredth of the wall-clock time of a serial run, and you pay only for the compute-minutes you actually consume. Object storage such as S3 becomes the single source of truth for both inputs and outputs, so no worker holds irreplaceable state. And containerisation guarantees that the PDAL, GDAL, and PROJ versions that produced last quarter's deliverable are byte-for-byte the versions that produce this quarter's — the reproducibility that regulated survey work and scientific datasets require.
 
-This guide builds on the execution fundamentals in [PDAL Pipeline Architecture & Execution](/pdal-pipeline-architecture-execution/). The pipelines you scale here are the same JSON stage graphs described there; what changes is where they run and how many run at once.
+This guide builds on the execution fundamentals in [PDAL Pipeline Architecture & Execution](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/). The pipelines you scale here are the same JSON stage graphs described there; what changes is where they run and how many run at once.
 
 ## Conceptual Architecture: Stateless, Idempotent Tile Jobs
 
@@ -159,7 +159,7 @@ The architecture rests on three ideas that reinforce one another.
 
 **Idempotency.** Running the same tile job twice produces the same output and no side effects beyond overwriting that tile's own output object. This is the property that makes retries safe. When a network blip or a spot reclamation kills a job at tile 2,600, the scheduler simply re-runs index 2,600; because the job is a pure function of its tile key, the re-run overwrites any partial output cleanly. Idempotency requires deterministic output naming — `dtm/tile_6342_NE.tif` is derived from the input key, never from a timestamp or a random suffix.
 
-**File-level parallelism over intra-pipeline threading.** PDAL's own concurrency inside a single pipeline is limited: most stages are single-threaded, and the OpenMP-accelerated ground filters saturate only a few cores while contending for shared memory. Distributing whole tiles across separate processes and separate containers sidesteps that ceiling entirely — there is no shared point table, no lock contention, and each container's memory footprint is isolated. This is the same principle explored in [Parallel Execution](/pdal-pipeline-architecture-execution/parallel-execution/) and [Optimizing PDAL for Multi-Core Processing](/pdal-pipeline-architecture-execution/parallel-execution/optimizing-pdal-for-multi-core-processing/), lifted from one machine's cores to a fleet's nodes.
+**File-level parallelism over intra-pipeline threading.** PDAL's own concurrency inside a single pipeline is limited: most stages are single-threaded, and the OpenMP-accelerated ground filters saturate only a few cores while contending for shared memory. Distributing whole tiles across separate processes and separate containers sidesteps that ceiling entirely — there is no shared point table, no lock contention, and each container's memory footprint is isolated. This is the same principle explored in [Parallel Execution](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/parallel-execution/) and [Optimizing PDAL for Multi-Core Processing](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/parallel-execution/optimizing-pdal-for-multi-core-processing/), lifted from one machine's cores to a fleet's nodes.
 
 The glue that makes stateless, idempotent jobs practical against cloud storage is GDAL's **virtual file system layer**, which PDAL inherits. Two virtual prefixes matter most:
 
@@ -179,7 +179,7 @@ Four technologies do the heavy lifting. Their roles are distinct and composable.
 | **S3 readers/writers** | The durable input and output store, streamed in place via GDAL virtual file systems | `readers.las` with `/vsis3/` filename; `writers.gdal` COG output to `/vsis3/`; IAM read/write scoping |
 | **Airflow** | Orchestrates the campaign: builds the manifest, submits Batch jobs, waits, validates, retries | DAG, `BatchOperator`/`PythonOperator`, `XCom` for passing the manifest key, `retries`/`retry_delay` |
 
-Docker and AWS Batch are covered in depth in [PDAL Docker Containers](/batch-automation-cloud-integration/pdal-docker-containers/) and [AWS Batch Processing](/batch-automation-cloud-integration/aws-batch-processing/). The S3 streaming and COG-writing mechanics have their own detailed treatments in [S3 Cloud Storage I/O](/batch-automation-cloud-integration/s3-cloud-storage-io/), and the DAG patterns in [Airflow DAG Orchestration](/batch-automation-cloud-integration/airflow-dag-orchestration/).
+Docker and AWS Batch are covered in depth in [PDAL Docker Containers](https://www.pythonlidar.com/batch-automation-cloud-integration/pdal-docker-containers/) and [AWS Batch Processing](https://www.pythonlidar.com/batch-automation-cloud-integration/aws-batch-processing/). The S3 streaming and COG-writing mechanics have their own detailed treatments in [S3 Cloud Storage I/O](https://www.pythonlidar.com/batch-automation-cloud-integration/s3-cloud-storage-io/), and the DAG patterns in [Airflow DAG Orchestration](https://www.pythonlidar.com/batch-automation-cloud-integration/airflow-dag-orchestration/).
 
 ## Annotated Reference: Image, Pipeline, and Entrypoint
 
@@ -199,7 +199,7 @@ COPY worker.py /work/worker.py
 ENTRYPOINT ["python3", "/work/worker.py"]
 ```
 
-Second, the pipeline. It reads a LAZ tile straight from S3 through `/vsis3/`, cleans and classifies ground, and rasterises a bare-earth DTM to a Cloud-Optimized GeoTIFF written back to S3. The `writers.gdal` stage targets the `COG` GDAL driver so the output is internally tiled with overviews — ready to serve without a post-processing pass. The rasterisation approach here is the same one detailed in [DTM Raster Generation](/ground-filtering-dtm-dsm-generation/dtm-raster-generation/).
+Second, the pipeline. It reads a LAZ tile straight from S3 through `/vsis3/`, cleans and classifies ground, and rasterises a bare-earth DTM to a Cloud-Optimized GeoTIFF written back to S3. The `writers.gdal` stage targets the `COG` GDAL driver so the output is internally tiled with overviews — ready to serve without a post-processing pass. The rasterisation approach here is the same one detailed in [DTM Raster Generation](https://www.pythonlidar.com/ground-filtering-dtm-dsm-generation/dtm-raster-generation/).
 
 ```json
 {
@@ -333,9 +333,9 @@ Because the AWS credentials are supplied by the container's IAM job role, no key
 
 The data flow is a loop that begins and ends in S3. A one-time enumeration step lists the input tiles and writes a `manifest.json` — an ordered array of object keys — so that array index *i* deterministically maps to tile *i*. The Batch array job then launches one container per index. Each container streams its LAZ tile in via range reads, runs the pipeline entirely in memory (the streaming execution model means the full tile is never resident at once), and writes a COG out.
 
-Two schema concerns travel with the points. First, **CRS integrity**: the `spatialreference` on `readers.las` must match the tile's true projection, because `filters.smrf`'s `window` is measured in the CRS's linear units — running it against a geographic CRS silently corrupts the ground surface. If your tiles arrive in mixed projections, insert a `filters.reprojection` stage, as covered in the pipeline pillar. Second, **classification dependency**: the DTM branch keeps only class 2, so any upstream stage that drops the `Classification` dimension breaks the pipeline; keep `filters.smrf` immediately before the `filters.range` mask.
+Two schema concerns travel with the points. First, **CRS integrity**: the `spatialreference` on `readers.las` must match the tile's true projection, because `filters.smrf`'s `window` is measured in the CRS's linear units — running it against a geographic CRS silently corrupts the ground surface. If your tiles arrive in mixed projections, insert a `filters.reprojection` stage, as covered in the PDAL pipeline architecture guide. Second, **classification dependency**: the DTM branch keeps only class 2, so any upstream stage that drops the `Classification` dimension breaks the pipeline; keep `filters.smrf` immediately before the `filters.range` mask.
 
-Memory behaviour per container matters because you will pack several workers onto each instance. Streaming keeps the resident point set bounded by `capacity`, but the GDAL rasteriser holds the output grid in memory until the write flushes — a 1 km tile at 1 m resolution is a modest one-million-cell raster, but dropping to 0.25 m resolution multiplies that by sixteen. Size container memory against the output raster, not just the input points. The trade-offs are the same ones discussed in [Memory Management](/pdal-pipeline-architecture-execution/memory-management/).
+Memory behaviour per container matters because you will pack several workers onto each instance. Streaming keeps the resident point set bounded by `capacity`, but the GDAL rasteriser holds the output grid in memory until the write flushes — a 1 km tile at 1 m resolution is a modest one-million-cell raster, but dropping to 0.25 m resolution multiplies that by sixteen. Size container memory against the output raster, not just the input points. The trade-offs are the same ones discussed in [Memory Management](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/memory-management/).
 
 ## Performance and Scaling
 
@@ -373,7 +373,7 @@ A campaign is production-ready when it is reproducible, least-privileged, and se
 
 **Credential expiry mid-job.** Long-running containers using temporary role credentials can see them expire before the job finishes. The AWS SDK and GDAL refresh instance-role credentials automatically, but if you inject static keys they will not refresh — always use the IAM job role and let `/vsis3/` resolve credentials dynamically. Symptom: a job that reads fine for minutes then fails writing the COG with an access-denied error.
 
-**Out-of-memory container kills.** A container killed with exit code 137 and no Python traceback is the OOM killer. The usual cause is an output raster larger than the container's memory limit — dropping resolution multiplies grid cells quadratically. Fix by raising the job definition's `memory` for fine-resolution outputs, or by lowering `capacity` if the input point buffer is the culprit. This mirrors the container memory guidance in [Memory Management](/pdal-pipeline-architecture-execution/memory-management/).
+**Out-of-memory container kills.** A container killed with exit code 137 and no Python traceback is the OOM killer. The usual cause is an output raster larger than the container's memory limit — dropping resolution multiplies grid cells quadratically. Fix by raising the job definition's `memory` for fine-resolution outputs, or by lowering `capacity` if the input point buffer is the culprit. This mirrors the container memory guidance in [Memory Management](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/memory-management/).
 
 **Partial or missing outputs.** If a job reports success but the COG is absent or truncated, suspect a write that never flushed — often a silent permission gap where the role can `GetObject` but not `PutObject` on the output prefix, or an interrupted spot instance. The idempotent design is the cure: re-run the affected array indices. A validation task that lists the expected output keys against the manifest catches these gaps before the data reaches a downstream consumer.
 
@@ -385,7 +385,7 @@ A campaign is production-ready when it is reproducible, least-privileged, and se
 
 **Why parallelise PDAL across containers instead of threads inside one pipeline?**
 
-A single PDAL pipeline is largely single-threaded, and the parts that use OpenMP contend for the same cores and memory. Point cloud tiles are naturally independent, so running one container per tile gives near-linear scaling with no shared-state locking, isolates memory pressure per job, and lets a scheduler like AWS Batch or Airflow retry a failed tile without touching the others. See [Parallel Execution](/pdal-pipeline-architecture-execution/parallel-execution/) for the single-machine version of the same principle.
+A single PDAL pipeline is largely single-threaded, and the parts that use OpenMP contend for the same cores and memory. Point cloud tiles are naturally independent, so running one container per tile gives near-linear scaling with no shared-state locking, isolates memory pressure per job, and lets a scheduler like AWS Batch or Airflow retry a failed tile without touching the others. See [Parallel Execution](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/parallel-execution/) for the single-machine version of the same principle.
 
 **How does PDAL read a LAZ file directly from S3 without downloading it first?**
 
@@ -407,11 +407,11 @@ They solve different problems and are often combined. AWS Batch is the execution
 
 ## Related
 
-- [PDAL Docker Containers](/batch-automation-cloud-integration/pdal-docker-containers/) — building, pinning, and running the official PDAL image as a portable worker
-- [AWS Batch Processing](/batch-automation-cloud-integration/aws-batch-processing/) — job definitions, array jobs, and compute environments for tile fan-out
-- [S3 Cloud Storage I/O](/batch-automation-cloud-integration/s3-cloud-storage-io/) — streaming LAZ with /vsis3/ and writing Cloud-Optimized GeoTIFFs back to the cloud
-- [Airflow DAG Orchestration](/batch-automation-cloud-integration/airflow-dag-orchestration/) — DAGs, operators, and XCom for reproducible campaign scheduling
-- [PDAL Pipeline Architecture & Execution](/pdal-pipeline-architecture-execution/) — the execution model behind every pipeline you scale here
-- [Parallel Execution](/pdal-pipeline-architecture-execution/parallel-execution/) — file-level parallelism strategies on a single machine
-- [Memory Management](/pdal-pipeline-architecture-execution/memory-management/) — capacity, stream mode, and container memory limits
-- [DTM Raster Generation](/ground-filtering-dtm-dsm-generation/dtm-raster-generation/) — turning classified ground returns into terrain rasters
+- [PDAL Docker Containers](https://www.pythonlidar.com/batch-automation-cloud-integration/pdal-docker-containers/) — building, pinning, and running the official PDAL image as a portable worker
+- [AWS Batch Processing](https://www.pythonlidar.com/batch-automation-cloud-integration/aws-batch-processing/) — job definitions, array jobs, and compute environments for tile fan-out
+- [S3 Cloud Storage I/O](https://www.pythonlidar.com/batch-automation-cloud-integration/s3-cloud-storage-io/) — streaming LAZ with /vsis3/ and writing Cloud-Optimized GeoTIFFs back to the cloud
+- [Airflow DAG Orchestration](https://www.pythonlidar.com/batch-automation-cloud-integration/airflow-dag-orchestration/) — DAGs, operators, and XCom for reproducible campaign scheduling
+- [PDAL Pipeline Architecture & Execution](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/) — the execution model behind every pipeline you scale here
+- [Parallel Execution](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/parallel-execution/) — file-level parallelism strategies on a single machine
+- [Memory Management](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/memory-management/) — capacity, stream mode, and container memory limits
+- [DTM Raster Generation](https://www.pythonlidar.com/ground-filtering-dtm-dsm-generation/dtm-raster-generation/) — turning classified ground returns into terrain rasters

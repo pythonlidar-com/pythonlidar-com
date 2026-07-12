@@ -2,7 +2,7 @@
 title: "SMRF Ground Classification in PDAL"
 description: "How the Simple Morphological Filter (filters.smrf) classifies ground returns in PDAL — the scalar/slope/window/threshold parameters, a runnable Python workflow, validation of ground fraction, and troubleshooting over-/under-classification."
 slug: "smrf-ground-classification"
-type: "cluster"
+type: "topic"
 breadcrumb: "SMRF Ground Classification"
 datePublished: "2024-06-18"
 dateModified: "2026-07-12"
@@ -23,9 +23,9 @@ dateModified: "2026-07-12"
     {
       "@type": "BreadcrumbList",
       "itemListElement": [
-        {"@type": "ListItem", "position": 1, "name": "Home", "item": "https://pythonlidar.com/"},
-        {"@type": "ListItem", "position": 2, "name": "Ground Filtering and DTM/DSM Generation with PDAL", "item": "https://pythonlidar.com/ground-filtering-dtm-dsm-generation/"},
-        {"@type": "ListItem", "position": 3, "name": "SMRF Ground Classification", "item": "https://pythonlidar.com/ground-filtering-dtm-dsm-generation/smrf-ground-classification/"}
+        {"@type": "ListItem", "position": 1, "name": "Home", "item": "https://www.pythonlidar.com/"},
+        {"@type": "ListItem", "position": 2, "name": "Ground Filtering and DTM/DSM Generation with PDAL", "item": "https://www.pythonlidar.com/ground-filtering-dtm-dsm-generation/"},
+        {"@type": "ListItem", "position": 3, "name": "SMRF Ground Classification", "item": "https://www.pythonlidar.com/ground-filtering-dtm-dsm-generation/smrf-ground-classification/"}
       ]
     },
     {
@@ -70,7 +70,7 @@ dateModified: "2026-07-12"
 
 # SMRF Ground Classification in PDAL
 
-Separating bare-earth returns from everything the laser also hit — canopy, rooftops, vehicles, wires — is the first real decision in any terrain-modelling workflow, and the Simple Morphological Filter is the tool PDAL reaches for by default. Exposed as `filters.smrf`, it turns an unstructured point cloud into a labelled one where every bare-earth return carries ASPRS Classification code 2, ready to feed a digital terrain model. This guide sits within [Ground Filtering and DTM/DSM Generation with PDAL](/ground-filtering-dtm-dsm-generation/) and focuses on how SMRF works internally, how its four core parameters interact, and how to prove the result is trustworthy before it flows downstream.
+Separating bare-earth returns from everything the laser also hit — canopy, rooftops, vehicles, wires — is the first real decision in any terrain-modelling workflow, and the Simple Morphological Filter is the tool PDAL reaches for by default. Exposed as `filters.smrf`, it turns an unstructured point cloud into a labelled one where every bare-earth return carries ASPRS Classification code 2, ready to feed a digital terrain model. This guide sits within [Ground Filtering and DTM/DSM Generation with PDAL](https://www.pythonlidar.com/ground-filtering-dtm-dsm-generation/) and focuses on how SMRF works internally, how its four core parameters interact, and how to prove the result is trustworthy before it flows downstream.
 
 SMRF earns its "simple" name honestly: compared with iterative surface-fitting classifiers it exposes a small, interpretable parameter set and behaves predictably across acquisition types, from dense terrestrial scans to sparse airborne swaths. That predictability is exactly why it is worth understanding the mechanism rather than copying default values — the same four numbers that produce a clean DTM over farmland will shave hillsides bald or leave shrubs standing over rough ground.
 
@@ -121,8 +121,8 @@ Have the following in place before running a ground-classification pass:
 
 - **PDAL 2.4 or later** with Python bindings (`pip install pdal` or `conda install -c conda-forge python-pdal`).
 - **Python 3.10+** with `numpy` available for validating the labelled output array.
-- **A point cloud with metric horizontal units** — SMRF interprets `window`, `cell`, and `threshold` in the same units as X/Y. A geographic (degree) CRS will make these values meaningless, so reproject first if needed; see [Spatial Reprojection](/pdal-pipeline-architecture-execution/spatial-reprojection/).
-- **Gross noise removed** — an understanding of how [Applying Statistical Outlier Filters in PDAL](/pdal-pipeline-architecture-execution/pipeline-filtering-logic/applying-statistical-outlier-filters-in-pdal/) strips the low blunders that would otherwise anchor the minimum surface.
+- **A point cloud with metric horizontal units** — SMRF interprets `window`, `cell`, and `threshold` in the same units as X/Y. A geographic (degree) CRS will make these values meaningless, so reproject first if needed; see [Spatial Reprojection](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/spatial-reprojection/).
+- **Gross noise removed** — an understanding of how [Applying Statistical Outlier Filters in PDAL](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/pipeline-filtering-logic/applying-statistical-outlier-filters-in-pdal/) strips the low blunders that would otherwise anchor the minimum surface.
 - **A sense of the terrain** — approximate maximum slope, the widest building or tree footprint, and the point density (points per square metre) of the scan.
 
 ## How SMRF Classifies Ground
@@ -133,9 +133,9 @@ SMRF is a raster-based morphological classifier. Rather than fitting a continuou
 2. **Progressive morphological opening.** SMRF repeatedly applies a morphological *opening* (an erosion followed by a dilation) using a structuring element whose diameter grows from one cell up to the `window` limit. Each successively larger opening removes objects that fit inside it — a car at a small window, a house at a medium window, a copse of trees at the largest. Points that rise above the opened surface by more than the tolerance at the window size that removed them are marked non-ground.
 3. **Per-cell slope threshold.** The `slope` parameter sets how steeply the accepted surface is allowed to climb between neighbouring cells. Where the reconstructed surface rises faster than `slope` (expressed as rise over run), SMRF treats the jump as the edge of an object rather than natural terrain, which is what lets it cut cleanly around vertical building walls.
 4. **Scalar-scaled elevation threshold.** A point survives as ground only if its height above the reconstructed surface is at most `threshold`, but that allowance is not constant. The `scalar` multiplies `threshold` as a function of local slope, granting steeper cells more vertical latitude so genuine terrain on a hillside is not sheared off while flat cells stay tight against low vegetation.
-5. **Label the survivors.** Every accepted point receives ASPRS Classification code 2 (Ground). Everything else is left as code 1 (Unassigned) unless a prior stage already assigned it a class such as 7 (Noise). Because the codes follow the [ASPRS standard](/point-cloud-data-standards-fundamentals/asprs-classification-codes/understanding-asprs-classification-codes/), downstream DTM and DSM tooling can select ground with a single range expression.
+5. **Label the survivors.** Every accepted point receives ASPRS Classification code 2 (Ground). Everything else is left as code 1 (Unassigned) unless a prior stage already assigned it a class such as 7 (Noise). Because the codes follow the [ASPRS standard](https://www.pythonlidar.com/point-cloud-data-standards-fundamentals/asprs-classification-codes/understanding-asprs-classification-codes/), downstream DTM and DSM tooling can select ground with a single range expression.
 
-The order of these stages is why SMRF wants a clean input. If a spurious point sits several metres below true ground, it becomes the cell minimum in stage one, drags the reconstructed surface down with it, and pushes every honest return in that cell above `threshold` — a local hole of missing ground. Running outlier removal beforehand, as the [Pipeline Filtering Logic](/pdal-pipeline-architecture-execution/pipeline-filtering-logic/) guide describes, prevents this class of failure entirely.
+The order of these stages is why SMRF wants a clean input. If a spurious point sits several metres below true ground, it becomes the cell minimum in stage one, drags the reconstructed surface down with it, and pushes every honest return in that cell above `threshold` — a local hole of missing ground. Running outlier removal beforehand, as the [Pipeline Filtering Logic](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/pipeline-filtering-logic/) guide describes, prevents this class of failure entirely.
 
 ## Full Implementation
 
@@ -268,7 +268,7 @@ if __name__ == "__main__":
 
 **Outlier stage placement.** `filters.outlier` runs first in `statistical` mode, flagging blunders as Classification 7 rather than deleting them. Keeping the points but labelling them lets SMRF exclude them from the minimum surface via the `ignore` expression while still counting them honestly in the total.
 
-**The SMRF stage.** All five governing parameters are exposed as arguments so the same function serves flat farmland (`slope` near 0.1) and rolling terrain (`slope` near 0.3). `ignore: "Classification[7:7]"` tells SMRF to skip points already flagged as noise, which is what prevents a single sub-ground blunder from carving a hole in the classified surface. This mirrors the range-selection syntax covered in [Pipeline Filtering Logic](/pdal-pipeline-architecture-execution/pipeline-filtering-logic/).
+**The SMRF stage.** All five governing parameters are exposed as arguments so the same function serves flat farmland (`slope` near 0.1) and rolling terrain (`slope` near 0.3). `ignore: "Classification[7:7]"` tells SMRF to skip points already flagged as noise, which is what prevents a single sub-ground blunder from carving a hole in the classified surface. This mirrors the range-selection syntax covered in [Pipeline Filtering Logic](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/pipeline-filtering-logic/).
 
 **Writer and dimension preservation.** `writers.las` with `forward: "all"` re-emits every source dimension plus the freshly written `Classification` codes, and `compression: "laszip"` produces a LAZ. Dropping `forward: "all"` would strip intensity, return numbers, and any custom dimensions from the output.
 
@@ -286,7 +286,7 @@ if __name__ == "__main__":
 | `ignore` | range string | — | any dimension range | Points to exclude from the surface, e.g. `Classification[7:7]` for noise. |
 | `returns` | string | `"last, only"` | `last`, `first`, `only`, `intermediate` | Which return types SMRF considers; last/only favours ground under canopy. |
 
-The `returns` parameter is the lever that makes SMRF work under vegetation: restricting it to last and only returns discards mid-canopy hits that would otherwise inflate the minimum surface. That tuning is the subject of a dedicated recipe, [Tuning SMRF for Forested Terrain](/ground-filtering-dtm-dsm-generation/smrf-ground-classification/tuning-smrf-for-forested-terrain/).
+The `returns` parameter is the lever that makes SMRF work under vegetation: restricting it to last and only returns discards mid-canopy hits that would otherwise inflate the minimum surface. That tuning is the subject of a dedicated recipe, [Tuning SMRF for Forested Terrain](https://www.pythonlidar.com/ground-filtering-dtm-dsm-generation/smrf-ground-classification/tuning-smrf-for-forested-terrain/).
 
 ## Validation and Integrity Checks
 
@@ -319,7 +319,7 @@ SMRF's cost is dominated by the morphological openings, which parallelise well a
 
 - **`OMP_NUM_THREADS`.** SMRF respects OpenMP threading; set `OMP_NUM_THREADS` to the physical core count before launching Python. On a 16-core workstation this roughly halves classification time versus single-threaded for large tiles. Hyperthreads add little because the openings are memory-bandwidth bound.
 - **`cell` size.** The raster resolution is the strongest single throughput lever — doubling `cell` from 1.0 to 2.0 m quarters the number of grid cells and the opening cost, at the price of coarser terrain detail. For a first-pass classification on a huge regional tile, a larger cell is a reasonable trade; refine on smaller AOIs.
-- **Tile the work.** Very large acquisitions should be split into overlapping tiles and classified independently, then merged. Keep an overlap buffer at least as wide as `window` so objects straddling a tile edge are still removed correctly. The [Parallel Execution](/pdal-pipeline-architecture-execution/parallel-execution/) guide covers driving many tiles concurrently.
+- **Tile the work.** Very large acquisitions should be split into overlapping tiles and classified independently, then merged. Keep an overlap buffer at least as wide as `window` so objects straddling a tile edge are still removed correctly. The [Parallel Execution](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/parallel-execution/) guide covers driving many tiles concurrently.
 
 | Configuration | `cell` | `OMP_NUM_THREADS` | Relative time | Notes |
 |---------------|--------|-------------------|---------------|-------|
@@ -337,7 +337,7 @@ SMRF's cost is dominated by the morphological openings, which parallelise well a
 
 **Low vegetation classified as ground.** `threshold` is too generous for the point density. Lower `threshold` toward 0.2 m and reduce `scalar`; if shrubs persist, restrict `returns` to `"last, only"` so mid-vegetation hits are excluded from the surface.
 
-**`RuntimeError: Dimension 'Classification' not found`.** The reader is a bare XYZ format with no classification dimension. Insert `filters.assign` with `"value": "Classification = 0"` before SMRF to create the field, as shown in the stage-composition patterns in [PDAL Stage Chaining](/pdal-pipeline-architecture-execution/pdal-stage-chaining/).
+**`RuntimeError: Dimension 'Classification' not found`.** The reader is a bare XYZ format with no classification dimension. Insert `filters.assign` with `"value": "Classification = 0"` before SMRF to create the field, as shown in the stage-composition patterns in [PDAL Stage Chaining](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/pdal-stage-chaining/).
 
 ## Frequently Asked Questions
 
@@ -359,15 +359,15 @@ A collapsed ground fraction almost always means the `threshold` or `scalar` is t
 
 **Should I use SMRF or PMF for my data?**
 
-Both are morphological ground filters and share a similar parameter vocabulary. SMRF is the more robust default across mixed terrain; the Progressive Morphological Filter can be preferable where you want tighter control of the growing window schedule. See [PMF Ground Classification](/ground-filtering-dtm-dsm-generation/pmf-ground-classification/) and the side-by-side [SMRF vs PMF for Dense Urban LiDAR](/ground-filtering-dtm-dsm-generation/smrf-ground-classification/smrf-vs-pmf-for-dense-urban-lidar/) comparison.
+Both are morphological ground filters and share a similar parameter vocabulary. SMRF is the more robust default across mixed terrain; the Progressive Morphological Filter can be preferable where you want tighter control of the growing window schedule. See [PMF Ground Classification](https://www.pythonlidar.com/ground-filtering-dtm-dsm-generation/pmf-ground-classification/) and the side-by-side [SMRF vs PMF for Dense Urban LiDAR](https://www.pythonlidar.com/ground-filtering-dtm-dsm-generation/smrf-ground-classification/smrf-vs-pmf-for-dense-urban-lidar/) comparison.
 
 ---
 
 ## Related
 
-- [Ground Filtering and DTM/DSM Generation with PDAL](/ground-filtering-dtm-dsm-generation/) — parent overview of ground filtering and terrain-model workflows
-- [Tuning SMRF for Forested Terrain](/ground-filtering-dtm-dsm-generation/smrf-ground-classification/tuning-smrf-for-forested-terrain/) — parameter recipe for recovering bare earth under dense canopy
-- [SMRF vs PMF for Dense Urban LiDAR](/ground-filtering-dtm-dsm-generation/smrf-ground-classification/smrf-vs-pmf-for-dense-urban-lidar/) — decision guide for buildings, bridges, and abrupt breaklines
-- [PMF Ground Classification](/ground-filtering-dtm-dsm-generation/pmf-ground-classification/) — the sibling Progressive Morphological Filter approach
-- [Applying Statistical Outlier Filters in PDAL](/pdal-pipeline-architecture-execution/pipeline-filtering-logic/applying-statistical-outlier-filters-in-pdal/) — remove blunders before they anchor the minimum surface
-- [Spatial Reprojection](/pdal-pipeline-architecture-execution/spatial-reprojection/) — get the cloud into a metric CRS so window and cell are meaningful
+- [Ground Filtering and DTM/DSM Generation with PDAL](https://www.pythonlidar.com/ground-filtering-dtm-dsm-generation/) — parent overview of ground filtering and terrain-model workflows
+- [Tuning SMRF for Forested Terrain](https://www.pythonlidar.com/ground-filtering-dtm-dsm-generation/smrf-ground-classification/tuning-smrf-for-forested-terrain/) — parameter recipe for recovering bare earth under dense canopy
+- [SMRF vs PMF for Dense Urban LiDAR](https://www.pythonlidar.com/ground-filtering-dtm-dsm-generation/smrf-ground-classification/smrf-vs-pmf-for-dense-urban-lidar/) — decision guide for buildings, bridges, and abrupt breaklines
+- [PMF Ground Classification](https://www.pythonlidar.com/ground-filtering-dtm-dsm-generation/pmf-ground-classification/) — the sibling Progressive Morphological Filter approach
+- [Applying Statistical Outlier Filters in PDAL](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/pipeline-filtering-logic/applying-statistical-outlier-filters-in-pdal/) — remove blunders before they anchor the minimum surface
+- [Spatial Reprojection](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/spatial-reprojection/) — get the cloud into a metric CRS so window and cell are meaningful

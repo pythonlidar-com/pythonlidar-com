@@ -2,7 +2,7 @@
 title: "Building a DSM from First Returns"
 description: "A PDAL recipe to build a Digital Surface Model from first-return LiDAR points using filters.range on ReturnNumber and writers.gdal output_type=max, with rasterio verification."
 slug: "building-a-dsm-from-first-returns"
-type: "long_tail"
+type: "howto"
 breadcrumb: "DSM from First Returns"
 datePublished: "2024-06-26"
 dateModified: "2026-07-12"
@@ -23,10 +23,10 @@ dateModified: "2026-07-12"
     {
       "@type": "BreadcrumbList",
       "itemListElement": [
-        {"@type": "ListItem", "position": 1, "name": "Home", "item": "https://pythonlidar.com/"},
-        {"@type": "ListItem", "position": 2, "name": "Ground Filtering and DTM/DSM Generation with PDAL", "item": "https://pythonlidar.com/ground-filtering-dtm-dsm-generation/"},
-        {"@type": "ListItem", "position": 3, "name": "DSM Generation", "item": "https://pythonlidar.com/ground-filtering-dtm-dsm-generation/dsm-generation/"},
-        {"@type": "ListItem", "position": 4, "name": "DSM from First Returns", "item": "https://pythonlidar.com/ground-filtering-dtm-dsm-generation/dsm-generation/building-a-dsm-from-first-returns/"}
+        {"@type": "ListItem", "position": 1, "name": "Home", "item": "https://www.pythonlidar.com/"},
+        {"@type": "ListItem", "position": 2, "name": "Ground Filtering and DTM/DSM Generation with PDAL", "item": "https://www.pythonlidar.com/ground-filtering-dtm-dsm-generation/"},
+        {"@type": "ListItem", "position": 3, "name": "DSM Generation", "item": "https://www.pythonlidar.com/ground-filtering-dtm-dsm-generation/dsm-generation/"},
+        {"@type": "ListItem", "position": 4, "name": "DSM from First Returns", "item": "https://www.pythonlidar.com/ground-filtering-dtm-dsm-generation/dsm-generation/building-a-dsm-from-first-returns/"}
       ]
     },
     {
@@ -69,7 +69,7 @@ dateModified: "2026-07-12"
 
 ## Context and Motivation
 
-This guide is part of [DSM Generation from LiDAR with PDAL](/ground-filtering-dtm-dsm-generation/dsm-generation/), and it drills into one specific, high-value technique: constraining the rasterizer to the leading pulse return so the resulting surface is unambiguously the top of the world. Where the parent page surveys the whole surface-modelling workflow, this recipe is the copy-and-run version you reach for when a client needs a canopy-and-structure raster by end of day.
+This guide is part of [DSM Generation from LiDAR with PDAL](https://www.pythonlidar.com/ground-filtering-dtm-dsm-generation/dsm-generation/), and it drills into one specific, high-value technique: constraining the rasterizer to the leading pulse return so the resulting surface is unambiguously the top of the world. Where the parent page surveys the whole surface-modelling workflow, this recipe is the copy-and-run version you reach for when a client needs a canopy-and-structure raster by end of day.
 
 The reason first returns deserve their own page is that they are the physically cleanest definition of a surface. When an airborne pulse descends into a forest, the first return fires off the outermost leaf it touches; subsequent returns leak through gaps and report twigs, branches, and eventually the ground. If you rasterize every return with a maximum statistic you usually get the right answer, but a single anomalously high second return from an adjacent pulse can poke a spike through your surface. Filtering to `ReturnNumber == 1` first removes that whole failure mode before the grid is ever populated. This recipe uses `EPSG:32611` (WGS84 / UTM Zone 11N) and a 0.4 m grid to keep the examples concrete and distinct from the regional Albers example on the parent page.
 
@@ -112,7 +112,7 @@ The reason first returns deserve their own page is that they are the physically 
 | `rasterio` | 1.3+ for output verification |
 | Input file | LAS/LAZ with populated `ReturnNumber` and `NumberOfReturns` |
 | CRS | Metre-based projected CRS; this recipe uses `EPSG:32611` |
-| Point density | Known average spacing — see [Point Density Metrics](/point-cloud-data-standards-fundamentals/point-density-metrics/) |
+| Point density | Known average spacing — see [Point Density Metrics](https://www.pythonlidar.com/point-cloud-data-standards-fundamentals/point-density-metrics/) |
 
 Before writing any pipeline, confirm the tile actually carries multi-return data. A file where every point reports `ReturnNumber == 1` came from a single-return sensor, and the filter below will be a harmless no-op:
 
@@ -126,7 +126,7 @@ Look for `NumberOfReturns` maxima above 1. If the maximum is 1 everywhere, skip 
 
 ### Step 1 — Keep only the first return
 
-`filters.range` selects points by a numeric interval on any dimension. The interval `ReturnNumber[1:1]` means "keep points where `ReturnNumber` is between 1 and 1 inclusive" — i.e. exactly the first return. This shares the interval syntax used across [Pipeline Filtering Logic](/pdal-pipeline-architecture-execution/pipeline-filtering-logic/).
+`filters.range` selects points by a numeric interval on any dimension. The interval `ReturnNumber[1:1]` means "keep points where `ReturnNumber` is between 1 and 1 inclusive" — i.e. exactly the first return. This shares the interval syntax used across [Pipeline Filtering Logic](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/pipeline-filtering-logic/).
 
 ```json
 {
@@ -154,7 +154,7 @@ Look for `NumberOfReturns` maxima above 1. If the maximum is 1 everywhere, skip 
 
 ### Step 3 — Assemble the full pipeline
 
-Wired together, the reader, range filter, and GDAL writer form a three-stage pipeline. This is the same reader-filter-writer chaining pattern described in [PDAL Stage Chaining](/pdal-pipeline-architecture-execution/pdal-stage-chaining/).
+Wired together, the reader, range filter, and GDAL writer form a three-stage pipeline. This is the same reader-filter-writer chaining pattern described in [PDAL Stage Chaining](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/pdal-stage-chaining/).
 
 ```json
 {
@@ -329,7 +329,7 @@ print(f"first returns: {first:,} / {raw:,}  ({first/raw:.0%})")
 
 **Eyeball the elevation range.** `z_max` should equal the tallest feature in the scene. A DSM over a forested UTM tile might read 612 m of bare valley floor up to 648 m of canopy crown; a max that matches the ground minimum means first returns never reached anything tall.
 
-**Render a quick hillshade.** Loading the DSM into a hillshade — see [Hillshade, Slope and Aspect](/ground-filtering-dtm-dsm-generation/hillshade-slope-aspect/) — instantly reveals whether buildings and tree crowns cast crisp shadows (good) or the surface is mushy and full of holes (resolution too fine).
+**Render a quick hillshade.** Loading the DSM into a hillshade — see [Hillshade, Slope and Aspect](https://www.pythonlidar.com/ground-filtering-dtm-dsm-generation/hillshade-slope-aspect/) — instantly reveals whether buildings and tree crowns cast crisp shadows (good) or the surface is mushy and full of holes (resolution too fine).
 
 ## Gotchas and Edge Cases
 
@@ -340,10 +340,10 @@ A handful of exporters write `ReturnNumber` starting at 0, or leave it at 0 enti
 Where two flight lines overlap, a cell may receive first returns from both passes. `max` still picks the highest, so the surface stays correct, but the point density in the overlap is inflated, which can mask a resolution that is otherwise too fine elsewhere. Judge void fraction from a non-overlap region.
 
 **3. Birds, dust, and low noise become spikes.**
-A first return off a bird sits well above the canopy and will win the `max` for its cell. If your hillshade shows isolated pinnacle spikes, insert an outlier removal stage before the range filter — the [statistical outlier filter](/pdal-pipeline-architecture-execution/pipeline-filtering-logic/applying-statistical-outlier-filters-in-pdal/) handles exactly this.
+A first return off a bird sits well above the canopy and will win the `max` for its cell. If your hillshade shows isolated pinnacle spikes, insert an outlier removal stage before the range filter — the [statistical outlier filter](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/pipeline-filtering-logic/applying-statistical-outlier-filters-in-pdal/) handles exactly this.
 
 **4. The CRS is geographic, not projected.**
-If the tile is in `EPSG:4326`, `resolution: 0.4` means 0.4 *degrees* — tens of kilometres per cell. Reproject to a metre-based CRS first with [Spatial Reprojection](/pdal-pipeline-architecture-execution/spatial-reprojection/), or the raster will be a single meaningless pixel.
+If the tile is in `EPSG:4326`, `resolution: 0.4` means 0.4 *degrees* — tens of kilometres per cell. Reproject to a metre-based CRS first with [Spatial Reprojection](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/spatial-reprojection/), or the raster will be a single meaningless pixel.
 
 ## Frequently Asked Questions
 
@@ -357,18 +357,18 @@ Single-return sensors record one point per pulse, so every point has `ReturnNumb
 
 **How do I choose the resolution for a first-return DSM?**
 
-Filtering to first returns roughly halves the point count on vegetated scenes, so the effective spacing between surviving points is coarser than the raw density suggests. Start at the raw average spacing and coarsen one step if the void fraction exceeds about 10 percent. The parent [DSM Generation](/ground-filtering-dtm-dsm-generation/dsm-generation/) page tabulates the resolution-versus-void tradeoff.
+Filtering to first returns roughly halves the point count on vegetated scenes, so the effective spacing between surviving points is coarser than the raw density suggests. Start at the raw average spacing and coarsen one step if the void fraction exceeds about 10 percent. The parent [DSM Generation](https://www.pythonlidar.com/ground-filtering-dtm-dsm-generation/dsm-generation/) page tabulates the resolution-versus-void tradeoff.
 
 **Can I keep last returns instead to approximate the ground?**
 
-You can filter `ReturnNumber` against `NumberOfReturns` to keep last returns, but last returns are not the same as classified ground — they include understory and building interiors. For a true bare-earth surface use ground classification and [DTM Raster Generation](/ground-filtering-dtm-dsm-generation/dtm-raster-generation/) rather than a last-return proxy.
+You can filter `ReturnNumber` against `NumberOfReturns` to keep last returns, but last returns are not the same as classified ground — they include understory and building interiors. For a true bare-earth surface use ground classification and [DTM Raster Generation](https://www.pythonlidar.com/ground-filtering-dtm-dsm-generation/dtm-raster-generation/) rather than a last-return proxy.
 
 ---
 
 ## Related
 
-- [DSM Generation from LiDAR with PDAL](/ground-filtering-dtm-dsm-generation/dsm-generation/) — parent guide covering the full surface-modelling workflow and derivations
-- [DTM vs DSM: Which Surface Model to Generate](/ground-filtering-dtm-dsm-generation/dsm-generation/dtm-vs-dsm-which-surface-model/) — choosing between top-surface and bare-earth models
-- [DTM Raster Generation](/ground-filtering-dtm-dsm-generation/dtm-raster-generation/) — the bare-earth counterpart built from classified ground returns
-- [Pipeline Filtering Logic](/pdal-pipeline-architecture-execution/pipeline-filtering-logic/) — the range and expression filter mechanics behind ReturnNumber selection
-- [Point Density Metrics](/point-cloud-data-standards-fundamentals/point-density-metrics/) — measuring returns per square metre to set the grid resolution
+- [DSM Generation from LiDAR with PDAL](https://www.pythonlidar.com/ground-filtering-dtm-dsm-generation/dsm-generation/) — parent guide covering the full surface-modelling workflow and derivations
+- [DTM vs DSM: Which Surface Model to Generate](https://www.pythonlidar.com/ground-filtering-dtm-dsm-generation/dsm-generation/dtm-vs-dsm-which-surface-model/) — choosing between top-surface and bare-earth models
+- [DTM Raster Generation](https://www.pythonlidar.com/ground-filtering-dtm-dsm-generation/dtm-raster-generation/) — the bare-earth counterpart built from classified ground returns
+- [Pipeline Filtering Logic](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/pipeline-filtering-logic/) — the range and expression filter mechanics behind ReturnNumber selection
+- [Point Density Metrics](https://www.pythonlidar.com/point-cloud-data-standards-fundamentals/point-density-metrics/) — measuring returns per square metre to set the grid resolution

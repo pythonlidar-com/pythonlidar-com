@@ -2,7 +2,7 @@
 title: "Mapping Custom Attributes in PDAL Pipelines"
 description: "Step-by-step guide to declaring, deriving, and persisting custom LAS dimensions in PDAL pipelines using filters.assign, filters.expression, and writers.las extra_dims."
 slug: "mapping-custom-attributes-in-pdal-pipelines"
-type: "long_tail"
+type: "howto"
 breadcrumb: "Mapping Custom Attributes"
 datePublished: "2025-08-01"
 dateModified: "2026-06-24"
@@ -23,10 +23,10 @@ dateModified: "2026-06-24"
     {
       "@type": "BreadcrumbList",
       "itemListElement": [
-        {"@type": "ListItem", "position": 1, "name": "Home", "item": "https://pythonlidar.com/"},
-        {"@type": "ListItem", "position": 2, "name": "PDAL Pipeline Architecture & Execution", "item": "https://pythonlidar.com/pdal-pipeline-architecture-execution/"},
-        {"@type": "ListItem", "position": 3, "name": "Attribute Mapping", "item": "https://pythonlidar.com/pdal-pipeline-architecture-execution/attribute-mapping/"},
-        {"@type": "ListItem", "position": 4, "name": "Mapping Custom Attributes in PDAL Pipelines", "item": "https://pythonlidar.com/pdal-pipeline-architecture-execution/attribute-mapping/mapping-custom-attributes-in-pdal-pipelines/"}
+        {"@type": "ListItem", "position": 1, "name": "Home", "item": "https://www.pythonlidar.com/"},
+        {"@type": "ListItem", "position": 2, "name": "PDAL Pipeline Architecture & Execution", "item": "https://www.pythonlidar.com/pdal-pipeline-architecture-execution/"},
+        {"@type": "ListItem", "position": 3, "name": "Attribute Mapping", "item": "https://www.pythonlidar.com/pdal-pipeline-architecture-execution/attribute-mapping/"},
+        {"@type": "ListItem", "position": 4, "name": "Mapping Custom Attributes in PDAL Pipelines", "item": "https://www.pythonlidar.com/pdal-pipeline-architecture-execution/attribute-mapping/mapping-custom-attributes-in-pdal-pipelines/"}
       ]
     },
     {
@@ -77,7 +77,7 @@ dateModified: "2026-06-24"
 
 ## Context and Motivation
 
-This guide is part of the [Attribute Mapping](/pdal-pipeline-architecture-execution/attribute-mapping/) cluster, which sits inside the broader [PDAL Pipeline Architecture & Execution](/pdal-pipeline-architecture-execution/) documentation. The specific problem this page solves is a common source of invisible data loss: PDAL does not auto-persist arbitrary point attributes. You can compute a dimension inside a filter and see it in `pipeline.arrays[0]` only to find it absent in the output file — because the writer was never told the dimension existed.
+This guide is part of the [Attribute Mapping](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/attribute-mapping/) cluster, which sits inside the broader [PDAL Pipeline Architecture & Execution](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/) documentation. The specific problem this page solves is a common source of invisible data loss: PDAL does not auto-persist arbitrary point attributes. You can compute a dimension inside a filter and see it in `pipeline.arrays[0]` only to find it absent in the output file — because the writer was never told the dimension existed.
 
 Production LiDAR workflows routinely need dimensions beyond the LAS standard: normalized intensity scores for vegetation classifiers, per-point survey confidence flags, height-above-ground proxies derived from return ratios, or machine-learning feature vectors computed on the fly. Getting these dimensions from expression to disk reliably requires understanding exactly where PDAL allocates buffer slots and which stages must declare an explicit type contract.
 
@@ -172,7 +172,7 @@ Three filters cover the full range of custom attribute derivation. Choose based 
 | `filters.expression` | Conditional assignment with a `where` predicate per point | Low — per-point boolean |
 | `filters.python` | Spatial joins, external lookups, non-vectorizable logic | High — Python interpreter per point |
 
-Reserve `filters.python` for operations that cannot be expressed in native PDAL arithmetic. The Python interpreter adds 10–50× overhead over `filters.assign` on large point clouds. For [pipeline filtering logic](/pdal-pipeline-architecture-execution/pipeline-filtering-logic/) that combines dimension assignment with point removal, use `filters.expression` with an explicit `where` clause rather than a separate `filters.range` stage — this avoids two buffer passes.
+Reserve `filters.python` for operations that cannot be expressed in native PDAL arithmetic. The Python interpreter adds 10–50× overhead over `filters.assign` on large point clouds. For [pipeline filtering logic](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/pipeline-filtering-logic/) that combines dimension assignment with point removal, use `filters.expression` with an explicit `where` clause rather than a separate `filters.range` stage — this avoids two buffer passes.
 
 ### Step 3 — Declare the dimension in the reader
 
@@ -269,7 +269,7 @@ pdal pipeline mapping_pipeline.json
 3. **Second assign** — overwrites `norm_intensity` with the normalized value and sets `survey_confidence = 128` only for points in the valid intensity range. Points outside the range keep `norm_intensity = 0.0` from step 2.
 4. **Writer** — serializes to LAS 1.4 point format 6 with both custom dimensions registered as Extra Bytes in the file's VLR.
 
-The equivalent Python invocation with validation, compatible with the patterns in the [Attribute Mapping](/pdal-pipeline-architecture-execution/attribute-mapping/) cluster documentation:
+The equivalent Python invocation with validation, compatible with the patterns in the [Attribute Mapping](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/attribute-mapping/) cluster documentation:
 
 ```python
 import json
@@ -353,7 +353,7 @@ assert arr["norm_intensity"].max() <= 1.0, "norm_intensity above 1 — check Int
 assert set(arr["survey_confidence"].tolist()).issubset({0, 128}), "unexpected confidence values"
 ```
 
-For [pipeline validation](/pdal-pipeline-architecture-execution/pipeline-validation/) before running against large production datasets, add a point-count parity check: compare `pdal info --summary input.laz` against `pdal info --summary output_mapped.laz`. `filters.assign` does not drop or duplicate points; any count mismatch indicates an upstream filter is also active in the pipeline.
+For [pipeline validation](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/pipeline-validation/) before running against large production datasets, add a point-count parity check: compare `pdal info --summary input.laz` against `pdal info --summary output_mapped.laz`. `filters.assign` does not drop or duplicate points; any count mismatch indicates an upstream filter is also active in the pipeline.
 
 ## Gotchas and Edge Cases
 
@@ -367,7 +367,7 @@ When a conditional `filters.assign` is the first stage to touch a dimension, poi
 
 **Schema drift during `filters.merge`**
 
-When merging point clouds from different sources — a common pattern before [PDAL stage chaining](/pdal-pipeline-architecture-execution/pdal-stage-chaining/) into a unified processing graph — `filters.merge` drops dimensions that are not present in all input views. If one tile already has `norm_intensity` mapped and another does not, the merged output loses the dimension. Pre-process all tiles through the same mapping pipeline before merging, or use separate per-tile pipelines and combine outputs at the file level.
+When merging point clouds from different sources — a common pattern before [PDAL stage chaining](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/pdal-stage-chaining/) into a unified processing graph — `filters.merge` drops dimensions that are not present in all input views. If one tile already has `norm_intensity` mapped and another does not, the merged output loses the dimension. Pre-process all tiles through the same mapping pipeline before merging, or use separate per-tile pipelines and combine outputs at the file level.
 
 **`filters.python` dimension creation requires explicit type registration**
 
@@ -375,8 +375,8 @@ When using `filters.python` to compute a custom dimension, you must call `ins.di
 
 ## Related
 
-- [Attribute Mapping](/pdal-pipeline-architecture-execution/attribute-mapping/) — parent cluster covering the full dimension-mapping workflow, schema audit patterns, and production validation strategies
-- [PDAL Pipeline Architecture & Execution](/pdal-pipeline-architecture-execution/) — pillar overview of the reader → filter → writer execution model and how dimensions propagate through the DAG
-- [PDAL Stage Chaining](/pdal-pipeline-architecture-execution/pdal-stage-chaining/) — how PDAL passes point buffers between stages and the ordering constraints that govern dimension availability
-- [Pipeline Filtering Logic](/pdal-pipeline-architecture-execution/pipeline-filtering-logic/) — conditional expression evaluation and how `where` predicates interact with dimension assignment
-- [Pipeline Validation](/pdal-pipeline-architecture-execution/pipeline-validation/) — pre-execution schema and dimension checks to catch configuration errors before running against full datasets
+- [Attribute Mapping](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/attribute-mapping/) — parent cluster covering the full dimension-mapping workflow, schema audit patterns, and production validation strategies
+- [PDAL Pipeline Architecture & Execution](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/) — overview of the reader → filter → writer execution model and how dimensions propagate through the DAG
+- [PDAL Stage Chaining](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/pdal-stage-chaining/) — how PDAL passes point buffers between stages and the ordering constraints that govern dimension availability
+- [Pipeline Filtering Logic](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/pipeline-filtering-logic/) — conditional expression evaluation and how `where` predicates interact with dimension assignment
+- [Pipeline Validation](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/pipeline-validation/) — pre-execution schema and dimension checks to catch configuration errors before running against full datasets

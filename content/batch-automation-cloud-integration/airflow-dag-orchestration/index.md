@@ -2,7 +2,7 @@
 title: "Airflow DAG Orchestration for PDAL Workflows"
 description: "Orchestrating multi-stage LiDAR processing with Apache Airflow — modelling tile discovery, ground classification, DTM rasterization, and QC as a DAG, using dynamic task mapping, operators, and retries."
 slug: "airflow-dag-orchestration"
-type: "cluster"
+type: "topic"
 breadcrumb: "Airflow DAG Orchestration"
 datePublished: "2024-07-08"
 dateModified: "2026-07-12"
@@ -23,9 +23,9 @@ dateModified: "2026-07-12"
     {
       "@type": "BreadcrumbList",
       "itemListElement": [
-        {"@type": "ListItem", "position": 1, "name": "Home", "item": "https://pythonlidar.com/"},
-        {"@type": "ListItem", "position": 2, "name": "Batch Automation and Cloud Integration for PDAL", "item": "https://pythonlidar.com/batch-automation-cloud-integration/"},
-        {"@type": "ListItem", "position": 3, "name": "Airflow DAG Orchestration", "item": "https://pythonlidar.com/batch-automation-cloud-integration/airflow-dag-orchestration/"}
+        {"@type": "ListItem", "position": 1, "name": "Home", "item": "https://www.pythonlidar.com/"},
+        {"@type": "ListItem", "position": 2, "name": "Batch Automation and Cloud Integration for PDAL", "item": "https://www.pythonlidar.com/batch-automation-cloud-integration/"},
+        {"@type": "ListItem", "position": 3, "name": "Airflow DAG Orchestration", "item": "https://www.pythonlidar.com/batch-automation-cloud-integration/airflow-dag-orchestration/"}
       ]
     },
     {
@@ -68,7 +68,7 @@ dateModified: "2026-07-12"
 }
 </script>
 
-A regional LiDAR delivery is not one job — it is thousands of small jobs that must run in a dependable order, recover from transient failures, and report their status without a human watching the terminal. When you process a county-scale acquisition tile by tile, you need something to decide which tiles are ready, launch classification and rasterization for each of them, wait for every result, and only then declare the batch complete. Apache Airflow is the scheduler that owns those decisions. This guide shows how to express a PDAL LiDAR workflow as an Airflow directed acyclic graph, so that discovery, ground classification, DTM rasterization, and quality control become named tasks with explicit dependencies rather than a fragile shell script. It sits under [Batch Automation and Cloud Integration for PDAL](/batch-automation-cloud-integration/), the broader guide to running point cloud pipelines beyond a single workstation.
+A regional LiDAR delivery is not one job — it is thousands of small jobs that must run in a dependable order, recover from transient failures, and report their status without a human watching the terminal. When you process a county-scale acquisition tile by tile, you need something to decide which tiles are ready, launch classification and rasterization for each of them, wait for every result, and only then declare the batch complete. Apache Airflow is the scheduler that owns those decisions. This guide shows how to express a PDAL LiDAR workflow as an Airflow directed acyclic graph, so that discovery, ground classification, DTM rasterization, and quality control become named tasks with explicit dependencies rather than a fragile shell script. It sits under [Batch Automation and Cloud Integration for PDAL](https://www.pythonlidar.com/batch-automation-cloud-integration/), the broader guide to running point cloud pipelines beyond a single workstation.
 
 <svg viewBox="0 0 780 300" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Airflow DAG for a per-tile PDAL LiDAR workflow with dynamic task mapping" style="width:100%;max-width:780px;display:block;margin:1.5rem auto">
   <title>PDAL LiDAR workflow modelled as an Airflow DAG</title>
@@ -122,7 +122,7 @@ Have these in place before wiring a PDAL workflow into Airflow:
 - **PDAL 2.5+ reachable from the workers** — either installed in the worker image (`conda install -c conda-forge pdal python-pdal`) or available as a container image for `DockerOperator`.
 - **Object storage credentials** — an Airflow connection (for example `aws_default`) with read access to the raw tile prefix and write access to the delivery prefix.
 - **A tiling scheme** — inputs already split into manageable LAZ tiles (typically 1 km squares). Airflow orchestrates tiles; it does not split them.
-- **Familiarity with the underlying pipeline** — the per-tile work reuses the same [PDAL Pipeline Architecture & Execution](/pdal-pipeline-architecture-execution/) model of readers, filters, and writers.
+- **Familiarity with the underlying pipeline** — the per-tile work reuses the same [PDAL Pipeline Architecture & Execution](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/) model of readers, filters, and writers.
 
 ## Core Workflow Architecture
 
@@ -131,12 +131,12 @@ Airflow gives you a small vocabulary — DAG, task, operator, scheduler, XCom �
 The lifecycle of a per-tile LiDAR run maps cleanly onto five stages:
 
 1. **Discover** — a task lists LAZ tiles under an input prefix and returns their keys. This is the fan-out source; its return value becomes the list every mapped task iterates over.
-2. **Classify** — one dynamically mapped task per tile runs a [SMRF Ground Classification](/ground-filtering-dtm-dsm-generation/smrf-ground-classification/) pipeline, writing a classified LAZ back to a working prefix and returning that key via XCom.
-3. **Rasterize** — a second mapped task consumes each classified tile and produces a DTM GeoTIFF using the [DTM Raster Generation](/ground-filtering-dtm-dsm-generation/dtm-raster-generation/) approach with `writers.gdal`.
+2. **Classify** — one dynamically mapped task per tile runs a [SMRF Ground Classification](https://www.pythonlidar.com/ground-filtering-dtm-dsm-generation/smrf-ground-classification/) pipeline, writing a classified LAZ back to a working prefix and returning that key via XCom.
+3. **Rasterize** — a second mapped task consumes each classified tile and produces a DTM GeoTIFF using the [DTM Raster Generation](https://www.pythonlidar.com/ground-filtering-dtm-dsm-generation/dtm-raster-generation/) approach with `writers.gdal`.
 4. **Validate** — a single reduce task collects every mapped result, asserts point-count and coverage invariants, and fails the run loudly if any tile is empty or missing.
 5. **Publish** — a final task promotes validated rasters to the delivery prefix and records run metadata so downstream consumers know the batch is complete.
 
-The shape is a fan-out/fan-in: one discover task, a mapped middle that scales with tile count, and a reduce that waits for all of them. Because each mapped instance is independent, this is embarrassingly parallel work — the same property exploited by [Parallel Execution](/pdal-pipeline-architecture-execution/parallel-execution/) inside a single machine, lifted to the scheduler level so it spans many workers.
+The shape is a fan-out/fan-in: one discover task, a mapped middle that scales with tile count, and a reduce that waits for all of them. Because each mapped instance is independent, this is embarrassingly parallel work — the same property exploited by [Parallel Execution](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/parallel-execution/) inside a single machine, lifted to the scheduler level so it spans many workers.
 
 ## Full Implementation
 
@@ -279,7 +279,7 @@ dag = pdal_tile_dtm()
 
 ### Mapped classification with a pool
 
-`classify_ground` carries `pool="pdal_pool"`. A pool caps how many PDAL-heavy instances run at once regardless of how many tiles exist, which protects worker memory when a thousand tiles fan out simultaneously. The task returns `out_key` — again just a string — so the next mapped task can consume it. Reading directly from S3 via GDAL's `/vsis3/` virtual filesystem avoids staging every tile to local disk, complementing the streaming approach in [S3 Cloud Storage I/O](/batch-automation-cloud-integration/s3-cloud-storage-io/).
+`classify_ground` carries `pool="pdal_pool"`. A pool caps how many PDAL-heavy instances run at once regardless of how many tiles exist, which protects worker memory when a thousand tiles fan out simultaneously. The task returns `out_key` — again just a string — so the next mapped task can consume it. Reading directly from S3 via GDAL's `/vsis3/` virtual filesystem avoids staging every tile to local disk, complementing the streaming approach in [S3 Cloud Storage I/O](https://www.pythonlidar.com/batch-automation-cloud-integration/s3-cloud-storage-io/).
 
 ### Chained mapping: rasterize over classified
 
@@ -291,7 +291,7 @@ dag = pdal_tile_dtm()
 
 ### Choosing the operator
 
-The example runs PDAL inside the worker via `@task`. Swap the body for `DockerOperator` when you want to pin a PDAL image, or `AwsBatchOperator` to offload heavy tiles to a managed compute fleet described in [AWS Batch Processing](/batch-automation-cloud-integration/aws-batch-processing/):
+The example runs PDAL inside the worker via `@task`. Swap the body for `DockerOperator` when you want to pin a PDAL image, or `AwsBatchOperator` to offload heavy tiles to a managed compute fleet described in [AWS Batch Processing](https://www.pythonlidar.com/batch-automation-cloud-integration/aws-batch-processing/):
 
 | Operator | Where PDAL runs | Best for | Trade-off |
 |---|---|---|---|
@@ -340,7 +340,7 @@ The `validate` reduce task is where cross-tile invariants belong: assert that th
 Throughput in an Airflow-orchestrated PDAL workflow is governed by concurrency limits, not by any single pipeline's speed. Three knobs interact:
 
 - **Executor parallelism.** `LocalExecutor` runs `parallelism` tasks in one process pool; `CeleryExecutor` and `KubernetesExecutor` spread instances across workers or pods. If tiles queue but nothing runs, the executor's global `parallelism` is the ceiling.
-- **Pools.** A `pdal_pool` with, say, 8 slots means at most 8 SMRF or `writers.gdal` tasks run concurrently even if 500 tiles are mapped. Size the pool to `(worker_RAM / peak_pipeline_RAM)` so a fan-out never triggers the OOM killer. Peak per-tile memory scales the same way it does for [Memory Management](/pdal-pipeline-architecture-execution/memory-management/) inside a standalone pipeline.
+- **Pools.** A `pdal_pool` with, say, 8 slots means at most 8 SMRF or `writers.gdal` tasks run concurrently even if 500 tiles are mapped. Size the pool to `(worker_RAM / peak_pipeline_RAM)` so a fan-out never triggers the OOM killer. Peak per-tile memory scales the same way it does for [Memory Management](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/memory-management/) inside a standalone pipeline.
 - **`max_active_tasks` per DAG.** Caps concurrency for one run so a single large batch cannot starve other DAGs sharing the same worker pool.
 
 Representative timings for a 400-tile county batch (1 km tiles, ~40 M points each) illustrate how the pool dominates:
@@ -374,7 +374,7 @@ Root cause: expensive top-level code — network calls, imports of heavy librari
 
 **What is the difference between an Airflow DAG and a PDAL pipeline?**
 
-A PDAL pipeline is a single in-process sequence of readers, filters, and writers that transforms one point cloud buffer. An Airflow DAG is a scheduling graph whose nodes are whole units of work — often each node executes a complete PDAL pipeline against one tile. Airflow decides when and where each task runs, handles retries and parallelism, and passes small references between tasks; PDAL moves the actual points inside a task. The two compose: the DAG orchestrates, the [PDAL pipeline](/pdal-pipeline-architecture-execution/) processes.
+A PDAL pipeline is a single in-process sequence of readers, filters, and writers that transforms one point cloud buffer. An Airflow DAG is a scheduling graph whose nodes are whole units of work — often each node executes a complete PDAL pipeline against one tile. Airflow decides when and where each task runs, handles retries and parallelism, and passes small references between tasks; PDAL moves the actual points inside a task. The two compose: the DAG orchestrates, the [PDAL pipeline](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/) processes.
 
 **How does dynamic task mapping work for per-tile LiDAR processing?**
 
@@ -382,7 +382,7 @@ Dynamic task mapping expands a single task definition into N runtime instances, 
 
 **Should PDAL run inside the Airflow worker or in a separate container?**
 
-For small clusters where every worker has PDAL and PROJ installed, `PythonOperator` or the TaskFlow API runs the pipeline directly in the worker. For heterogeneous or serverless environments, `DockerOperator` or `AwsBatchOperator` delegates the work to a container image that pins the PDAL version, which keeps workers thin and makes the runtime reproducible across the fleet. See [PDAL Docker Containers](/batch-automation-cloud-integration/pdal-docker-containers/) for building that image.
+For small clusters where every worker has PDAL and PROJ installed, `PythonOperator` or the TaskFlow API runs the pipeline directly in the worker. For heterogeneous or serverless environments, `DockerOperator` or `AwsBatchOperator` delegates the work to a container image that pins the PDAL version, which keeps workers thin and makes the runtime reproducible across the fleet. See [PDAL Docker Containers](https://www.pythonlidar.com/batch-automation-cloud-integration/pdal-docker-containers/) for building that image.
 
 **Why must Airflow tasks that run PDAL be idempotent?**
 
@@ -390,16 +390,16 @@ Airflow retries failed tasks and allows manual re-runs of any date, so a task ma
 
 **Can one DAG process multiple acquisitions at once?**
 
-Yes, but prefer parameterised runs. Trigger the same DAG with a run config that sets the prefix, and keep `max_active_runs=1` per acquisition so two runs never write to the same delivery prefix. For a fully worked single-acquisition version, see [Orchestrating PDAL Workflows with Airflow](/batch-automation-cloud-integration/airflow-dag-orchestration/orchestrating-pdal-workflows-with-airflow/).
+Yes, but prefer parameterised runs. Trigger the same DAG with a run config that sets the prefix, and keep `max_active_runs=1` per acquisition so two runs never write to the same delivery prefix. For a fully worked single-acquisition version, see [Orchestrating PDAL Workflows with Airflow](https://www.pythonlidar.com/batch-automation-cloud-integration/airflow-dag-orchestration/orchestrating-pdal-workflows-with-airflow/).
 
 ---
 
 ## Related
 
-- [Batch Automation and Cloud Integration for PDAL](/batch-automation-cloud-integration/) — parent overview of running PDAL beyond a single workstation
-- [Orchestrating PDAL Workflows with Airflow](/batch-automation-cloud-integration/airflow-dag-orchestration/orchestrating-pdal-workflows-with-airflow/) — a complete worked DAG with the TaskFlow API and dynamic mapping
-- [AWS Batch Processing](/batch-automation-cloud-integration/aws-batch-processing/) — offload heavy mapped tasks to a managed compute fleet
-- [PDAL Docker Containers](/batch-automation-cloud-integration/pdal-docker-containers/) — pin a reproducible PDAL image for DockerOperator and Batch
-- [S3 Cloud Storage I/O](/batch-automation-cloud-integration/s3-cloud-storage-io/) — read and write LAZ and COGs directly from object storage
-- [SMRF Ground Classification](/ground-filtering-dtm-dsm-generation/smrf-ground-classification/) — the classification stage each mapped task runs
-- [DTM Raster Generation](/ground-filtering-dtm-dsm-generation/dtm-raster-generation/) — the `writers.gdal` rasterization the DAG parallelises
+- [Batch Automation and Cloud Integration for PDAL](https://www.pythonlidar.com/batch-automation-cloud-integration/) — parent overview of running PDAL beyond a single workstation
+- [Orchestrating PDAL Workflows with Airflow](https://www.pythonlidar.com/batch-automation-cloud-integration/airflow-dag-orchestration/orchestrating-pdal-workflows-with-airflow/) — a complete worked DAG with the TaskFlow API and dynamic mapping
+- [AWS Batch Processing](https://www.pythonlidar.com/batch-automation-cloud-integration/aws-batch-processing/) — offload heavy mapped tasks to a managed compute fleet
+- [PDAL Docker Containers](https://www.pythonlidar.com/batch-automation-cloud-integration/pdal-docker-containers/) — pin a reproducible PDAL image for DockerOperator and Batch
+- [S3 Cloud Storage I/O](https://www.pythonlidar.com/batch-automation-cloud-integration/s3-cloud-storage-io/) — read and write LAZ and COGs directly from object storage
+- [SMRF Ground Classification](https://www.pythonlidar.com/ground-filtering-dtm-dsm-generation/smrf-ground-classification/) — the classification stage each mapped task runs
+- [DTM Raster Generation](https://www.pythonlidar.com/ground-filtering-dtm-dsm-generation/dtm-raster-generation/) — the `writers.gdal` rasterization the DAG parallelises

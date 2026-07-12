@@ -2,7 +2,7 @@
 title: "Chaining PDAL Stages for Data Cleaning"
 description: "Step-by-step guide to chaining PDAL readers, filters, and writers in Python for noise removal, outlier rejection, and classification refinement — with a complete runnable example."
 slug: "chaining-pdal-stages-for-data-cleaning"
-type: "long_tail"
+type: "howto"
 breadcrumb:
   - label: "PDAL Pipeline Architecture & Execution"
     url: "/pdal-pipeline-architecture-execution/"
@@ -24,15 +24,15 @@ dateModified: "2026-06-24"
       "description": "Step-by-step guide to chaining PDAL readers, filters, and writers in Python for noise removal, outlier rejection, and classification refinement — with a complete runnable example.",
       "datePublished": "2024-11-15",
       "dateModified": "2026-06-24",
-      "url": "https://pythonlidar.com/pdal-pipeline-architecture-execution/pdal-stage-chaining/chaining-pdal-stages-for-data-cleaning/",
+      "url": "https://www.pythonlidar.com/pdal-pipeline-architecture-execution/pdal-stage-chaining/chaining-pdal-stages-for-data-cleaning/",
       "author": { "@type": "Organization", "name": "pythonlidar.com" }
     },
     {
       "@type": "BreadcrumbList",
       "itemListElement": [
-        { "@type": "ListItem", "position": 1, "name": "PDAL Pipeline Architecture & Execution", "item": "https://pythonlidar.com/pdal-pipeline-architecture-execution/" },
-        { "@type": "ListItem", "position": 2, "name": "PDAL Stage Chaining", "item": "https://pythonlidar.com/pdal-pipeline-architecture-execution/pdal-stage-chaining/" },
-        { "@type": "ListItem", "position": 3, "name": "Chaining PDAL Stages for Data Cleaning", "item": "https://pythonlidar.com/pdal-pipeline-architecture-execution/pdal-stage-chaining/chaining-pdal-stages-for-data-cleaning/" }
+        { "@type": "ListItem", "position": 1, "name": "PDAL Pipeline Architecture & Execution", "item": "https://www.pythonlidar.com/pdal-pipeline-architecture-execution/" },
+        { "@type": "ListItem", "position": 2, "name": "PDAL Stage Chaining", "item": "https://www.pythonlidar.com/pdal-pipeline-architecture-execution/pdal-stage-chaining/" },
+        { "@type": "ListItem", "position": 3, "name": "Chaining PDAL Stages for Data Cleaning", "item": "https://www.pythonlidar.com/pdal-pipeline-architecture-execution/pdal-stage-chaining/chaining-pdal-stages-for-data-cleaning/" }
       ]
     },
     {
@@ -86,7 +86,7 @@ dateModified: "2026-06-24"
 
 Raw LiDAR surveys contain acquisition artifacts that make direct analysis unreliable: atmospheric scatter above the sensor ceiling, sub-terrain noise from ground-penetrating returns, scan-angle-dependent intensity distortion, and unclassified or misclassified returns from water bodies and low vegetation. Cleaning these before downstream terrain modelling or feature extraction is non-negotiable in production workflows.
 
-This guide is part of [PDAL Stage Chaining](/pdal-pipeline-architecture-execution/pdal-stage-chaining/), which explains the full buffer-passing execution model. The cleaning-specific techniques here build directly on how [PDAL Pipeline Architecture & Execution](/pdal-pipeline-architecture-execution/) allocates memory and propagates dimensions between stages. Understanding that broader execution context helps you reason about *why* stage order matters, not just *what* order to use.
+This guide is part of [PDAL Stage Chaining](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/pdal-stage-chaining/), which explains the full buffer-passing execution model. The cleaning-specific techniques here build directly on how [PDAL Pipeline Architecture & Execution](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/) allocates memory and propagates dimensions between stages. Understanding that broader execution context helps you reason about *why* stage order matters, not just *what* order to use.
 
 ---
 
@@ -164,7 +164,7 @@ The diagram below shows the five-stage cleaning chain, what each stage removes o
 }
 ```
 
-Setting `spatialreference` here overrides any embedded projection record and prevents silent datum mismatches when a downstream [spatial reprojection](/pdal-pipeline-architecture-execution/spatial-reprojection/) stage or range-based spatial filter assumes a specific unit system. Always verify the EPSG code matches the sensor's recording datum — not the delivery datum — before adding a reprojection stage.
+Setting `spatialreference` here overrides any embedded projection record and prevents silent datum mismatches when a downstream [spatial reprojection](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/spatial-reprojection/) stage or range-based spatial filter assumes a specific unit system. Always verify the EPSG code matches the sensor's recording datum — not the delivery datum — before adding a reprojection stage.
 
 ### Step 2 — Clamp to physically valid bounds with `filters.range`
 
@@ -175,7 +175,7 @@ Setting `spatialreference` here overrides any embedded projection record and pre
 }
 ```
 
-The `limits` string is a comma-separated list of `Dimension[min:max]` expressions. Place `filters.range` *before* `filters.outlier` so the statistical algorithm only sees points that are geometrically plausible — running outlier detection on atmospheric noise wastes CPU and skews the neighbourhood statistics. The [Pipeline Filtering Logic](/pdal-pipeline-architecture-execution/pipeline-filtering-logic/) section covers filter ordering rules in depth.
+The `limits` string is a comma-separated list of `Dimension[min:max]` expressions. Place `filters.range` *before* `filters.outlier` so the statistical algorithm only sees points that are geometrically plausible — running outlier detection on atmospheric noise wastes CPU and skews the neighbourhood statistics. The [Pipeline Filtering Logic](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/pipeline-filtering-logic/) section covers filter ordering rules in depth.
 
 ### Step 3 — Remove statistical noise with `filters.outlier`
 
@@ -188,7 +188,7 @@ The `limits` string is a comma-separated list of `Dimension[min:max]` expression
 }
 ```
 
-`filters.outlier` marks isolated points as noise (Classification 7) rather than dropping them immediately, giving downstream stages a chance to inspect or preserve them. Set `mean_k` to roughly 10–16 for airborne surveys and 6–10 for terrestrial scans where point density is higher but spatial extent is smaller. See the dedicated [Applying Statistical Outlier Filters in PDAL](/pdal-pipeline-architecture-execution/pipeline-filtering-logic/applying-statistical-outlier-filters-in-pdal/) guide for `multiplier` tuning guidance.
+`filters.outlier` marks isolated points as noise (Classification 7) rather than dropping them immediately, giving downstream stages a chance to inspect or preserve them. Set `mean_k` to roughly 10–16 for airborne surveys and 6–10 for terrestrial scans where point density is higher but spatial extent is smaller. See the dedicated [Applying Statistical Outlier Filters in PDAL](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/pipeline-filtering-logic/applying-statistical-outlier-filters-in-pdal/) guide for `multiplier` tuning guidance.
 
 ### Step 4 — Assign or correct classification codes with `filters.assign`
 
@@ -199,7 +199,7 @@ The `limits` string is a comma-separated list of `Dimension[min:max]` expression
 }
 ```
 
-The `value` parameter is a PDAL expression string. The `WHERE` clause restricts the assignment to unclassified points (code 0), leaving ground (2), vegetation (3–5), and building (6) labels from the original data intact. Classification codes follow the [ASPRS classification scheme](/point-cloud-data-standards-fundamentals/asprs-classification-codes/) — consult that reference when you need to preserve or recategorise specific return types.
+The `value` parameter is a PDAL expression string. The `WHERE` clause restricts the assignment to unclassified points (code 0), leaving ground (2), vegetation (3–5), and building (6) labels from the original data intact. Classification codes follow the [ASPRS classification scheme](https://www.pythonlidar.com/point-cloud-data-standards-fundamentals/asprs-classification-codes/) — consult that reference when you need to preserve or recategorise specific return types.
 
 ### Step 5 — Write compressed output
 
@@ -349,7 +349,7 @@ bbox = meta["metadata"]["readers.las"]["bbox"]
 print(f"Output bounds: Z {bbox['minz']:.2f} – {bbox['maxz']:.2f} m")
 ```
 
-If `minz` equals your lower `filters.range` bound, you may have clipped valid ground returns — raise the lower Z limit and re-run. The [memory management](/pdal-pipeline-architecture-execution/memory-management/) page explains how to verify buffer allocation and detect truncation from out-of-memory conditions during execution.
+If `minz` equals your lower `filters.range` bound, you may have clipped valid ground returns — raise the lower Z limit and re-run. The [memory management](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/memory-management/) page explains how to verify buffer allocation and detect truncation from out-of-memory conditions during execution.
 
 ---
 
@@ -362,7 +362,7 @@ In sparse forests or low-shrub areas, isolated single returns from sub-metre veg
 PDAL 2.5+ uses `ScanAngle` (float, degrees) in LAS 1.4 files and `ScanAngleRank` (int8, 1/10-degree units scaled −128 to +127) in LAS 1.2/1.3. Applying a `ScanAngleRank[-20:20]` limit to a LAS 1.4 file that stores `ScanAngle` will silently pass all points because the dimension name does not match. Run `pdal info --schema raw_survey.las | grep -i scan` to confirm which dimension is present before writing the `limits` expression.
 
 **3. `filters.assign` without a `WHERE` clause overwrites existing labels.**
-Omitting the `WHERE Classification == 0` guard sets every point to code 2, destroying building, vegetation, and water classifications that the sensor vendor may have pre-computed. Always scope assignment expressions with a `WHERE` predicate. Cross-reference the [ASPRS classification codes](/point-cloud-data-standards-fundamentals/asprs-classification-codes/) table to confirm you are targeting the correct numeric codes before running a bulk assignment.
+Omitting the `WHERE Classification == 0` guard sets every point to code 2, destroying building, vegetation, and water classifications that the sensor vendor may have pre-computed. Always scope assignment expressions with a `WHERE` predicate. Cross-reference the [ASPRS classification codes](https://www.pythonlidar.com/point-cloud-data-standards-fundamentals/asprs-classification-codes/) table to confirm you are targeting the correct numeric codes before running a bulk assignment.
 
 **4. `compression: "true"` requires a `.laz` file extension.**
 If you set `compression: "true"` but write to a `.las` filename, `writers.las` raises a `RuntimeError` at execution time. The filename extension and the compression flag must agree — use `.laz` for compressed output and `.las` for uncompressed.
@@ -381,14 +381,14 @@ No. PDAL passes a shared PointView buffer between stages entirely in memory. Int
 
 ### How do I handle multi-gigabyte LAS files in a cleaning chain?
 
-Insert `filters.splitter` early in the chain. Set the `length` parameter to tile the point cloud into chunks that fit in available RAM, forcing sequential processing and releasing memory between tiles. See the [memory management](/pdal-pipeline-architecture-execution/memory-management/) page for recommended `length` values relative to available RAM and point density.
+Insert `filters.splitter` early in the chain. Set the `length` parameter to tile the point cloud into chunks that fit in available RAM, forcing sequential processing and releasing memory between tiles. See the [memory management](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/memory-management/) page for recommended `length` values relative to available RAM and point density.
 
 ---
 
 ## Related
 
-- [PDAL Stage Chaining](/pdal-pipeline-architecture-execution/pdal-stage-chaining/) — parent guide covering the full buffer-passing execution model
-- [Applying Statistical Outlier Filters in PDAL](/pdal-pipeline-architecture-execution/pipeline-filtering-logic/applying-statistical-outlier-filters-in-pdal/) — deep dive on `mean_k` and `multiplier` calibration
-- [Pipeline Filtering Logic](/pdal-pipeline-architecture-execution/pipeline-filtering-logic/) — filter ordering rules and dimension propagation
-- [Spatial Reprojection](/pdal-pipeline-architecture-execution/spatial-reprojection/) — inserting a CRS transformation before geometric filters
-- [PDAL Pipeline Architecture & Execution](/pdal-pipeline-architecture-execution/) — top-level guide to the execution model
+- [PDAL Stage Chaining](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/pdal-stage-chaining/) — parent guide covering the full buffer-passing execution model
+- [Applying Statistical Outlier Filters in PDAL](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/pipeline-filtering-logic/applying-statistical-outlier-filters-in-pdal/) — deep dive on `mean_k` and `multiplier` calibration
+- [Pipeline Filtering Logic](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/pipeline-filtering-logic/) — filter ordering rules and dimension propagation
+- [Spatial Reprojection](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/spatial-reprojection/) — inserting a CRS transformation before geometric filters
+- [PDAL Pipeline Architecture & Execution](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/) — top-level guide to the execution model

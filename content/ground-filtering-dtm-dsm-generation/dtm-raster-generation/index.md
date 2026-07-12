@@ -2,7 +2,7 @@
 title: "DTM Raster Generation with PDAL"
 description: "Turning classified ground returns into a bare-earth Digital Terrain Model GeoTIFF with PDAL writers.gdal — resolution, output_type (idw/mean/min), search radius, window_size gap-filling, NoData, and CRS-aware rasterization."
 slug: "dtm-raster-generation"
-type: "cluster"
+type: "topic"
 breadcrumb: "DTM Raster Generation"
 datePublished: "2024-06-24"
 dateModified: "2026-07-12"
@@ -23,9 +23,9 @@ dateModified: "2026-07-12"
     {
       "@type": "BreadcrumbList",
       "itemListElement": [
-        {"@type": "ListItem", "position": 1, "name": "Home", "item": "https://pythonlidar.com/"},
-        {"@type": "ListItem", "position": 2, "name": "Ground Filtering & Terrain Models", "item": "https://pythonlidar.com/ground-filtering-dtm-dsm-generation/"},
-        {"@type": "ListItem", "position": 3, "name": "DTM Raster Generation", "item": "https://pythonlidar.com/ground-filtering-dtm-dsm-generation/dtm-raster-generation/"}
+        {"@type": "ListItem", "position": 1, "name": "Home", "item": "https://www.pythonlidar.com/"},
+        {"@type": "ListItem", "position": 2, "name": "Ground Filtering & Terrain Models", "item": "https://www.pythonlidar.com/ground-filtering-dtm-dsm-generation/"},
+        {"@type": "ListItem", "position": 3, "name": "DTM Raster Generation", "item": "https://www.pythonlidar.com/ground-filtering-dtm-dsm-generation/dtm-raster-generation/"}
       ]
     },
     {
@@ -68,7 +68,7 @@ dateModified: "2026-07-12"
 }
 </script>
 
-A Digital Terrain Model is the deliverable most LiDAR projects are ultimately commissioned to produce: a continuous bare-earth elevation surface with vegetation, buildings, and vehicles stripped away. Once ground returns have been isolated by an algorithm such as SMRF or PMF, the remaining task is rasterization — collapsing an irregular scatter of classified ground points into a regular grid of elevation values written to a GeoTIFF. PDAL performs this final step with `writers.gdal`, a rasterizing sink that bins points into cells, interpolates a value per cell, and hands the array to GDAL for encoding. This guide is part of [Ground Filtering and DTM/DSM Generation with PDAL](/ground-filtering-dtm-dsm-generation/), and it focuses on the parameters that decide whether the resulting terrain model is survey-usable or riddled with holes and artefacts.
+A Digital Terrain Model is the deliverable most LiDAR projects are ultimately commissioned to produce: a continuous bare-earth elevation surface with vegetation, buildings, and vehicles stripped away. Once ground returns have been isolated by an algorithm such as SMRF or PMF, the remaining task is rasterization — collapsing an irregular scatter of classified ground points into a regular grid of elevation values written to a GeoTIFF. PDAL performs this final step with `writers.gdal`, a rasterizing sink that bins points into cells, interpolates a value per cell, and hands the array to GDAL for encoding. This guide is part of [Ground Filtering and DTM/DSM Generation with PDAL](https://www.pythonlidar.com/ground-filtering-dtm-dsm-generation/), and it focuses on the parameters that decide whether the resulting terrain model is survey-usable or riddled with holes and artefacts.
 
 <svg viewBox="0 0 760 250" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="DTM raster generation flow from classified ground points through filters.range to writers.gdal cell binning and GeoTIFF output" style="width:100%;max-width:760px;display:block;margin:1.5rem auto">
   <title>DTM Raster Generation Data Flow</title>
@@ -106,22 +106,22 @@ A Digital Terrain Model is the deliverable most LiDAR projects are ultimately co
 Confirm the following before rasterizing a terrain model:
 
 - **PDAL 2.5 or later** with Python bindings (`pip install pdal`) and a working GDAL 3.x underneath.
-- **A ground-classified point cloud** — Classification code 2 already assigned by [SMRF Ground Classification](/ground-filtering-dtm-dsm-generation/smrf-ground-classification/) or an equivalent filter. Rasterizing an unclassified cloud produces a first-surface DSM, not a DTM.
-- **A projected, metric CRS.** DTM cell sizes only make sense in metres or feet; a cloud still in `EPSG:4326` degrees must be reprojected first. See [Spatial Reprojection](/pdal-pipeline-architecture-execution/spatial-reprojection/).
+- **A ground-classified point cloud** — Classification code 2 already assigned by [SMRF Ground Classification](https://www.pythonlidar.com/ground-filtering-dtm-dsm-generation/smrf-ground-classification/) or an equivalent filter. Rasterizing an unclassified cloud produces a first-surface DSM, not a DTM.
+- **A projected, metric CRS.** DTM cell sizes only make sense in metres or feet; a cloud still in `EPSG:4326` degrees must be reprojected first. See [Spatial Reprojection](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/spatial-reprojection/).
 - **`rasterio` installed** for validation (`pip install rasterio`), plus `numpy`.
-- **Knowledge of your ground-point spacing** — the average distance between ground returns sets the finest resolution you can rasterize without holes. The [Point Density Metrics](/point-cloud-data-standards-fundamentals/point-density-metrics/) guide covers how to measure it.
+- **Knowledge of your ground-point spacing** — the average distance between ground returns sets the finest resolution you can rasterize without holes. The [Point Density Metrics](https://www.pythonlidar.com/point-cloud-data-standards-fundamentals/point-density-metrics/) guide covers how to measure it.
 
 ## Core Workflow Architecture
 
 Producing a DTM with PDAL is a five-phase lifecycle. Each phase maps onto one or two pipeline stages, and the whole sequence executes in a single streaming pass.
 
 1. **Ingest and confirm CRS** — a `readers.las` stage loads the classified tile. If the horizontal CRS is geographic or missing, prepend a `filters.reprojection` stage targeting a projected code such as `EPSG:6339` (NAD83(2011) / UTM zone 12N).
-2. **Select ground returns** — a `filters.range` stage with `limits: "Classification[2:2]"` discards every non-ground point. This is the single most important step: skip it and every rooftop and tree crown contaminates the surface. The mechanics of this stage are covered in [Pipeline Filtering Logic](/pdal-pipeline-architecture-execution/pipeline-filtering-logic/).
+2. **Select ground returns** — a `filters.range` stage with `limits: "Classification[2:2]"` discards every non-ground point. This is the single most important step: skip it and every rooftop and tree crown contaminates the surface. The mechanics of this stage are covered in [Pipeline Filtering Logic](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/pipeline-filtering-logic/).
 3. **Rasterize** — `writers.gdal` bins the surviving points into a grid defined by `resolution`, interpolates a value per cell using `output_type`, and searches within `radius` for contributing points.
 4. **Interpolate small gaps** — `window_size` triggers an in-writer moving-window fill that closes isolated NoData cells from their populated neighbours before the array is encoded.
 5. **Encode and tag** — `gdaldriver: "GTiff"` with `gdalopts` sets compression and tiling, `nodata` marks empty cells, and the CRS carried by the points is written into the GeoTIFF header automatically.
 
-Stage order is not negotiable. `filters.range` must precede `writers.gdal`, and any reprojection must precede the range filter so that the classification codes are evaluated on the same points that get rasterized. This is the same buffer-passing discipline described in [PDAL Stage Chaining](/pdal-pipeline-architecture-execution/pdal-stage-chaining/).
+Stage order is not negotiable. `filters.range` must precede `writers.gdal`, and any reprojection must precede the range filter so that the classification codes are evaluated on the same points that get rasterized. This is the same buffer-passing discipline described in [PDAL Stage Chaining](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/pdal-stage-chaining/).
 
 ## Full Implementation
 
@@ -263,11 +263,11 @@ The equivalent declarative JSON, useful for the `pdal pipeline` CLI or for stori
 | `stdev` | Standard deviation of Z | Roughness / uncertainty band |
 | `all` | Every statistic as separate bands | One-pass diagnostics |
 
-For a production terrain model, `idw` is the standard. The trade-offs between `idw` and `mean` for gap-prone tiles are examined in depth in [IDW vs Mean Interpolation for DTM Gaps](/ground-filtering-dtm-dsm-generation/dtm-raster-generation/idw-vs-mean-interpolation-for-dtm-gaps/).
+For a production terrain model, `idw` is the standard. The trade-offs between `idw` and `mean` for gap-prone tiles are examined in depth in [IDW vs Mean Interpolation for DTM Gaps](https://www.pythonlidar.com/ground-filtering-dtm-dsm-generation/dtm-raster-generation/idw-vs-mean-interpolation-for-dtm-gaps/).
 
 ### window_size gap filling
 
-`window_size` is an integer radius, expressed in cells, for a moving-window interpolation that runs after binning but before encoding. A value of `3` lets PDAL fill an empty cell if it can see populated cells within three cells in any direction. This closes the small, scattered holes that appear at the finest resolutions without a separate post-processing tool. Larger values invent terrain across genuine voids, so keep `window_size` modest and reach for a dedicated fill only when needed — see [Filling NoData Voids in DTM Rasters](/ground-filtering-dtm-dsm-generation/dtm-raster-generation/filling-nodata-voids-in-dtm-rasters/).
+`window_size` is an integer radius, expressed in cells, for a moving-window interpolation that runs after binning but before encoding. A value of `3` lets PDAL fill an empty cell if it can see populated cells within three cells in any direction. This closes the small, scattered holes that appear at the finest resolutions without a separate post-processing tool. Larger values invent terrain across genuine voids, so keep `window_size` modest and reach for a dedicated fill only when needed — see [Filling NoData Voids in DTM Rasters](https://www.pythonlidar.com/ground-filtering-dtm-dsm-generation/dtm-raster-generation/filling-nodata-voids-in-dtm-rasters/).
 
 ### GDAL driver, options, and NoData
 
@@ -344,10 +344,10 @@ Rasterization cost is dominated by the output grid size, which scales with the i
 
 Practical guidance:
 
-- **Match resolution to ground-point spacing.** If ground returns average 0.7 m apart, a 0.25 m DTM is mostly interpolation and holes; 1 m is honest. Measure spacing with [Point Density Metrics](/point-cloud-data-standards-fundamentals/point-density-metrics/) before choosing.
+- **Match resolution to ground-point spacing.** If ground returns average 0.7 m apart, a 0.25 m DTM is mostly interpolation and holes; 1 m is honest. Measure spacing with [Point Density Metrics](https://www.pythonlidar.com/point-cloud-data-standards-fundamentals/point-density-metrics/) before choosing.
 - **Prefer float32 over float64** unless you genuinely need sub-millimetre vertical precision — it halves both RAM and file size with no visible quality loss for airborne LiDAR.
 - **Keep TILED=YES** so downstream slope, aspect, and hillshade derivations read windows efficiently rather than scanning whole scanlines.
-- **Tile large areas rather than rasterizing a whole survey at once**; a fixed `bounds` per tile keeps peak memory bounded and lets a batch system parallelise across cores, as covered in [Parallel Execution](/pdal-pipeline-architecture-execution/parallel-execution/).
+- **Tile large areas rather than rasterizing a whole survey at once**; a fixed `bounds` per tile keeps peak memory bounded and lets a batch system parallelise across cores, as covered in [Parallel Execution](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/parallel-execution/).
 
 ## Common Errors and Troubleshooting
 
@@ -355,13 +355,13 @@ Practical guidance:
 Root cause: no points survived `filters.range`, so there is nothing to rasterize. Fix: confirm the tile is actually classified — run `pdal info --metadata` and check for a non-zero count of Classification 2 points before rasterizing.
 
 **DTM cell size is one degree, not one metre**
-Root cause: the point cloud is still in a geographic CRS (`EPSG:4326`), so `resolution: 1.0` means one degree. Fix: insert `filters.reprojection` targeting a projected CRS such as `EPSG:6339` before the range filter, as detailed in [Spatial Reprojection](/pdal-pipeline-architecture-execution/spatial-reprojection/).
+Root cause: the point cloud is still in a geographic CRS (`EPSG:4326`), so `resolution: 1.0` means one degree. Fix: insert `filters.reprojection` targeting a projected CRS such as `EPSG:6339` before the range filter, as detailed in [Spatial Reprojection](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/spatial-reprojection/).
 
 **Sawtooth or terraced terrain**
 Root cause: `output_type: "min"` combined with sparse points quantises the surface, or the vertical values were stored as integers. Fix: switch to `idw`, set `data_type: "float32"`, and add a small `radius` so each cell draws from several points.
 
 **Speckled NoData holes at fine resolution**
-Root cause: `resolution` is finer than the ground spacing and `window_size` is 0. Fix: raise `window_size` to 3–4 to interpolate across small gaps, widen `radius`, or coarsen the grid. Persistent large voids need the techniques in [Filling NoData Voids in DTM Rasters](/ground-filtering-dtm-dsm-generation/dtm-raster-generation/filling-nodata-voids-in-dtm-rasters/).
+Root cause: `resolution` is finer than the ground spacing and `window_size` is 0. Fix: raise `window_size` to 3–4 to interpolate across small gaps, widen `radius`, or coarsen the grid. Persistent large voids need the techniques in [Filling NoData Voids in DTM Rasters](https://www.pythonlidar.com/ground-filtering-dtm-dsm-generation/dtm-raster-generation/filling-nodata-voids-in-dtm-rasters/).
 
 **Downstream tools treat -9999 as real elevation**
 Root cause: some consumers ignore the GeoTIFF NoData tag. Fix: confirm `nodata` is set in the writer and, if a specific tool still mishandles it, mask explicitly with `rasterio`'s masked reads or re-tag with `gdal_edit.py -a_nodata`.
@@ -388,10 +388,10 @@ Empty cells appear where no ground point fell within the search radius. Common c
 
 ## Related
 
-- [Ground Filtering and DTM/DSM Generation with PDAL](/ground-filtering-dtm-dsm-generation/) — parent overview of ground filtering and terrain modelling
-- [Generating a DTM GeoTIFF with writers.gdal](/ground-filtering-dtm-dsm-generation/dtm-raster-generation/generating-a-dtm-geotiff-with-writers-gdal/) — the complete step-by-step recipe
-- [IDW vs Mean Interpolation for DTM Gaps](/ground-filtering-dtm-dsm-generation/dtm-raster-generation/idw-vs-mean-interpolation-for-dtm-gaps/) — how the two interpolators treat sparse cells
-- [Filling NoData Voids in DTM Rasters](/ground-filtering-dtm-dsm-generation/dtm-raster-generation/filling-nodata-voids-in-dtm-rasters/) — closing holes with window_size and post-processing
-- [DSM Generation](/ground-filtering-dtm-dsm-generation/dsm-generation/) — the first-return surface counterpart to a DTM
-- [SMRF Ground Classification](/ground-filtering-dtm-dsm-generation/smrf-ground-classification/) — how ground points are labelled before rasterization
-- [Point Density Metrics](/point-cloud-data-standards-fundamentals/point-density-metrics/) — measuring ground spacing to choose a resolution
+- [Ground Filtering and DTM/DSM Generation with PDAL](https://www.pythonlidar.com/ground-filtering-dtm-dsm-generation/) — parent overview of ground filtering and terrain modelling
+- [Generating a DTM GeoTIFF with writers.gdal](https://www.pythonlidar.com/ground-filtering-dtm-dsm-generation/dtm-raster-generation/generating-a-dtm-geotiff-with-writers-gdal/) — the complete step-by-step recipe
+- [IDW vs Mean Interpolation for DTM Gaps](https://www.pythonlidar.com/ground-filtering-dtm-dsm-generation/dtm-raster-generation/idw-vs-mean-interpolation-for-dtm-gaps/) — how the two interpolators treat sparse cells
+- [Filling NoData Voids in DTM Rasters](https://www.pythonlidar.com/ground-filtering-dtm-dsm-generation/dtm-raster-generation/filling-nodata-voids-in-dtm-rasters/) — closing holes with window_size and post-processing
+- [DSM Generation](https://www.pythonlidar.com/ground-filtering-dtm-dsm-generation/dsm-generation/) — the first-return surface counterpart to a DTM
+- [SMRF Ground Classification](https://www.pythonlidar.com/ground-filtering-dtm-dsm-generation/smrf-ground-classification/) — how ground points are labelled before rasterization
+- [Point Density Metrics](https://www.pythonlidar.com/point-cloud-data-standards-fundamentals/point-density-metrics/) — measuring ground spacing to choose a resolution

@@ -1,6 +1,6 @@
 <header class="site-header">
   <div class="container site-header__inner">
-    <a class="brand" href="/" aria-label="{{ site.name }} — home">
+    <a class="brand" href="{{ site.url }}/" aria-label="{{ site.name }} — home">
       {% include "partials/logo-inline.njk" %}
       <span class="brand__text">{{ site.shortName }}</span>
     </a>
@@ -12,14 +12,14 @@
     <nav class="nav" id="primary-nav" aria-label="Primary">
       <ul class="nav__list">
         <li>
-          <a class="nav__link" href="/" {% if page.url == "/" %}aria-current="page"{% endif %}>
+          <a class="nav__link" href="{{ site.url }}/" {% if page.url == "/" %}aria-current="page"{% endif %}>
             {% icon "home", 18 %}
             <span>Home</span>
           </a>
         </li>
         {% for section in site.sections %}
         <li>
-          <a class="nav__link" href="/{{ section.slug }}/" {% if page.url.startsWith("/" + section.slug + "/") %}aria-current="page"{% endif %}>
+          <a class="nav__link" href="{{ site.url }}/{{ section.slug }}/" {% if page.url.startsWith("/" + section.slug + "/") %}aria-current="page"{% endif %}>
             {% sectionIcon section.slug, 20 %}
             <span>{{ section.label }}</span>
           </a>

@@ -2,7 +2,7 @@
 title: "DSM Generation from LiDAR with PDAL"
 description: "Building a Digital Surface Model from LiDAR first returns with PDAL writers.gdal output_type=max — filtering by ReturnNumber, choosing resolution, and producing a canopy-and-structure surface raster for volumetrics and viewsheds."
 slug: "dsm-generation"
-type: "cluster"
+type: "topic"
 breadcrumb: "DSM Generation"
 datePublished: "2024-06-26"
 dateModified: "2026-07-12"
@@ -23,9 +23,9 @@ dateModified: "2026-07-12"
     {
       "@type": "BreadcrumbList",
       "itemListElement": [
-        {"@type": "ListItem", "position": 1, "name": "Home", "item": "https://pythonlidar.com/"},
-        {"@type": "ListItem", "position": 2, "name": "Ground Filtering and DTM/DSM Generation with PDAL", "item": "https://pythonlidar.com/ground-filtering-dtm-dsm-generation/"},
-        {"@type": "ListItem", "position": 3, "name": "DSM Generation", "item": "https://pythonlidar.com/ground-filtering-dtm-dsm-generation/dsm-generation/"}
+        {"@type": "ListItem", "position": 1, "name": "Home", "item": "https://www.pythonlidar.com/"},
+        {"@type": "ListItem", "position": 2, "name": "Ground Filtering and DTM/DSM Generation with PDAL", "item": "https://www.pythonlidar.com/ground-filtering-dtm-dsm-generation/"},
+        {"@type": "ListItem", "position": 3, "name": "DSM Generation", "item": "https://www.pythonlidar.com/ground-filtering-dtm-dsm-generation/dsm-generation/"}
       ]
     },
     {
@@ -70,7 +70,7 @@ dateModified: "2026-07-12"
 
 # DSM Generation from LiDAR with PDAL
 
-A Digital Surface Model captures the world as the laser first meets it — the tops of tree crowns, the ridge of every roof, the deck of a bridge, the crown of a transmission tower. Where a bare-earth terrain model strips vegetation and structures away, a DSM deliberately keeps them, encoding the elevation of the highest reflective surface in each grid cell. That single design choice — record the top, not the ground — drives every parameter decision on this page, from which returns you keep to how `writers.gdal` collapses points into pixels. This guide is part of [Ground Filtering and DTM/DSM Generation with PDAL](/ground-filtering-dtm-dsm-generation/), and it deliberately avoids the ground-classification machinery that the bare-earth workflow depends on.
+A Digital Surface Model captures the world as the laser first meets it — the tops of tree crowns, the ridge of every roof, the deck of a bridge, the crown of a transmission tower. Where a bare-earth terrain model strips vegetation and structures away, a DSM deliberately keeps them, encoding the elevation of the highest reflective surface in each grid cell. That single design choice — record the top, not the ground — drives every parameter decision on this page, from which returns you keep to how `writers.gdal` collapses points into pixels. This guide is part of [Ground Filtering and DTM/DSM Generation with PDAL](https://www.pythonlidar.com/ground-filtering-dtm-dsm-generation/), and it deliberately avoids the ground-classification machinery that the bare-earth workflow depends on.
 
 The surface a DSM describes is what an observer standing at altitude would actually see, which is why it underpins viewshed analysis, line-of-sight modelling, solar and telecom planning, and volumetric estimates of stockpiles or forest canopy. Because the DSM needs no notion of "ground," it is often the fastest raster you can extract from a point cloud: read the tile, keep the first returns, and ask GDAL for the maximum Z per cell. The subtlety lives in resolution choice, void handling, and — when you pair it with a terrain model — grid alignment.
 
@@ -115,16 +115,16 @@ Before building a surface raster, confirm you have the following in place:
 - **`rasterio` 1.3+** for opening and validating the output GeoTIFF, plus `numpy`.
 - **A LAS/LAZ tile with populated `ReturnNumber` and `NumberOfReturns` dimensions.** Single-return sensors still produce a DSM, but multi-return data lets you separate canopy top from understory.
 - **A known projected CRS in metres.** Surface models are area rasters; a geographic CRS in degrees makes resolution meaningless. This page uses `EPSG:6350` (NAD83(2011) / Conus Albers) for a regional example.
-- **Point density awareness.** Knowing your average returns per square metre — see [Point Density Metrics](/point-cloud-data-standards-fundamentals/point-density-metrics/) — is the single best predictor of a sensible cell size.
+- **Point density awareness.** Knowing your average returns per square metre — see [Point Density Metrics](https://www.pythonlidar.com/point-cloud-data-standards-fundamentals/point-density-metrics/) — is the single best predictor of a sensible cell size.
 
-If your input arrives in a different projection than the grid you want to publish, run a reprojection first; the [Spatial Reprojection](/pdal-pipeline-architecture-execution/spatial-reprojection/) guide covers folding `filters.reprojection` into the same pipeline so the raster lands in its final CRS in one pass.
+If your input arrives in a different projection than the grid you want to publish, run a reprojection first; the [Spatial Reprojection](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/spatial-reprojection/) guide covers folding `filters.reprojection` into the same pipeline so the raster lands in its final CRS in one pass.
 
 ## Core Workflow Architecture
 
 DSM generation is a four-stage lifecycle. Unlike bare-earth extraction it has no classification step, which is what makes it both faster and conceptually simpler:
 
 1. **Ingest.** `readers.las` streams the tile into a `PointView`. The only header field that matters here is the CRS; the elevation values in `Z` are taken as-is.
-2. **Top-surface selection.** You keep the points that represent the visible surface. The cleanest approach filters to `ReturnNumber == 1` with `filters.range`, discarding intermediate and last returns that came back from below the canopy. This is a pure selection step and shares its mechanics with the broader [Pipeline Filtering Logic](/pdal-pipeline-architecture-execution/pipeline-filtering-logic/) used across PDAL.
+2. **Top-surface selection.** You keep the points that represent the visible surface. The cleanest approach filters to `ReturnNumber == 1` with `filters.range`, discarding intermediate and last returns that came back from below the canopy. This is a pure selection step and shares its mechanics with the broader [Pipeline Filtering Logic](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/pipeline-filtering-logic/) used across PDAL.
 3. **Rasterization.** `writers.gdal` bins the surviving points onto a regular grid. `output_type=max` writes the highest `Z` in each cell, which is exactly the top-surface definition of a DSM. Resolution and `nodata` are set here.
 4. **Validation and derivation.** You open the GeoTIFF, confirm the elevation range and void fraction are plausible, and — if you also hold a bare-earth grid — subtract to produce a normalized surface.
 
@@ -317,12 +317,12 @@ Practical guidance:
 
 - **Filtering to first returns lowers both time and memory** because roughly a third of multi-return points never reach the writer. It is essentially free accuracy on vegetated scenes.
 - **`writers.gdal` streams**, so peak RAM tracks the raster size, not the point count. Doubling resolution quadruples the cell grid and the memory it occupies.
-- **Batch many tiles in parallel** rather than throwing many cores at one tile; DSM rasterization is not strongly multi-threaded. Tile-level parallelism, as covered in [Parallel Execution](/pdal-pipeline-architecture-execution/parallel-execution/), scales far better across a survey.
+- **Batch many tiles in parallel** rather than throwing many cores at one tile; DSM rasterization is not strongly multi-threaded. Tile-level parallelism, as covered in [Parallel Execution](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/parallel-execution/), scales far better across a survey.
 
 ## Common Errors and Troubleshooting
 
 **The raster is full of nodata speckle.**
-Root cause: `resolution` is finer than the average point spacing, so many cells receive no first return. Fix: coarsen the grid to match density (see [Point Density Metrics](/point-cloud-data-standards-fundamentals/point-density-metrics/)), or set `window_size` to 1–2 to interpolate across pinholes.
+Root cause: `resolution` is finer than the average point spacing, so many cells receive no first return. Fix: coarsen the grid to match density (see [Point Density Metrics](https://www.pythonlidar.com/point-cloud-data-standards-fundamentals/point-density-metrics/)), or set `window_size` to 1–2 to interpolate across pinholes.
 
 **The DSM looks identical to the DTM.**
 Root cause: the input tile is single-return, or `ReturnNumber` is unpopulated (all zeros), so first-return filtering keeps everything and `max` barely differs from ground. Fix: confirm `NumberOfReturns` varies across the file; if the sensor only records one return per pulse, the DSM legitimately equals the surface and there is no canopy signal to recover.
@@ -340,11 +340,11 @@ Root cause: the DSM and DTM grids are not perfectly aligned — different origin
 
 **Do I need ground classification to build a DSM?**
 
-No. A DSM records the highest surface hit by the laser, so it never consults the `Classification` dimension. You either keep first returns with `filters.range` on `ReturnNumber`, or let `writers.gdal` pick the maximum `Z` per cell with `output_type=max`. Ground classification only matters when you also want the bare-earth [DTM Raster Generation](/ground-filtering-dtm-dsm-generation/dtm-raster-generation/) surface to subtract from the DSM.
+No. A DSM records the highest surface hit by the laser, so it never consults the `Classification` dimension. You either keep first returns with `filters.range` on `ReturnNumber`, or let `writers.gdal` pick the maximum `Z` per cell with `output_type=max`. Ground classification only matters when you also want the bare-earth [DTM Raster Generation](https://www.pythonlidar.com/ground-filtering-dtm-dsm-generation/dtm-raster-generation/) surface to subtract from the DSM.
 
 **Should I filter to ReturnNumber==1 or just use output_type=max?**
 
-`output_type=max` already selects the tallest point per cell, so on clean data the two approaches converge. Filtering to first returns first removes below-canopy multi-return points before rasterization, which produces a cleaner surface on dense vegetation and slightly lowers memory use. Combining both — first returns plus `max` — is the most defensive choice, as [Building a DSM from First Returns](/ground-filtering-dtm-dsm-generation/dsm-generation/building-a-dsm-from-first-returns/) walks through in detail.
+`output_type=max` already selects the tallest point per cell, so on clean data the two approaches converge. Filtering to first returns first removes below-canopy multi-return points before rasterization, which produces a cleaner surface on dense vegetation and slightly lowers memory use. Combining both — first returns plus `max` — is the most defensive choice, as [Building a DSM from First Returns](https://www.pythonlidar.com/ground-filtering-dtm-dsm-generation/dsm-generation/building-a-dsm-from-first-returns/) walks through in detail.
 
 **What resolution should a DSM raster use?**
 
@@ -352,19 +352,19 @@ Match the cell size to the point spacing so that most cells receive at least one
 
 **How do I turn a DSM and DTM into a canopy height model?**
 
-Generate both rasters on an identical grid — same resolution, origin, and CRS — then subtract cell by cell: `CHM = DSM - DTM`. The result is height above ground, so tree crowns and building roofs appear as their true above-ground elevation and flat bare earth reads near zero. The [DTM vs DSM](/ground-filtering-dtm-dsm-generation/dsm-generation/dtm-vs-dsm-which-surface-model/) comparison shows the full derivation.
+Generate both rasters on an identical grid — same resolution, origin, and CRS — then subtract cell by cell: `CHM = DSM - DTM`. The result is height above ground, so tree crowns and building roofs appear as their true above-ground elevation and flat bare earth reads near zero. The [DTM vs DSM](https://www.pythonlidar.com/ground-filtering-dtm-dsm-generation/dsm-generation/dtm-vs-dsm-which-surface-model/) comparison shows the full derivation.
 
 **Does the classification of returns affect a DSM at all?**
 
-Not directly. Two returns classified as high vegetation and one as building both contribute their `Z` to the `max` statistic identically — the DSM cares about elevation, not label. Classification codes, catalogued in [ASPRS Classification Codes](/point-cloud-data-standards-fundamentals/asprs-classification-codes/), matter only if you deliberately exclude a class (for example, dropping noise) before rasterizing.
+Not directly. Two returns classified as high vegetation and one as building both contribute their `Z` to the `max` statistic identically — the DSM cares about elevation, not label. Classification codes, catalogued in [ASPRS Classification Codes](https://www.pythonlidar.com/point-cloud-data-standards-fundamentals/asprs-classification-codes/), matter only if you deliberately exclude a class (for example, dropping noise) before rasterizing.
 
 ---
 
 ## Related
 
-- [Ground Filtering and DTM/DSM Generation with PDAL](/ground-filtering-dtm-dsm-generation/) — parent overview of terrain and surface modelling from LiDAR
-- [Building a DSM from First Returns](/ground-filtering-dtm-dsm-generation/dsm-generation/building-a-dsm-from-first-returns/) — a focused recipe filtering on ReturnNumber with rasterio verification
-- [DTM vs DSM: Which Surface Model to Generate](/ground-filtering-dtm-dsm-generation/dsm-generation/dtm-vs-dsm-which-surface-model/) — when each surface is the right tool and how to derive a canopy height model
-- [DTM Raster Generation](/ground-filtering-dtm-dsm-generation/dtm-raster-generation/) — the bare-earth counterpart that pairs with the DSM for normalized heights
-- [Point Density Metrics](/point-cloud-data-standards-fundamentals/point-density-metrics/) — measuring returns per square metre to choose a sensible resolution
-- [Spatial Reprojection](/pdal-pipeline-architecture-execution/spatial-reprojection/) — folding a CRS transform into the pipeline so the raster lands in its final projection
+- [Ground Filtering and DTM/DSM Generation with PDAL](https://www.pythonlidar.com/ground-filtering-dtm-dsm-generation/) — parent overview of terrain and surface modelling from LiDAR
+- [Building a DSM from First Returns](https://www.pythonlidar.com/ground-filtering-dtm-dsm-generation/dsm-generation/building-a-dsm-from-first-returns/) — a focused recipe filtering on ReturnNumber with rasterio verification
+- [DTM vs DSM: Which Surface Model to Generate](https://www.pythonlidar.com/ground-filtering-dtm-dsm-generation/dsm-generation/dtm-vs-dsm-which-surface-model/) — when each surface is the right tool and how to derive a canopy height model
+- [DTM Raster Generation](https://www.pythonlidar.com/ground-filtering-dtm-dsm-generation/dtm-raster-generation/) — the bare-earth counterpart that pairs with the DSM for normalized heights
+- [Point Density Metrics](https://www.pythonlidar.com/point-cloud-data-standards-fundamentals/point-density-metrics/) — measuring returns per square metre to choose a sensible resolution
+- [Spatial Reprojection](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/spatial-reprojection/) — folding a CRS transform into the pipeline so the raster lands in its final projection

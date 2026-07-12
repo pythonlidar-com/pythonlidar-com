@@ -2,7 +2,7 @@
 title: "LAZ vs Uncompressed LAS for Iterative Processing"
 description: "A decision guide on when to keep LiDAR as compressed LAZ versus uncompressed LAS during iterative PDAL development — the decompression cost per run, disk trade-offs, and a benchmark-style comparison."
 slug: "laz-vs-uncompressed-las-for-iterative-processing"
-type: "long_tail"
+type: "howto"
 breadcrumb: "LAZ vs Uncompressed LAS"
 datePublished: "2024-07-03"
 dateModified: "2026-07-12"
@@ -23,10 +23,10 @@ dateModified: "2026-07-12"
     {
       "@type": "BreadcrumbList",
       "itemListElement": [
-        { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://pythonlidar.com/" },
-        { "@type": "ListItem", "position": 2, "name": "PDAL Pipeline Architecture & Execution", "item": "https://pythonlidar.com/pdal-pipeline-architecture-execution/" },
-        { "@type": "ListItem", "position": 3, "name": "Memory Management", "item": "https://pythonlidar.com/pdal-pipeline-architecture-execution/memory-management/" },
-        { "@type": "ListItem", "position": 4, "name": "LAZ vs Uncompressed LAS", "item": "https://pythonlidar.com/pdal-pipeline-architecture-execution/memory-management/laz-vs-uncompressed-las-for-iterative-processing/" }
+        { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://www.pythonlidar.com/" },
+        { "@type": "ListItem", "position": 2, "name": "PDAL Pipeline Architecture & Execution", "item": "https://www.pythonlidar.com/pdal-pipeline-architecture-execution/" },
+        { "@type": "ListItem", "position": 3, "name": "Memory Management", "item": "https://www.pythonlidar.com/pdal-pipeline-architecture-execution/memory-management/" },
+        { "@type": "ListItem", "position": 4, "name": "LAZ vs Uncompressed LAS", "item": "https://www.pythonlidar.com/pdal-pipeline-architecture-execution/memory-management/laz-vs-uncompressed-las-for-iterative-processing/" }
       ]
     },
     {
@@ -73,7 +73,7 @@ dateModified: "2026-07-12"
 
 ## Context and Motivation
 
-This guide is part of [Memory Management](/pdal-pipeline-architecture-execution/memory-management/), which treats data volume as the dominant cost in Python LiDAR work. Here the question is narrower and it is about time, not RAM: when you iterate on a pipeline against the same file over and over, does compression help or hurt?
+This guide is part of [Memory Management](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/memory-management/), which treats data volume as the dominant cost in Python LiDAR work. Here the question is narrower and it is about time, not RAM: when you iterate on a pipeline against the same file over and over, does compression help or hurt?
 
 Compression is almost always the right default for stored point clouds — a LAZ tile is a fraction of the bytes of its LAS twin, and it moves across a network in a fraction of the time. But iterative development inverts the usual economics. In a debugging loop you might execute a pipeline against one tile forty times in an afternoon, tweaking a `filters.smrf` slope or a range predicate between runs. Every one of those runs pays the full LASzip decompression cost before the first filter even sees a point. That per-run tax is invisible in a benchmark that reads a file once, but it accumulates into minutes of dead waiting across a working session. Understanding where the cost lands — disk once versus CPU every time — is what lets you pick the right format for the phase of work you are in, rather than reflexively compressing everything.
 
@@ -132,7 +132,7 @@ Compression is almost always the right default for stored point clouds — a LAZ
 | Sample tile | 5–50 M points, any real acquisition (USGS 3DEP works well) |
 | Disk | Local SSD/NVMe — network storage skews read timings toward I/O |
 
-This comparison assumes you already know how PDAL streams stages; if not, the [PDAL Pipeline Architecture & Execution](/pdal-pipeline-architecture-execution/) overview covers the reader-filter-writer model that every timing below sits inside. The measurements here reflect a single tile read repeatedly on one machine; parallelising the loop is a separate concern covered in [Optimizing PDAL for Multi-Core Processing](/pdal-pipeline-architecture-execution/parallel-execution/optimizing-pdal-for-multi-core-processing/).
+This comparison assumes you already know how PDAL streams stages; if not, the [PDAL Pipeline Architecture & Execution](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/) overview covers the reader-filter-writer model that every timing below sits inside. The measurements here reflect a single tile read repeatedly on one machine; parallelising the loop is a separate concern covered in [Optimizing PDAL for Multi-Core Processing](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/parallel-execution/optimizing-pdal-for-multi-core-processing/).
 
 ## Step-by-Step Comparison
 
@@ -154,7 +154,7 @@ Start from your source tile and write two working copies with the same point con
 }
 ```
 
-Swap `"compression": "none"` for `"compression": "laszip"` and the `.las` extension for `.laz` to produce the compressed twin. `forward: "all"` guarantees both copies carry identical headers, VLRs, and extra dimensions, so the benchmark compares like with like. For the mechanics of that conversion in isolation, see [Converting LAS to LAZ with PDAL](/point-cloud-data-standards-fundamentals/laslaz-file-structure/converting-las-to-laz-with-pdal/).
+Swap `"compression": "none"` for `"compression": "laszip"` and the `.las` extension for `.laz` to produce the compressed twin. `forward: "all"` guarantees both copies carry identical headers, VLRs, and extra dimensions, so the benchmark compares like with like. For the mechanics of that conversion in isolation, see [Converting LAS to LAZ with PDAL](https://www.pythonlidar.com/point-cloud-data-standards-fundamentals/laslaz-file-structure/converting-las-to-laz-with-pdal/).
 
 ### Step 2 — Time a repeated read of each file
 
@@ -344,7 +344,7 @@ Because LASzip is lossless, this assertion passes exactly — every stored integ
 The very first read after writing a file may hit disk while later reads hit the page cache. Discard the first iteration or read each file once as a warm-up before recording, otherwise LAS looks artificially slow on spinning disks and LAZ looks artificially competitive.
 
 **2. LAZ and LAS use identical RAM once loaded.**
-It is tempting to reach for LAZ to fit a bigger tile in memory — but compression is a disk property only. `pipeline.execute()` expands both to the same NumPy array. If RAM is the constraint, tiling and dtype downcasting from the [Memory Management](/pdal-pipeline-architecture-execution/memory-management/) guide are the levers, not the file format.
+It is tempting to reach for LAZ to fit a bigger tile in memory — but compression is a disk property only. `pipeline.execute()` expands both to the same NumPy array. If RAM is the constraint, tiling and dtype downcasting from the [Memory Management](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/memory-management/) guide are the levers, not the file format.
 
 **3. Multi-threaded LASzip changes the equation on many-core machines.**
 The `lazrs_parallel` backend decompresses across threads and narrows LAZ's read penalty considerably. If your development box has 16+ cores mostly idle during a read, benchmark with the parallel backend before assuming uncompressed LAS wins — the CPU cost is still there, but wall time may be close enough that the disk savings dominate.
@@ -360,7 +360,7 @@ On a typical 8-core workstation, decompressing LAZ adds roughly 2–4x to the re
 
 **Does LAZ use less RAM than LAS once loaded?**
 
-No. Compression only affects the on-disk representation. Once PDAL materialises the point buffer, LAZ and LAS occupy identical memory because both expand to the same NumPy structured array. The savings are purely storage and transfer bandwidth, not runtime footprint — a distinction the [Memory Management](/pdal-pipeline-architecture-execution/memory-management/) guide leans on heavily.
+No. Compression only affects the on-disk representation. Once PDAL materialises the point buffer, LAZ and LAS occupy identical memory because both expand to the same NumPy structured array. The savings are purely storage and transfer bandwidth, not runtime footprint — a distinction the [Memory Management](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/memory-management/) guide leans on heavily.
 
 **Is LAZ compression lossless?**
 
@@ -368,14 +368,14 @@ Yes. LASzip is bit-exact: coordinates, intensity, classification, GPS time, and 
 
 **Should I keep intermediate pipeline outputs as LAZ or LAS?**
 
-For scratch intermediates that you re-read many times in a single debugging session, uncompressed LAS avoids paying the decompression tax on each iteration. For intermediates that survive between sessions or move across machines, LAZ is worth the compression cost because you read them far less often than you store them. When several tiles are processed at once, [Optimizing PDAL for Multi-Core Processing](/pdal-pipeline-architecture-execution/parallel-execution/optimizing-pdal-for-multi-core-processing/) changes the arithmetic by spreading decode across cores.
+For scratch intermediates that you re-read many times in a single debugging session, uncompressed LAS avoids paying the decompression tax on each iteration. For intermediates that survive between sessions or move across machines, LAZ is worth the compression cost because you read them far less often than you store them. When several tiles are processed at once, [Optimizing PDAL for Multi-Core Processing](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/parallel-execution/optimizing-pdal-for-multi-core-processing/) changes the arithmetic by spreading decode across cores.
 
 ---
 
 ## Related
 
-- [Memory Management](/pdal-pipeline-architecture-execution/memory-management/) — parent guide on RAM discipline, tiling, and why compression does not change in-memory footprint
-- [PDAL Pipeline Architecture & Execution](/pdal-pipeline-architecture-execution/) — the reader-filter-writer streaming model these timings sit inside
-- [Optimizing PDAL for Multi-Core Processing](/pdal-pipeline-architecture-execution/parallel-execution/optimizing-pdal-for-multi-core-processing/) — parallel decode strategies that narrow LAZ's read penalty
-- [Converting LAS to LAZ with PDAL](/point-cloud-data-standards-fundamentals/laslaz-file-structure/converting-las-to-laz-with-pdal/) — the lossless conversion that stages both working copies
-- [LAS/LAZ File Structure](/point-cloud-data-standards-fundamentals/laslaz-file-structure/) — how the binary layout is shared between compressed and uncompressed files
+- [Memory Management](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/memory-management/) — parent guide on RAM discipline, tiling, and why compression does not change in-memory footprint
+- [PDAL Pipeline Architecture & Execution](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/) — the reader-filter-writer streaming model these timings sit inside
+- [Optimizing PDAL for Multi-Core Processing](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/parallel-execution/optimizing-pdal-for-multi-core-processing/) — parallel decode strategies that narrow LAZ's read penalty
+- [Converting LAS to LAZ with PDAL](https://www.pythonlidar.com/point-cloud-data-standards-fundamentals/laslaz-file-structure/converting-las-to-laz-with-pdal/) — the lossless conversion that stages both working copies
+- [LAS/LAZ File Structure](https://www.pythonlidar.com/point-cloud-data-standards-fundamentals/laslaz-file-structure/) — how the binary layout is shared between compressed and uncompressed files

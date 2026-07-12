@@ -2,7 +2,7 @@
 title: "Writing Cloud-Optimized GeoTIFFs to S3"
 description: "Producing a Cloud-Optimized GeoTIFF DTM with PDAL writers.gdal and uploading it to S3 — COG creation options, /vsis3/ direct writes vs boto3 upload, and validating the COG structure."
 slug: "writing-cloud-optimized-geotiffs-to-s3"
-type: "long_tail"
+type: "howto"
 breadcrumb: "Writing COGs to S3"
 datePublished: "2024-07-06"
 dateModified: "2026-07-12"
@@ -23,10 +23,10 @@ dateModified: "2026-07-12"
     {
       "@type": "BreadcrumbList",
       "itemListElement": [
-        {"@type": "ListItem", "position": 1, "name": "Home", "item": "https://pythonlidar.com/"},
-        {"@type": "ListItem", "position": 2, "name": "Batch Automation and Cloud Integration for PDAL", "item": "https://pythonlidar.com/batch-automation-cloud-integration/"},
-        {"@type": "ListItem", "position": 3, "name": "S3 Cloud Storage I/O", "item": "https://pythonlidar.com/batch-automation-cloud-integration/s3-cloud-storage-io/"},
-        {"@type": "ListItem", "position": 4, "name": "Writing COGs to S3", "item": "https://pythonlidar.com/batch-automation-cloud-integration/s3-cloud-storage-io/writing-cloud-optimized-geotiffs-to-s3/"}
+        {"@type": "ListItem", "position": 1, "name": "Home", "item": "https://www.pythonlidar.com/"},
+        {"@type": "ListItem", "position": 2, "name": "Batch Automation and Cloud Integration for PDAL", "item": "https://www.pythonlidar.com/batch-automation-cloud-integration/"},
+        {"@type": "ListItem", "position": 3, "name": "S3 Cloud Storage I/O", "item": "https://www.pythonlidar.com/batch-automation-cloud-integration/s3-cloud-storage-io/"},
+        {"@type": "ListItem", "position": 4, "name": "Writing COGs to S3", "item": "https://www.pythonlidar.com/batch-automation-cloud-integration/s3-cloud-storage-io/writing-cloud-optimized-geotiffs-to-s3/"}
       ]
     },
     {
@@ -73,9 +73,9 @@ dateModified: "2026-07-12"
 
 ## Context and Motivation
 
-This guide is part of [S3 Cloud Storage I/O with PDAL](/batch-automation-cloud-integration/s3-cloud-storage-io/), which covers the full range of reading and writing point-cloud data against Amazon S3.
+This guide is part of [S3 Cloud Storage I/O with PDAL](https://www.pythonlidar.com/batch-automation-cloud-integration/s3-cloud-storage-io/), which covers the full range of reading and writing point-cloud data against Amazon S3.
 
-A terrain raster that lives in a bucket is only useful to downstream web maps and tiling services if it is a Cloud-Optimized GeoTIFF: internally tiled, carrying overviews, and laid out so a client can pull a small window with an HTTP range request instead of downloading the whole file. PDAL's `writers.gdal` stage rasterises a classified point cloud into exactly this kind of surface, and GDAL's COG driver structures the bytes correctly. The remaining question — the one this guide answers — is how the finished raster gets into the bucket: a direct `/vsis3/` write from the writer, or a two-step "write local, upload with boto3" that trades a little code for atomicity and resumability. The upstream rasterisation is the same one covered in [Generating a DTM GeoTIFF with writers.gdal](/ground-filtering-dtm-dsm-generation/dtm-raster-generation/generating-a-dtm-geotiff-with-writers-gdal/); here the focus is COG structure and the S3 handoff.
+A terrain raster that lives in a bucket is only useful to downstream web maps and tiling services if it is a Cloud-Optimized GeoTIFF: internally tiled, carrying overviews, and laid out so a client can pull a small window with an HTTP range request instead of downloading the whole file. PDAL's `writers.gdal` stage rasterises a classified point cloud into exactly this kind of surface, and GDAL's COG driver structures the bytes correctly. The remaining question — the one this guide answers — is how the finished raster gets into the bucket: a direct `/vsis3/` write from the writer, or a two-step "write local, upload with boto3" that trades a little code for atomicity and resumability. The upstream rasterisation is the same one covered in [Generating a DTM GeoTIFF with writers.gdal](https://www.pythonlidar.com/ground-filtering-dtm-dsm-generation/dtm-raster-generation/generating-a-dtm-geotiff-with-writers-gdal/); here the focus is COG structure and the S3 handoff.
 
 <svg viewBox="0 0 740 250" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Two paths for writing a Cloud-Optimized GeoTIFF DTM to S3" style="width:100%;max-width:740px;display:block;margin:1.5rem auto">
   <title>Writing a COG DTM to S3: direct /vsis3/ write versus local write plus boto3 upload</title>
@@ -124,7 +124,7 @@ A terrain raster that lives in a bucket is only useful to downstream web maps an
 | Input | a classified cloud with ground points (Classification 2) |
 | IAM permissions | `s3:PutObject` on the target bucket/prefix |
 
-The point cloud should already carry ground labels. If it does not, run `filters.smrf` first as shown below; the ground-classification background lives in the broader terrain-model material referenced under [DTM Raster Generation](/ground-filtering-dtm-dsm-generation/dtm-raster-generation/).
+The point cloud should already carry ground labels. If it does not, run `filters.smrf` first as shown below; the ground-classification background lives in the broader terrain-model material referenced under [DTM Raster Generation](https://www.pythonlidar.com/ground-filtering-dtm-dsm-generation/dtm-raster-generation/).
 
 ## Step-by-Step Implementation
 
@@ -356,8 +356,8 @@ Run `rio cogeo validate` on the file, or inspect it with `gdalinfo` and confirm 
 
 ## Related
 
-- [S3 Cloud Storage I/O with PDAL](/batch-automation-cloud-integration/s3-cloud-storage-io/) — parent guide to reading and writing point clouds against S3
-- [Streaming LAZ from S3 with PDAL](/batch-automation-cloud-integration/s3-cloud-storage-io/streaming-laz-from-s3-with-pdal/) — the read-side counterpart to this write guide
-- [Generating a DTM GeoTIFF with writers.gdal](/ground-filtering-dtm-dsm-generation/dtm-raster-generation/generating-a-dtm-geotiff-with-writers-gdal/) — the upstream rasterisation this guide sends to the cloud
-- [DTM Raster Generation](/ground-filtering-dtm-dsm-generation/dtm-raster-generation/) — surface-model interpolation options and gap handling
-- [Batch Automation and Cloud Integration for PDAL](/batch-automation-cloud-integration/) — the wider cloud automation picture
+- [S3 Cloud Storage I/O with PDAL](https://www.pythonlidar.com/batch-automation-cloud-integration/s3-cloud-storage-io/) — parent guide to reading and writing point clouds against S3
+- [Streaming LAZ from S3 with PDAL](https://www.pythonlidar.com/batch-automation-cloud-integration/s3-cloud-storage-io/streaming-laz-from-s3-with-pdal/) — the read-side counterpart to this write guide
+- [Generating a DTM GeoTIFF with writers.gdal](https://www.pythonlidar.com/ground-filtering-dtm-dsm-generation/dtm-raster-generation/generating-a-dtm-geotiff-with-writers-gdal/) — the upstream rasterisation this guide sends to the cloud
+- [DTM Raster Generation](https://www.pythonlidar.com/ground-filtering-dtm-dsm-generation/dtm-raster-generation/) — surface-model interpolation options and gap handling
+- [Batch Automation and Cloud Integration for PDAL](https://www.pythonlidar.com/batch-automation-cloud-integration/) — the wider cloud automation picture

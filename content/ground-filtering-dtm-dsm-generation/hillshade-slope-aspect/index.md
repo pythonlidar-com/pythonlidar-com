@@ -2,7 +2,7 @@
 title: "Hillshade, Slope and Aspect from LiDAR DTMs"
 description: "Deriving hillshade, slope, and aspect rasters from a LiDAR-derived DTM using gdaldem and Python — azimuth/altitude, z-factor, multidirectional shading, and how these terrain derivatives support mapping and analysis."
 slug: "hillshade-slope-aspect"
-type: "cluster"
+type: "topic"
 breadcrumb: "Hillshade, Slope & Aspect"
 datePublished: "2024-06-28"
 dateModified: "2026-07-12"
@@ -23,9 +23,9 @@ dateModified: "2026-07-12"
     {
       "@type": "BreadcrumbList",
       "itemListElement": [
-        {"@type": "ListItem", "position": 1, "name": "Home", "item": "https://pythonlidar.com/"},
-        {"@type": "ListItem", "position": 2, "name": "Ground Filtering and DTM/DSM Generation with PDAL", "item": "https://pythonlidar.com/ground-filtering-dtm-dsm-generation/"},
-        {"@type": "ListItem", "position": 3, "name": "Hillshade, Slope and Aspect", "item": "https://pythonlidar.com/ground-filtering-dtm-dsm-generation/hillshade-slope-aspect/"}
+        {"@type": "ListItem", "position": 1, "name": "Home", "item": "https://www.pythonlidar.com/"},
+        {"@type": "ListItem", "position": 2, "name": "Ground Filtering and DTM/DSM Generation with PDAL", "item": "https://www.pythonlidar.com/ground-filtering-dtm-dsm-generation/"},
+        {"@type": "ListItem", "position": 3, "name": "Hillshade, Slope and Aspect", "item": "https://www.pythonlidar.com/ground-filtering-dtm-dsm-generation/hillshade-slope-aspect/"}
       ]
     },
     {
@@ -68,7 +68,7 @@ dateModified: "2026-07-12"
 }
 </script>
 
-Once a bare-earth terrain surface exists as a raster, its raw elevation values are rarely the final deliverable. Cartographers, geomorphologists, and hydrologists work with what the surface *does* — how it catches light, how steeply it falls, and which way it faces. Those three qualities are captured by hillshade, slope, and aspect rasters, and all three are computed directly from a LiDAR-derived DTM with a single GDAL utility, `gdaldem`, exposed in Python through `osgeo.gdal.DEMProcessing`. This guide sits within the broader [Ground Filtering and DTM/DSM Generation with PDAL](/ground-filtering-dtm-dsm-generation/) workflow and picks up exactly where a finished elevation grid leaves off.
+Once a bare-earth terrain surface exists as a raster, its raw elevation values are rarely the final deliverable. Cartographers, geomorphologists, and hydrologists work with what the surface *does* — how it catches light, how steeply it falls, and which way it faces. Those three qualities are captured by hillshade, slope, and aspect rasters, and all three are computed directly from a LiDAR-derived DTM with a single GDAL utility, `gdaldem`, exposed in Python through `osgeo.gdal.DEMProcessing`. This guide sits within the broader [Ground Filtering and DTM/DSM Generation with PDAL](https://www.pythonlidar.com/ground-filtering-dtm-dsm-generation/) workflow and picks up exactly where a finished elevation grid leaves off.
 
 <svg viewBox="0 0 720 300" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="DTM feeding gdaldem to produce hillshade, slope, and aspect rasters" style="width:100%;max-width:720px;display:block;margin:1.5rem auto">
   <title>Terrain derivative fan-out from a single DTM</title>
@@ -108,12 +108,12 @@ Once a bare-earth terrain surface exists as a raster, its raw elevation values a
 Have these in place before deriving any terrain product:
 
 - **GDAL 3.4 or later** with Python bindings (`osgeo.gdal`) — install via `conda install -c conda-forge gdal` or a system package
-- **A finished DTM GeoTIFF** — produced upstream in [DTM Raster Generation](/ground-filtering-dtm-dsm-generation/dtm-raster-generation/), ideally void-filled and in a projected metric CRS
+- **A finished DTM GeoTIFF** — produced upstream in [DTM Raster Generation](https://www.pythonlidar.com/ground-filtering-dtm-dsm-generation/dtm-raster-generation/), ideally void-filled and in a projected metric CRS
 - **`rasterio` and `numpy`** for validation and value-range inspection
 - **A known CRS with known horizontal units** — a projected system such as EPSG:6342 (NAD83(2011)/UTM 13N) or EPSG:32613 (WGS84/UTM 13N) keeps horizontal and vertical units both in metres
 - **Single-band Float32 elevation data** with a defined NoData value so edge cells do not contaminate the gradient calculation
 
-If the DTM still carries voids, resolve them first — see [Filling NoData Voids in DTM Rasters](/ground-filtering-dtm-dsm-generation/dtm-raster-generation/filling-nodata-voids-in-dtm-rasters/). And if the surface is not yet in a metric projection, reproject it; the reasoning mirrors the point-cloud case covered in [Spatial Reprojection](/pdal-pipeline-architecture-execution/spatial-reprojection/).
+If the DTM still carries voids, resolve them first — see [Filling NoData Voids in DTM Rasters](https://www.pythonlidar.com/ground-filtering-dtm-dsm-generation/dtm-raster-generation/filling-nodata-voids-in-dtm-rasters/). And if the surface is not yet in a metric projection, reproject it; the reasoning mirrors the point-cloud case covered in [Spatial Reprojection](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/spatial-reprojection/).
 
 ## Core Workflow Architecture
 
@@ -125,7 +125,7 @@ Every terrain derivative starts from the same 3x3 moving window. GDAL slides a k
 4. **Product computation** — the gradient is turned into a shaded-relief value (hillshade), a steepness angle (slope), or a downslope compass bearing (aspect).
 5. **Raster emission** — GDAL writes a new GeoTIFF that inherits the DTM's geotransform and CRS, so the derivative overlays the source perfectly.
 
-Because all three products share stages one through three, generating them together in one script amortises the I/O. The distinctions appear only at stage four: hillshade needs an `azimuth` and `altitude`, slope needs a `slopeFormat`, and aspect needs neither but reports a circular quantity. The dedicated walkthrough in [Exporting Hillshade from a LiDAR DTM](/ground-filtering-dtm-dsm-generation/hillshade-slope-aspect/exporting-hillshade-from-a-lidar-dtm/) drills into the shaded-relief case end to end.
+Because all three products share stages one through three, generating them together in one script amortises the I/O. The distinctions appear only at stage four: hillshade needs an `azimuth` and `altitude`, slope needs a `slopeFormat`, and aspect needs neither but reports a circular quantity. The dedicated walkthrough in [Exporting Hillshade from a LiDAR DTM](https://www.pythonlidar.com/ground-filtering-dtm-dsm-generation/hillshade-slope-aspect/exporting-hillshade-from-a-lidar-dtm/) drills into the shaded-relief case end to end.
 
 ## Full Implementation
 
@@ -318,7 +318,7 @@ def validate_products(products: dict) -> None:
                   f"nodata={src.nodata}")
 ```
 
-A slope raster whose maximum sits at implausible values such as several thousand degrees is the unmistakable signature of the geographic-CRS unit trap — the gradient was computed as if one degree of longitude equalled one metre of elevation. A hillshade whose entire histogram collapses onto one or two values points to the same root cause. If the products validate cleanly, they are ready to feed a map renderer or an analysis model; the sibling surface produced in [DSM Generation](/ground-filtering-dtm-dsm-generation/dsm-generation/) can be shaded with exactly the same routine to compare canopy relief against bare earth.
+A slope raster whose maximum sits at implausible values such as several thousand degrees is the unmistakable signature of the geographic-CRS unit trap — the gradient was computed as if one degree of longitude equalled one metre of elevation. A hillshade whose entire histogram collapses onto one or two values points to the same root cause. If the products validate cleanly, they are ready to feed a map renderer or an analysis model; the sibling surface produced in [DSM Generation](https://www.pythonlidar.com/ground-filtering-dtm-dsm-generation/dsm-generation/) can be shaded with exactly the same routine to compare canopy relief against bare earth.
 
 ## Performance Tuning
 
@@ -335,7 +335,7 @@ Practical guidance:
 
 - **Compress the output.** DEFLATE with tiling costs about 20 % more wall time but shrinks the files roughly fourfold, which pays for itself as soon as the rasters cross a network.
 - **Batch the three products in one process.** The DTM is read once per call, so issuing three separate command-line invocations reads the source three times. A single Python script that reuses the opened dataset is measurably faster on large tiles.
-- **Parallelise across tiles, not within one.** Since a single `gdaldem` run cannot use multiple cores, scale out by processing many DTM tiles concurrently — the same reasoning covered in [Optimizing PDAL for Multi-Core Processing](/pdal-pipeline-architecture-execution/parallel-execution/optimizing-pdal-for-multi-core-processing/).
+- **Parallelise across tiles, not within one.** Since a single `gdaldem` run cannot use multiple cores, scale out by processing many DTM tiles concurrently — the same reasoning covered in [Optimizing PDAL for Multi-Core Processing](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/parallel-execution/optimizing-pdal-for-multi-core-processing/).
 
 ## How These Derivatives Support Mapping and Analysis
 
@@ -347,7 +347,7 @@ The three products are not interchangeable — each answers a different question
 
 **Aspect informs anything sun- or wind-dependent.** The compass bearing a slope faces controls how much solar radiation it receives, which in turn shapes snowmelt timing, vegetation communities, and micro-climate. Ecologists reclassify aspect into cardinal or intercardinal bins to correlate species distribution with orientation; solar-siting studies favour south-facing slopes in the northern hemisphere. Because aspect is circular, treat it as a categorical or directional variable, never as a plain continuous number to be averaged.
 
-Combined, these layers let a small script turn a single bare-earth grid into a full cartographic and analytical stack. The same routine applied to the canopy surface from [DTM vs DSM: Which Surface Model to Generate](/ground-filtering-dtm-dsm-generation/dsm-generation/dtm-vs-dsm-which-surface-model/) yields a matching set for the first-return surface, and differencing the two shading products highlights where vegetation and structures depart from bare earth.
+Combined, these layers let a small script turn a single bare-earth grid into a full cartographic and analytical stack. The same routine applied to the canopy surface from [DTM vs DSM: Which Surface Model to Generate](https://www.pythonlidar.com/ground-filtering-dtm-dsm-generation/dsm-generation/dtm-vs-dsm-which-surface-model/) yields a matching set for the first-return surface, and differencing the two shading products highlights where vegetation and structures depart from bare earth.
 
 ## Common Errors and Troubleshooting
 
@@ -361,7 +361,7 @@ Root cause: the same unit mismatch, seen through the slope product instead of th
 Root cause: `computeEdges` defaults to False, so GDAL cannot form a full 3x3 window at the raster boundary and leaves those cells empty. Fix: pass `computeEdges=True` to every `DEMProcessing` call, as the implementation above does.
 
 **Voids bleed into the derivatives as large flat or spiked patches**
-Root cause: unfilled NoData cells inside the DTM corrupt the 3x3 gradient of their neighbours. Fix: fill the voids upstream — see [Filling NoData Voids in DTM Rasters](/ground-filtering-dtm-dsm-generation/dtm-raster-generation/filling-nodata-voids-in-dtm-rasters/) — and ensure the DTM's NoData value is correctly declared so GDAL masks rather than interpolates across it.
+Root cause: unfilled NoData cells inside the DTM corrupt the 3x3 gradient of their neighbours. Fix: fill the voids upstream — see [Filling NoData Voids in DTM Rasters](https://www.pythonlidar.com/ground-filtering-dtm-dsm-generation/dtm-raster-generation/filling-nodata-voids-in-dtm-rasters/) — and ensure the DTM's NoData value is correctly declared so GDAL masks rather than interpolates across it.
 
 **Aspect returns -9999 across flat areas**
 Root cause: flat cells have no defined downslope direction, and GDAL emits its NoData sentinel by default. Fix: pass `zeroForFlat=True` so flat cells report 0, or mask them explicitly during analysis.
@@ -386,15 +386,15 @@ Multidirectional hillshade blends illumination from several azimuths into one ra
 
 **Can I compute these products directly from the point cloud instead of a DTM?**
 
-Not with `gdaldem`, which requires a continuous raster surface. Rasterise the classified ground returns into a DTM first — see [DTM Raster Generation](/ground-filtering-dtm-dsm-generation/dtm-raster-generation/) — then derive hillshade, slope, and aspect from that grid.
+Not with `gdaldem`, which requires a continuous raster surface. Rasterise the classified ground returns into a DTM first — see [DTM Raster Generation](https://www.pythonlidar.com/ground-filtering-dtm-dsm-generation/dtm-raster-generation/) — then derive hillshade, slope, and aspect from that grid.
 
 ---
 
 ## Related
 
-- [Ground Filtering and DTM/DSM Generation with PDAL](/ground-filtering-dtm-dsm-generation/) — parent guide covering ground classification through raster surface generation
-- [Exporting Hillshade from a LiDAR DTM](/ground-filtering-dtm-dsm-generation/hillshade-slope-aspect/exporting-hillshade-from-a-lidar-dtm/) — a focused, step-by-step shaded-relief walkthrough
-- [DTM Raster Generation](/ground-filtering-dtm-dsm-generation/dtm-raster-generation/) — produce the bare-earth surface these derivatives consume
-- [DSM Generation](/ground-filtering-dtm-dsm-generation/dsm-generation/) — build the first-return surface model to compare canopy relief against bare earth
-- [Filling NoData Voids in DTM Rasters](/ground-filtering-dtm-dsm-generation/dtm-raster-generation/filling-nodata-voids-in-dtm-rasters/) — remove voids before deriving terrain products
-- [Spatial Reprojection](/pdal-pipeline-architecture-execution/spatial-reprojection/) — put the surface in a metric CRS to avoid unit-mismatch shading failures
+- [Ground Filtering and DTM/DSM Generation with PDAL](https://www.pythonlidar.com/ground-filtering-dtm-dsm-generation/) — parent guide covering ground classification through raster surface generation
+- [Exporting Hillshade from a LiDAR DTM](https://www.pythonlidar.com/ground-filtering-dtm-dsm-generation/hillshade-slope-aspect/exporting-hillshade-from-a-lidar-dtm/) — a focused, step-by-step shaded-relief walkthrough
+- [DTM Raster Generation](https://www.pythonlidar.com/ground-filtering-dtm-dsm-generation/dtm-raster-generation/) — produce the bare-earth surface these derivatives consume
+- [DSM Generation](https://www.pythonlidar.com/ground-filtering-dtm-dsm-generation/dsm-generation/) — build the first-return surface model to compare canopy relief against bare earth
+- [Filling NoData Voids in DTM Rasters](https://www.pythonlidar.com/ground-filtering-dtm-dsm-generation/dtm-raster-generation/filling-nodata-voids-in-dtm-rasters/) — remove voids before deriving terrain products
+- [Spatial Reprojection](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/spatial-reprojection/) — put the surface in a metric CRS to avoid unit-mismatch shading failures

@@ -2,7 +2,7 @@
 title: "PDAL Pipeline Validation: Catch Errors Before Processing Point Clouds"
 description: "A five-phase Python validation harness for PDAL pipelines — covering JSON schema checks, stage dependency resolution, filter parameter auditing, dry-run profiling, and output integrity verification."
 slug: "pipeline-validation"
-type: "cluster"
+type: "topic"
 breadcrumb: "Pipeline Validation"
 datePublished: "2024-03-15"
 dateModified: "2026-06-24"
@@ -23,9 +23,9 @@ dateModified: "2026-06-24"
     {
       "@type": "BreadcrumbList",
       "itemListElement": [
-        {"@type": "ListItem", "position": 1, "name": "Home", "item": "/"},
-        {"@type": "ListItem", "position": 2, "name": "PDAL Pipeline Architecture & Execution", "item": "/pdal-pipeline-architecture-execution/"},
-        {"@type": "ListItem", "position": 3, "name": "Pipeline Validation", "item": "/pdal-pipeline-architecture-execution/pipeline-validation/"}
+        {"@type": "ListItem", "position": 1, "name": "Home", "item": "https://www.pythonlidar.com/"},
+        {"@type": "ListItem", "position": 2, "name": "PDAL Pipeline Architecture & Execution", "item": "https://www.pythonlidar.com/pdal-pipeline-architecture-execution/"},
+        {"@type": "ListItem", "position": 3, "name": "Pipeline Validation", "item": "https://www.pythonlidar.com/pdal-pipeline-architecture-execution/pipeline-validation/"}
       ]
     },
     {
@@ -70,7 +70,7 @@ dateModified: "2026-06-24"
 
 # Pipeline Validation in Python LiDAR & Point Cloud Workflows
 
-Unvalidated PDAL pipelines fail in ways that are difficult to trace: a typo like `"reader.las"` instead of `"readers.las"` produces a cryptic C++ exception, a `filters.range` stage referencing a dimension that does not yet exist silently drops every point, and an unbounded dry-run against a 50 GB regional tile exhausts available memory before a single result is written. Pipeline validation is the systematic process of catching these faults before they corrupt production deliverables. Within the broader [PDAL Pipeline Architecture & Execution](/pdal-pipeline-architecture-execution/) framework, validation is a mandatory quality gate that spans three distinct layers: static JSON structure, stage-level dependency resolution, and runtime resource profiling against a representative data sample.
+Unvalidated PDAL pipelines fail in ways that are difficult to trace: a typo like `"reader.las"` instead of `"readers.las"` produces a cryptic C++ exception, a `filters.range` stage referencing a dimension that does not yet exist silently drops every point, and an unbounded dry-run against a 50 GB regional tile exhausts available memory before a single result is written. Pipeline validation is the systematic process of catching these faults before they corrupt production deliverables. Within the broader [PDAL Pipeline Architecture & Execution](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/) framework, validation is a mandatory quality gate that spans three distinct layers: static JSON structure, stage-level dependency resolution, and runtime resource profiling against a representative data sample.
 
 This guide builds a production-ready validation harness for LiDAR analysts, Python GIS developers, and surveying technology teams who need deterministic, auditable point cloud processing at scale.
 
@@ -191,7 +191,7 @@ The `pattern` constraint `^(readers|filters|writers)\\.` rejects both `"reader.l
 
 ### Phase 2 — Stage Dependency and Compatibility Resolution
 
-Each stage in a [PDAL stage chain](/pdal-pipeline-architecture-execution/pdal-stage-chaining/) consumes specific input dimensions and produces transformed outputs. Feeding a rasterized output into a point-cloud-only filter, or applying `filters.smrf` before `filters.reprojection` when the CRS uses geographic coordinates, breaks execution or produces geometrically distorted results.
+Each stage in a [PDAL stage chain](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/pdal-stage-chaining/) consumes specific input dimensions and produces transformed outputs. Feeding a rasterized output into a point-cloud-only filter, or applying `filters.smrf` before `filters.reprojection` when the CRS uses geographic coordinates, breaks execution or produces geometrically distorted results.
 
 PDAL exposes a `--validate` flag that checks stage compatibility without reading any point data:
 
@@ -221,7 +221,7 @@ This check catches ordering violations such as applying a classification-depende
 
 ### Phase 3 — Filter Parameter Verification
 
-Filters modify point attributes, classify returns, or remove outliers. Validation must confirm that referenced dimensions exist in the input schema and that numeric thresholds fall within valid operational ranges. A `filters.range` stage with an empty `limits` string silently drops all points — no error, no warning, just zero output. The checks below address the most commonly misconfigured [pipeline filtering logic](/pdal-pipeline-architecture-execution/pipeline-filtering-logic/) stages:
+Filters modify point attributes, classify returns, or remove outliers. Validation must confirm that referenced dimensions exist in the input schema and that numeric thresholds fall within valid operational ranges. A `filters.range` stage with an empty `limits` string silently drops all points — no error, no warning, just zero output. The checks below address the most commonly misconfigured [pipeline filtering logic](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/pipeline-filtering-logic/) stages:
 
 ```python
 def verify_filter_stages(pipeline_obj: list[dict]) -> list[str]:
@@ -335,7 +335,7 @@ def profile_dry_run(
     return result
 ```
 
-Dry-run memory warnings are the primary signal that a pipeline needs [memory management](/pdal-pipeline-architecture-execution/memory-management/) intervention — specifically `filters.splitter`-based tiling, reduced `chunk_size` on readers, or selective dimension forwarding to reduce buffer width.
+Dry-run memory warnings are the primary signal that a pipeline needs [memory management](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/memory-management/) intervention — specifically `filters.splitter`-based tiling, reduced `chunk_size` on readers, or selective dimension forwarding to reduce buffer width.
 
 ### Phase 5 — Output Integrity Verification
 
@@ -538,7 +538,7 @@ def assert_pipeline_output(pipeline: pdal.Pipeline) -> None:
         "No spatial reference detected in pipeline metadata — CRS may have been dropped."
 ```
 
-For pipelines that include [spatial reprojection](/pdal-pipeline-architecture-execution/spatial-reprojection/), add a coordinate bounds check: verify that output `X`/`Y` values fall within the expected geographic or projected extent for the target CRS. A silent datum shift from NAD27 to NAD83 can introduce 20–30 m horizontal error that only manifests when overlaying outputs with reference data.
+For pipelines that include [spatial reprojection](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/spatial-reprojection/), add a coordinate bounds check: verify that output `X`/`Y` values fall within the expected geographic or projected extent for the target CRS. A silent datum shift from NAD27 to NAD83 can introduce 20–30 m horizontal error that only manifests when overlaying outputs with reference data.
 
 ## Performance Tuning
 
@@ -550,7 +550,7 @@ For pipelines that include [spatial reprojection](/pdal-pipeline-architecture-ex
 | `filters.outlier` removing >15% of points on dense urban scan | `mean_k` too low or `multiplier` too aggressive for building edge points | Increase `mean_k` to 12–20; raise `multiplier` to 3.5 for urban datasets |
 | CI/CD validation runs add >2 min to pipeline | Full dry-run on 1 M-point sample in every build | Cache validated pipeline hash; only re-run dry-run when pipeline JSON changes |
 
-For [parallel execution](/pdal-pipeline-architecture-execution/parallel-execution/) environments, run validation on one worker before dispatching the pipeline to a pool. A pipeline that passes validation on a 1 M-point sample can be safely broadcast to a `ProcessPoolExecutor` without per-worker re-validation overhead.
+For [parallel execution](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/parallel-execution/) environments, run validation on one worker before dispatching the pipeline to a pool. A pipeline that passes validation on a 1 M-point sample can be safely broadcast to a `ProcessPoolExecutor` without per-worker re-validation overhead.
 
 ## Automating Validation in CI/CD
 
@@ -599,7 +599,7 @@ Fix: Reorder pipeline to place `filters.smrf` or `filters.pmf` before any classi
 
 **`RuntimeError: Dry-run consumed 3842 MB on 1000000 sample points`**
 Cause: Pipeline forwards all extra dimensions (`"extra_dims": "all"`), including waveform data or custom sensor metadata, inflating the per-point buffer from ~40 bytes to 200+ bytes.
-Fix: Enumerate only required output dimensions. Use `filters.ferry` to drop high-cardinality extras before the writer. Consult the [memory management](/pdal-pipeline-architecture-execution/memory-management/) guide for `chunk_size` and tiling strategies.
+Fix: Enumerate only required output dimensions. Use `filters.ferry` to drop high-cardinality extras before the writer. Consult the [memory management](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/memory-management/) guide for `chunk_size` and tiling strategies.
 
 **`AssertionError: No spatial reference detected in pipeline metadata`**
 Cause: A `writers.las` stage with `"forward": "none"` was used without an explicit `"a_srs"` parameter, causing the output file to lose its CRS record. Alternatively, an intermediate `filters.reprojection` that uses an invalid EPSG code silently drops the spatial reference.
@@ -613,8 +613,8 @@ Fix: Check the PDAL stage reference for the correct namespace. All stages use pl
 
 ## Related
 
-- [PDAL Pipeline Architecture & Execution](/pdal-pipeline-architecture-execution/) — parent overview: execution model, stage categories, and production deployment patterns
-- [PDAL Stage Chaining](/pdal-pipeline-architecture-execution/pdal-stage-chaining/) — orchestrating multi-stage processing graphs with strict buffer-passing semantics
-- [Pipeline Filtering Logic](/pdal-pipeline-architecture-execution/pipeline-filtering-logic/) — designing predicate sequences, handling dimension propagation, and avoiding over-filtering
-- [Spatial Reprojection](/pdal-pipeline-architecture-execution/spatial-reprojection/) — CRS transformation stages that validation must account for when checking metadata integrity
-- [Memory Management](/pdal-pipeline-architecture-execution/memory-management/) — tiling, chunking, and dimension-forwarding strategies flagged by dry-run profiling
+- [PDAL Pipeline Architecture & Execution](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/) — parent overview: execution model, stage categories, and production deployment patterns
+- [PDAL Stage Chaining](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/pdal-stage-chaining/) — orchestrating multi-stage processing graphs with strict buffer-passing semantics
+- [Pipeline Filtering Logic](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/pipeline-filtering-logic/) — designing predicate sequences, handling dimension propagation, and avoiding over-filtering
+- [Spatial Reprojection](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/spatial-reprojection/) — CRS transformation stages that validation must account for when checking metadata integrity
+- [Memory Management](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/memory-management/) — tiling, chunking, and dimension-forwarding strategies flagged by dry-run profiling

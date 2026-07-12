@@ -2,7 +2,7 @@
 title: "SMRF vs PMF for Dense Urban LiDAR"
 description: "A decision guide comparing filters.smrf and filters.pmf for ground classification in dense urban point clouds — how each handles buildings, bridges, and abrupt breaklines, with benchmark-style comparison."
 slug: "smrf-vs-pmf-for-dense-urban-lidar"
-type: "long_tail"
+type: "howto"
 breadcrumb: "SMRF vs PMF for Dense Urban LiDAR"
 datePublished: "2024-06-18"
 dateModified: "2026-07-12"
@@ -23,10 +23,10 @@ dateModified: "2026-07-12"
     {
       "@type": "BreadcrumbList",
       "itemListElement": [
-        {"@type": "ListItem", "position": 1, "name": "Home", "item": "https://pythonlidar.com/"},
-        {"@type": "ListItem", "position": 2, "name": "Ground Filtering and DTM/DSM Generation with PDAL", "item": "https://pythonlidar.com/ground-filtering-dtm-dsm-generation/"},
-        {"@type": "ListItem", "position": 3, "name": "SMRF Ground Classification", "item": "https://pythonlidar.com/ground-filtering-dtm-dsm-generation/smrf-ground-classification/"},
-        {"@type": "ListItem", "position": 4, "name": "SMRF vs PMF for Dense Urban LiDAR", "item": "https://pythonlidar.com/ground-filtering-dtm-dsm-generation/smrf-ground-classification/smrf-vs-pmf-for-dense-urban-lidar/"}
+        {"@type": "ListItem", "position": 1, "name": "Home", "item": "https://www.pythonlidar.com/"},
+        {"@type": "ListItem", "position": 2, "name": "Ground Filtering and DTM/DSM Generation with PDAL", "item": "https://www.pythonlidar.com/ground-filtering-dtm-dsm-generation/"},
+        {"@type": "ListItem", "position": 3, "name": "SMRF Ground Classification", "item": "https://www.pythonlidar.com/ground-filtering-dtm-dsm-generation/smrf-ground-classification/"},
+        {"@type": "ListItem", "position": 4, "name": "SMRF vs PMF for Dense Urban LiDAR", "item": "https://www.pythonlidar.com/ground-filtering-dtm-dsm-generation/smrf-ground-classification/smrf-vs-pmf-for-dense-urban-lidar/"}
       ]
     },
     {
@@ -62,7 +62,7 @@ dateModified: "2026-07-12"
 
 ## Context and Motivation
 
-This comparison is part of [SMRF Ground Classification in PDAL](/ground-filtering-dtm-dsm-generation/smrf-ground-classification/) and puts that filter head to head with its main alternative, [PMF Ground Classification](/ground-filtering-dtm-dsm-generation/pmf-ground-classification/), on the terrain type that punishes ground filters hardest: the dense city. Both are morphological classifiers, both write ASPRS Classification code 2, and both are one PDAL stage away from a digital terrain model. The question this page answers is not which is better in the abstract — it is which one to declare in your pipeline when the scene is wall-to-wall buildings, elevated roadways, and hard breaklines.
+This comparison is part of [SMRF Ground Classification in PDAL](https://www.pythonlidar.com/ground-filtering-dtm-dsm-generation/smrf-ground-classification/) and puts that filter head to head with its main alternative, [PMF Ground Classification](https://www.pythonlidar.com/ground-filtering-dtm-dsm-generation/pmf-ground-classification/), on the terrain type that punishes ground filters hardest: the dense city. Both are morphological classifiers, both write ASPRS Classification code 2, and both are one PDAL stage away from a digital terrain model. The question this page answers is not which is better in the abstract — it is which one to declare in your pipeline when the scene is wall-to-wall buildings, elevated roadways, and hard breaklines.
 
 Urban environments violate the gentle assumptions that ground filters were originally built around. Terrain is interrupted by sheer vertical walls, plazas sit flush with adjacent roofs, and elevated highways float slabs of near-flat surface right at nuisance heights above the true ground. A filter that reconstructs a smooth minimum surface can be fooled into treating a bridge deck as terrain, or into shaving a ground strip off the base of every tower. SMRF and PMF fail in slightly different ways here, and knowing those failure modes is worth more than any single "best" default.
 
@@ -100,7 +100,7 @@ Urban environments violate the gentle assumptions that ground filters were origi
 
 ## The Two Filters at a Glance
 
-SMRF reconstructs a minimum-elevation surface and applies a progressive morphological opening whose window grows automatically, using a `scalar` that scales the elevation tolerance by local slope. PMF — the Progressive Morphological Filter — instead steps a structuring element through an explicit schedule bounded by `max_window_size`, raising an elevation-difference threshold at each step governed by `initial_distance`, `slope`, and `max_distance`. The practical difference is one of control: SMRF hides its window growth behind two tuning knobs, while PMF exposes the schedule so you can dictate exactly how far it reaches and how much vertical difference it tolerates at each stage. The [PMF classification walk-through](/ground-filtering-dtm-dsm-generation/pmf-ground-classification/classifying-ground-with-progressive-morphological-filter/) covers that schedule in depth.
+SMRF reconstructs a minimum-elevation surface and applies a progressive morphological opening whose window grows automatically, using a `scalar` that scales the elevation tolerance by local slope. PMF — the Progressive Morphological Filter — instead steps a structuring element through an explicit schedule bounded by `max_window_size`, raising an elevation-difference threshold at each step governed by `initial_distance`, `slope`, and `max_distance`. The practical difference is one of control: SMRF hides its window growth behind two tuning knobs, while PMF exposes the schedule so you can dictate exactly how far it reaches and how much vertical difference it tolerates at each stage. The [PMF classification walk-through](https://www.pythonlidar.com/ground-filtering-dtm-dsm-generation/pmf-ground-classification/classifying-ground-with-progressive-morphological-filter/) covers that schedule in depth.
 
 ## Parameter Equivalence
 
@@ -213,7 +213,7 @@ A large gap between the two ground counts is itself diagnostic: if SMRF classifi
 
 ## Verification
 
-Whichever filter you pick, validate the same way you would any ground pass — the checks are covered fully in the parent [SMRF Ground Classification](/ground-filtering-dtm-dsm-generation/smrf-ground-classification/) guide. In dense urban tiles the ground fraction runs lower than open terrain, often 15–35 %, because buildings occupy so much of the footprint. Focus verification on the structure edges:
+Whichever filter you pick, validate the same way you would any ground pass — the checks are covered fully in the parent [SMRF Ground Classification](https://www.pythonlidar.com/ground-filtering-dtm-dsm-generation/smrf-ground-classification/) guide. In dense urban tiles the ground fraction runs lower than open terrain, often 15–35 %, because buildings occupy so much of the footprint. Focus verification on the structure edges:
 
 ```python
 import numpy as np, pdal, json
@@ -235,7 +235,7 @@ Rasterize the ground class and overlay it on a building-footprint layer: a corre
 
 **Underground and sunken features.** Sunken plazas, subway entrances, and depressed roadways sit below the surrounding grade and can be dropped by either filter's minimum-surface logic. Lower `cell` and inspect these areas; they often need manual reclassification.
 
-**Threading dominates runtime, not filter choice.** Both stages honour `OMP_NUM_THREADS`, and on a dense city tile the point count and `cell` size drive the clock far more than the algorithm. Set threads to your physical core count before benchmarking one filter against the other, as the [SMRF performance notes](/ground-filtering-dtm-dsm-generation/smrf-ground-classification/) describe.
+**Threading dominates runtime, not filter choice.** Both stages honour `OMP_NUM_THREADS`, and on a dense city tile the point count and `cell` size drive the clock far more than the algorithm. Set threads to your physical core count before benchmarking one filter against the other, as the [SMRF performance notes](https://www.pythonlidar.com/ground-filtering-dtm-dsm-generation/smrf-ground-classification/) describe.
 
 ## Frequently Asked Questions
 
@@ -259,8 +259,8 @@ Runtimes are broadly comparable and dominated by point count and cell size rathe
 
 ## Related
 
-- [SMRF Ground Classification in PDAL](/ground-filtering-dtm-dsm-generation/smrf-ground-classification/) — the SMRF algorithm, parameters, and validation in full
-- [PMF Ground Classification](/ground-filtering-dtm-dsm-generation/pmf-ground-classification/) — the Progressive Morphological Filter and its window schedule
-- [Classifying Ground with the Progressive Morphological Filter](/ground-filtering-dtm-dsm-generation/pmf-ground-classification/classifying-ground-with-progressive-morphological-filter/) — a full PMF walk-through
-- [Ground Filtering and DTM/DSM Generation with PDAL](/ground-filtering-dtm-dsm-generation/) — parent overview of ground filtering and terrain models
-- [Tuning SMRF for Forested Terrain](/ground-filtering-dtm-dsm-generation/smrf-ground-classification/tuning-smrf-for-forested-terrain/) — the same filter tuned for the opposite land cover
+- [SMRF Ground Classification in PDAL](https://www.pythonlidar.com/ground-filtering-dtm-dsm-generation/smrf-ground-classification/) — the SMRF algorithm, parameters, and validation in full
+- [PMF Ground Classification](https://www.pythonlidar.com/ground-filtering-dtm-dsm-generation/pmf-ground-classification/) — the Progressive Morphological Filter and its window schedule
+- [Classifying Ground with the Progressive Morphological Filter](https://www.pythonlidar.com/ground-filtering-dtm-dsm-generation/pmf-ground-classification/classifying-ground-with-progressive-morphological-filter/) — a full PMF walk-through
+- [Ground Filtering and DTM/DSM Generation with PDAL](https://www.pythonlidar.com/ground-filtering-dtm-dsm-generation/) — parent overview of ground filtering and terrain models
+- [Tuning SMRF for Forested Terrain](https://www.pythonlidar.com/ground-filtering-dtm-dsm-generation/smrf-ground-classification/tuning-smrf-for-forested-terrain/) — the same filter tuned for the opposite land cover

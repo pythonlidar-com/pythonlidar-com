@@ -2,7 +2,7 @@
 title: "How to Parse LAS Headers with Python"
 description: "Step-by-step guide to extracting LAS/LAZ header fields with laspy and Python's struct module — covering version detection, VLR inspection, coordinate scale/offset, and validation for production pipelines."
 slug: "how-to-parse-las-headers-with-python"
-type: "long_tail"
+type: "howto"
 breadcrumb: "How to Parse LAS Headers with Python"
 datePublished: "2025-01-15"
 dateModified: "2026-06-24"
@@ -23,9 +23,9 @@ dateModified: "2026-06-24"
     {
       "@type": "BreadcrumbList",
       "itemListElement": [
-        {"@type": "ListItem", "position": 1, "name": "Point Cloud Data Standards", "item": "https://pythonlidar.com/point-cloud-data-standards-fundamentals/"},
-        {"@type": "ListItem", "position": 2, "name": "LAS/LAZ File Structure", "item": "https://pythonlidar.com/point-cloud-data-standards-fundamentals/laslaz-file-structure/"},
-        {"@type": "ListItem", "position": 3, "name": "How to Parse LAS Headers with Python", "item": "https://pythonlidar.com/point-cloud-data-standards-fundamentals/laslaz-file-structure/how-to-parse-las-headers-with-python/"}
+        {"@type": "ListItem", "position": 1, "name": "Point Cloud Data Standards", "item": "https://www.pythonlidar.com/point-cloud-data-standards-fundamentals/"},
+        {"@type": "ListItem", "position": 2, "name": "LAS/LAZ File Structure", "item": "https://www.pythonlidar.com/point-cloud-data-standards-fundamentals/laslaz-file-structure/"},
+        {"@type": "ListItem", "position": 3, "name": "How to Parse LAS Headers with Python", "item": "https://www.pythonlidar.com/point-cloud-data-standards-fundamentals/laslaz-file-structure/how-to-parse-las-headers-with-python/"}
       ]
     },
     {
@@ -78,7 +78,7 @@ dateModified: "2026-06-24"
 
 ## Context and Motivation
 
-This guide is part of [LAS/LAZ File Structure](/point-cloud-data-standards-fundamentals/laslaz-file-structure/), which covers the full binary layout of the ASPRS point cloud format. Within the broader [Point Cloud Data Standards & Fundamentals](/point-cloud-data-standards-fundamentals/) framework, header parsing is the entry point to every processing decision: the version number tells you which fields exist, the point format ID defines the record schema, the scale and offset govern coordinate reconstruction, and the VLRs carry the [coordinate reference system](/point-cloud-data-standards-fundamentals/coordinate-reference-systems/) metadata without which spatial queries are meaningless.
+This guide is part of [LAS/LAZ File Structure](https://www.pythonlidar.com/point-cloud-data-standards-fundamentals/laslaz-file-structure/), which covers the full binary layout of the ASPRS point cloud format. Within the broader [Point Cloud Data Standards & Fundamentals](https://www.pythonlidar.com/point-cloud-data-standards-fundamentals/) framework, header parsing is the entry point to every processing decision: the version number tells you which fields exist, the point format ID defines the record schema, the scale and offset govern coordinate reconstruction, and the VLRs carry the [coordinate reference system](https://www.pythonlidar.com/point-cloud-data-standards-fundamentals/coordinate-reference-systems/) metadata without which spatial queries are meaningless.
 
 Skipping or misreading any of these fields causes silent corruption: coordinates reconstructed with the wrong scale drift by metres; an undetected CRS mismatch in a VLR will pass ingestion validation only to fail at the reprojection stage; a zero legacy point count on a LAS 1.4 file will make pipelines believe they processed an empty dataset.
 
@@ -202,7 +202,7 @@ Scale and offset are the two most critical header fields for numeric correctness
 
 ### Step 5: Scan VLRs for CRS metadata
 
-VLR record ID 34735 is the GeoKey directory (legacy CRS, used in LAS 1.2/1.3). Record ID 2112 is the WKT2 string (modern, preferred in LAS 1.4). A file with neither is technically unconstrained in projection — always fall back to checking a `.prj` sidecar or the `global_encoding` bit flags. The [coordinate reference system](/point-cloud-data-standards-fundamentals/coordinate-reference-systems/) embedded here is what downstream reprojection stages read to align datasets.
+VLR record ID 34735 is the GeoKey directory (legacy CRS, used in LAS 1.2/1.3). Record ID 2112 is the WKT2 string (modern, preferred in LAS 1.4). A file with neither is technically unconstrained in projection — always fall back to checking a `.prj` sidecar or the `global_encoding` bit flags. The [coordinate reference system](https://www.pythonlidar.com/point-cloud-data-standards-fundamentals/coordinate-reference-systems/) embedded here is what downstream reprojection stages read to align datasets.
 
 ```python
     if h.vlrs:
@@ -393,7 +393,7 @@ def validate_header(h: laspy.LasHeader) -> list[str]:
 
 **LAZ point data compression.** LAZ files share the identical public header block with LAS, so header parsing with `struct` works correctly. However, the block that follows the VLRs is a LAZ chunk table, not raw point records. A manual parser that reads past the VLRs without handling the chunk table will misinterpret compressed chunk index data as point records. For anything beyond header extraction, use `laspy[lazrs]`.
 
-**Missing CRS in legacy datasets.** Many pre-2015 aerial survey LAS files were delivered without a GeoKey VLR or WKT string. Before assuming EPSG 4326 or a local projection, inspect the `global_encoding` bits (byte offset 6, `uint16`): bit 0 set means GPS time is GPS week time; bit 4 set (LAS 1.4) means OGC WKT is used for the CRS instead of GeoKeys. When both VLR approaches are absent, check for a `.prj` sidecar with the same base filename. Treating an unconstrained file as georeferenced causes silent drift that accumulates across [coordinate reference system](/point-cloud-data-standards-fundamentals/coordinate-reference-systems/) transformations — see [Fixing CRS Mismatches in Point Clouds](/point-cloud-data-standards-fundamentals/coordinate-reference-systems/fixing-crs-mismatches-in-point-clouds/) for a recovery workflow.
+**Missing CRS in legacy datasets.** Many pre-2015 aerial survey LAS files were delivered without a GeoKey VLR or WKT string. Before assuming EPSG 4326 or a local projection, inspect the `global_encoding` bits (byte offset 6, `uint16`): bit 0 set means GPS time is GPS week time; bit 4 set (LAS 1.4) means OGC WKT is used for the CRS instead of GeoKeys. When both VLR approaches are absent, check for a `.prj` sidecar with the same base filename. Treating an unconstrained file as georeferenced causes silent drift that accumulates across [coordinate reference system](https://www.pythonlidar.com/point-cloud-data-standards-fundamentals/coordinate-reference-systems/) transformations — see [Fixing CRS Mismatches in Point Clouds](https://www.pythonlidar.com/point-cloud-data-standards-fundamentals/coordinate-reference-systems/fixing-crs-mismatches-in-point-clouds/) for a recovery workflow.
 
 **Scale precision and floating-point arithmetic.** LAS coordinates are raw 32-bit integers (point formats 0–5) or 32-bit integers in a 64-bit-capable container (formats 6–10 in LAS 1.4). The scale and offset are 64-bit doubles. Always reconstruct real-world coordinates using `float64` arithmetic. Reducing to `float32` introduces rounding errors of roughly ±0.01 m for UTM datasets with kilometre-scale offsets.
 
@@ -415,8 +415,8 @@ LAZ files store an identical public header block to LAS files, so reading the fi
 
 ## Related
 
-- [LAS/LAZ File Structure](/point-cloud-data-standards-fundamentals/laslaz-file-structure/) — binary architecture, VLR layout, and point record schemas
-- [Point Cloud Data Standards & Fundamentals](/point-cloud-data-standards-fundamentals/) — the parent reference covering format interoperability, ASPRS classification codes, and metadata standards
-- [Coordinate Reference Systems](/point-cloud-data-standards-fundamentals/coordinate-reference-systems/) — how VLR CRS metadata maps to EPSG codes and projection workflows
-- [Fixing CRS Mismatches in Point Clouds](/point-cloud-data-standards-fundamentals/coordinate-reference-systems/fixing-crs-mismatches-in-point-clouds/) — what happens when the VLR CRS does not match the actual data projection
-- [ASPRS Classification Codes](/point-cloud-data-standards-fundamentals/asprs-classification-codes/) — the classification dimension stored in every point record alongside XYZ
+- [LAS/LAZ File Structure](https://www.pythonlidar.com/point-cloud-data-standards-fundamentals/laslaz-file-structure/) — binary architecture, VLR layout, and point record schemas
+- [Point Cloud Data Standards & Fundamentals](https://www.pythonlidar.com/point-cloud-data-standards-fundamentals/) — the parent reference covering format interoperability, ASPRS classification codes, and metadata standards
+- [Coordinate Reference Systems](https://www.pythonlidar.com/point-cloud-data-standards-fundamentals/coordinate-reference-systems/) — how VLR CRS metadata maps to EPSG codes and projection workflows
+- [Fixing CRS Mismatches in Point Clouds](https://www.pythonlidar.com/point-cloud-data-standards-fundamentals/coordinate-reference-systems/fixing-crs-mismatches-in-point-clouds/) — what happens when the VLR CRS does not match the actual data projection
+- [ASPRS Classification Codes](https://www.pythonlidar.com/point-cloud-data-standards-fundamentals/asprs-classification-codes/) — the classification dimension stored in every point record alongside XYZ

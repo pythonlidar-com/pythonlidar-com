@@ -2,7 +2,7 @@
 title: "ASPRS Classification Codes: Python Workflows for Point Cloud Processing"
 description: "Complete guide to reading, validating, reclassifying, and exporting ASPRS classification codes in LAS/LAZ files using Python, laspy, and NumPy — with parameter tables, troubleshooting, and production pipeline patterns."
 slug: "asprs-classification-codes"
-type: "cluster"
+type: "topic"
 breadcrumb: "ASPRS Classification Codes"
 datePublished: "2024-03-15"
 dateModified: "2026-06-24"
@@ -23,9 +23,9 @@ dateModified: "2026-06-24"
     {
       "@type": "BreadcrumbList",
       "itemListElement": [
-        {"@type": "ListItem", "position": 1, "name": "Home", "item": "https://pythonlidar.com/"},
-        {"@type": "ListItem", "position": 2, "name": "Point Cloud Data Standards & Fundamentals", "item": "https://pythonlidar.com/point-cloud-data-standards-fundamentals/"},
-        {"@type": "ListItem", "position": 3, "name": "ASPRS Classification Codes", "item": "https://pythonlidar.com/point-cloud-data-standards-fundamentals/asprs-classification-codes/"}
+        {"@type": "ListItem", "position": 1, "name": "Home", "item": "https://www.pythonlidar.com/"},
+        {"@type": "ListItem", "position": 2, "name": "Point Cloud Data Standards & Fundamentals", "item": "https://www.pythonlidar.com/point-cloud-data-standards-fundamentals/"},
+        {"@type": "ListItem", "position": 3, "name": "ASPRS Classification Codes", "item": "https://www.pythonlidar.com/point-cloud-data-standards-fundamentals/asprs-classification-codes/"}
       ]
     },
     {
@@ -74,7 +74,7 @@ dateModified: "2026-06-24"
 
 ASPRS Classification Codes define the semantic taxonomy that separates raw LiDAR returns into actionable categories: ground, vegetation, buildings, water, noise, and infrastructure. Every downstream workflow — terrain modeling, canopy height estimation, utility corridor analysis, or flood mapping — depends on these integer labels being correct and consistent. For LiDAR analysts, Python GIS developers, and infrastructure engineering teams, building reliable programmatic workflows around these codes is the prerequisite for scalable point cloud processing.
 
-This page is part of [Point Cloud Data Standards & Fundamentals](/point-cloud-data-standards-fundamentals/), which covers the file formats, [metadata structures](/point-cloud-data-standards-fundamentals/metadata-header-sync/), and coordinate systems that underpin all Python LiDAR work. For a detailed history of each code's semantics across LAS versions, see [Understanding ASPRS Classification Codes](/point-cloud-data-standards-fundamentals/asprs-classification-codes/understanding-asprs-classification-codes/).
+This page is part of [Point Cloud Data Standards & Fundamentals](https://www.pythonlidar.com/point-cloud-data-standards-fundamentals/), which covers the file formats, [metadata structures](https://www.pythonlidar.com/point-cloud-data-standards-fundamentals/metadata-header-sync/), and coordinate systems that underpin all Python LiDAR work. For a detailed history of each code's semantics across LAS versions, see [Understanding ASPRS Classification Codes](https://www.pythonlidar.com/point-cloud-data-standards-fundamentals/asprs-classification-codes/understanding-asprs-classification-codes/).
 
 ---
 
@@ -198,7 +198,7 @@ The American Society for Photogrammetry and Remote Sensing defines a standardize
 | 19–63 | Reserved | Future ASPRS expansion |
 | 64–255 | User-Defined | Custom project taxonomies |
 
-When working with legacy LAS 1.2 files, the classification field is packed into 5 bits of a shared byte — supporting only values 0–31. The remaining 3 bits carry the synthetic, key-point, and withheld flags. The `laspy` property `.classification` unpacks this transparently, but you must stay aware of the constraint when writing output: values above 31 in a LAS 1.2 point format will be silently truncated. The underlying [LAS/LAZ file structure](/point-cloud-data-standards-fundamentals/laslaz-file-structure/) determines which point formats are available and what the field can hold.
+When working with legacy LAS 1.2 files, the classification field is packed into 5 bits of a shared byte — supporting only values 0–31. The remaining 3 bits carry the synthetic, key-point, and withheld flags. The `laspy` property `.classification` unpacks this transparently, but you must stay aware of the constraint when writing output: values above 31 in a LAS 1.2 point format will be silently truncated. The underlying [LAS/LAZ file structure](https://www.pythonlidar.com/point-cloud-data-standards-fundamentals/laslaz-file-structure/) determines which point formats are available and what the field can hold.
 
 ---
 
@@ -374,7 +374,7 @@ Silently processing a truncated array leads to classification results that do no
 
 ### Why call `las.update_header()` before writing
 
-Modifying the `classification` array does not recalculate the bounding box extents stored in the LAS header. `update_header()` recomputes min/max X, Y, Z and the exact `point_count`. Skipping this step produces headers that disagree with the actual data, causing downstream tools (PDAL, QGIS, ArcGIS Pro) to misreport extents or refuse to open the file. This is the same [metadata header sync](/point-cloud-data-standards-fundamentals/metadata-header-sync/) requirement that applies after any attribute modification.
+Modifying the `classification` array does not recalculate the bounding box extents stored in the LAS header. `update_header()` recomputes min/max X, Y, Z and the exact `point_count`. Skipping this step produces headers that disagree with the actual data, causing downstream tools (PDAL, QGIS, ArcGIS Pro) to misreport extents or refuse to open the file. This is the same [metadata header sync](https://www.pythonlidar.com/point-cloud-data-standards-fundamentals/metadata-header-sync/) requirement that applies after any attribute modification.
 
 ---
 
@@ -434,7 +434,7 @@ def validate_classification_output(
     return True
 ```
 
-For pipelines that integrate with [coordinate reference system](/point-cloud-data-standards-fundamentals/coordinate-reference-systems/) validation, add a CRS round-trip check: extract the authority string from the header's WKT VLR and confirm it matches the expected EPSG code using `pyproj.CRS.from_wkt().to_epsg()`.
+For pipelines that integrate with [coordinate reference system](https://www.pythonlidar.com/point-cloud-data-standards-fundamentals/coordinate-reference-systems/) validation, add a CRS round-trip check: extract the authority string from the header's WKT VLR and confirm it matches the expected EPSG code using `pyproj.CRS.from_wkt().to_epsg()`.
 
 ---
 
@@ -480,7 +480,7 @@ Throughput scales approximately linearly with chunk size up to the point where t
 
 ### Compression choices
 
-Writing `.laz` instead of `.las` reduces file size by 70–85% at a cost of roughly 30–40% additional CPU time for both write and read. For iterative re-processing passes (e.g., running multiple classification experiments), keep intermediate outputs as uncompressed `.las` to minimize read latency. Use `.laz` for archival and data delivery. See the [LAS/LAZ file structure](/point-cloud-data-standards-fundamentals/laslaz-file-structure/) page for a full comparison of point format options and compression tradeoffs.
+Writing `.laz` instead of `.las` reduces file size by 70–85% at a cost of roughly 30–40% additional CPU time for both write and read. For iterative re-processing passes (e.g., running multiple classification experiments), keep intermediate outputs as uncompressed `.las` to minimize read latency. Use `.laz` for archival and data delivery. See the [LAS/LAZ file structure](https://www.pythonlidar.com/point-cloud-data-standards-fundamentals/laslaz-file-structure/) page for a full comparison of point format options and compression tradeoffs.
 
 ---
 
@@ -538,16 +538,16 @@ No. The 5-bit classification field in LAS 1.2 point formats supports only values
 
 **Why do classification boundaries shift after reprojection?**
 
-Classification codes are integer attributes on individual points; they do not change during reprojection. The apparent shift happens when tiling or spatial indexing runs before reprojection: points near tile boundaries get reassigned to a different tile based on their pre-projection coordinates, making class distributions appear to shift spatially. Always reproject before tiling. For full details on resolving these mismatches, see the guide to [fixing CRS mismatches in point clouds](/point-cloud-data-standards-fundamentals/coordinate-reference-systems/fixing-crs-mismatches-in-point-clouds/).
+Classification codes are integer attributes on individual points; they do not change during reprojection. The apparent shift happens when tiling or spatial indexing runs before reprojection: points near tile boundaries get reassigned to a different tile based on their pre-projection coordinates, making class distributions appear to shift spatially. Always reproject before tiling. For full details on resolving these mismatches, see the guide to [fixing CRS mismatches in point clouds](https://www.pythonlidar.com/point-cloud-data-standards-fundamentals/coordinate-reference-systems/fixing-crs-mismatches-in-point-clouds/).
 
 ---
 
 ## Related
 
-- [Understanding ASPRS Classification Codes](/point-cloud-data-standards-fundamentals/asprs-classification-codes/understanding-asprs-classification-codes/) — per-code semantics, historical changes across LAS versions, and the LAS 1.4 specification reference
-- [LAS/LAZ File Structure](/point-cloud-data-standards-fundamentals/laslaz-file-structure/) — point record formats, VLR layout, header fields, and bit-packing in legacy formats
-- [Coordinate Reference Systems](/point-cloud-data-standards-fundamentals/coordinate-reference-systems/) — CRS validation, authority string extraction, and datum-aware spatial operations
-- [Metadata & Header Sync](/point-cloud-data-standards-fundamentals/metadata-header-sync/) — keeping LAS header fields (point count, bounding box, VLR records) in sync after attribute modifications
-- [Point Density Metrics](/point-cloud-data-standards-fundamentals/point-density-metrics/) — calculating returns-per-square-metre by classification class for survey quality assessment
-- [Fixing CRS Mismatches in Point Clouds](/point-cloud-data-standards-fundamentals/coordinate-reference-systems/fixing-crs-mismatches-in-point-clouds/) — practical steps to detect and correct misaligned projections before or after classification
-- [Point Cloud Data Standards & Fundamentals](/point-cloud-data-standards-fundamentals/) — parent section covering all LAS/LAZ standards, metadata, and Python workflows
+- [Understanding ASPRS Classification Codes](https://www.pythonlidar.com/point-cloud-data-standards-fundamentals/asprs-classification-codes/understanding-asprs-classification-codes/) — per-code semantics, historical changes across LAS versions, and the LAS 1.4 specification reference
+- [LAS/LAZ File Structure](https://www.pythonlidar.com/point-cloud-data-standards-fundamentals/laslaz-file-structure/) — point record formats, VLR layout, header fields, and bit-packing in legacy formats
+- [Coordinate Reference Systems](https://www.pythonlidar.com/point-cloud-data-standards-fundamentals/coordinate-reference-systems/) — CRS validation, authority string extraction, and datum-aware spatial operations
+- [Metadata & Header Sync](https://www.pythonlidar.com/point-cloud-data-standards-fundamentals/metadata-header-sync/) — keeping LAS header fields (point count, bounding box, VLR records) in sync after attribute modifications
+- [Point Density Metrics](https://www.pythonlidar.com/point-cloud-data-standards-fundamentals/point-density-metrics/) — calculating returns-per-square-metre by classification class for survey quality assessment
+- [Fixing CRS Mismatches in Point Clouds](https://www.pythonlidar.com/point-cloud-data-standards-fundamentals/coordinate-reference-systems/fixing-crs-mismatches-in-point-clouds/) — practical steps to detect and correct misaligned projections before or after classification
+- [Point Cloud Data Standards & Fundamentals](https://www.pythonlidar.com/point-cloud-data-standards-fundamentals/) — parent section covering all LAS/LAZ standards, metadata, and Python workflows
