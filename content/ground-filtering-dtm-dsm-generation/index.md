@@ -95,6 +95,7 @@ Turning a raw LiDAR scan into a usable terrain product hinges on one decision th
 <svg viewBox="0 0 1140 360" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Workflow from raw LiDAR points through ground classification to DTM and DSM terrain rasters" style="width:100%;max-width:960px;display:block;margin:1.5rem auto">
   <title>Ground Filtering to DTM and DSM Workflow</title>
   <desc>A branching PDAL workflow: raw points pass through noise removal, then split into a ground path that classifies terrain, masks to Classification 2, rasterizes a DTM with writers.gdal, and derives a hillshade with gdaldem, and a surface path that selects first returns and rasterizes a DSM with writers.gdal.</desc>
+  <rect x="0" y="0" width="1140" height="360" fill="var(--dg-bg)" rx="10"/>
   <defs>
     <marker id="arr-gnd" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
       <polygon points="0 0, 8 3, 0 6" fill="currentColor" opacity="0.6"/>
@@ -190,6 +191,49 @@ The terrain workflow is assembled from a small, stable set of PDAL stages plus t
 - `count` — number of points per cell; a diagnostic layer for coverage and density.
 
 `resolution` sets the cell size **in CRS units**, `radius` sets the search distance around each cell centre (default is `resolution` × √2 if omitted), and `window_size` enables a focal gap-filling pass that interpolates empty cells from populated neighbours within that many cells. `nodata` sets the fill value for cells with no data, and `gdaldriver` selects the output format (`GTiff` for GeoTIFF).
+
+<svg viewBox="0 0 720 288" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Matrix of the seven terrain-workflow stages against the role each one plays" style="width:100%;max-width:720px;display:block;margin:1.6rem auto">
+  <title>Which stage does which job in the terrain workflow</title>
+  <desc>A capability matrix. Each row is one stage — filters.outlier, filters.smrf, filters.pmf, filters.range, filters.hag_nn, writers.gdal and gdaldem — and each column is a job: clean, label, select, raster, derive. A filled dot marks the stage's primary job and a hollow dot a side effect, such as filters.outlier writing Classification 7 while cleaning.</desc>
+  <rect x="0" y="0" width="720" height="288" fill="var(--dg-bg)" rx="10"/>
+  <text x="385" y="48" text-anchor="middle" font-size="10.5" fill="var(--dg-muted)">clean</text>
+  <text x="455" y="48" text-anchor="middle" font-size="10.5" fill="var(--dg-muted)">label</text>
+  <text x="525" y="48" text-anchor="middle" font-size="10.5" fill="var(--dg-muted)">select</text>
+  <text x="595" y="48" text-anchor="middle" font-size="10.5" fill="var(--dg-muted)">raster</text>
+  <text x="665" y="48" text-anchor="middle" font-size="10.5" fill="var(--dg-muted)">derive</text>
+  <line x1="420" y1="56" x2="420" y2="252" stroke="var(--dg-line-soft)" stroke-width="1" stroke-dasharray="3 4"/>
+  <line x1="490" y1="56" x2="490" y2="252" stroke="var(--dg-line-soft)" stroke-width="1" stroke-dasharray="3 4"/>
+  <line x1="560" y1="56" x2="560" y2="252" stroke="var(--dg-line-soft)" stroke-width="1" stroke-dasharray="3 4"/>
+  <line x1="630" y1="56" x2="630" y2="252" stroke="var(--dg-line-soft)" stroke-width="1" stroke-dasharray="3 4"/>
+  <rect x="20" y="58" width="330" height="26" rx="5" fill="var(--dg-surface)" stroke="var(--dg-line-soft)" stroke-width="1"/>
+  <text x="32" y="76" font-size="11.5" fill="var(--dg-text)">filters.outlier — strip low noise and high birds</text>
+  <circle cx="385" cy="71" r="6.5" fill="var(--dg-a)"/>
+  <circle cx="455" cy="71" r="6.5" fill="none" stroke="var(--dg-a)" stroke-width="1.6"/>
+  <rect x="20" y="86" width="330" height="26" rx="5" fill="var(--dg-surface)" stroke="var(--dg-line-soft)" stroke-width="1"/>
+  <text x="32" y="104" font-size="11.5" fill="var(--dg-text)">filters.smrf — one-pass morphological ground</text>
+  <circle cx="455" cy="99" r="6.5" fill="var(--dg-a)"/>
+  <rect x="20" y="114" width="330" height="26" rx="5" fill="var(--dg-surface)" stroke="var(--dg-line-soft)" stroke-width="1"/>
+  <text x="32" y="132" font-size="11.5" fill="var(--dg-text)">filters.pmf — progressive ground classification</text>
+  <circle cx="455" cy="127" r="6.5" fill="var(--dg-a)"/>
+  <rect x="20" y="142" width="330" height="26" rx="5" fill="var(--dg-surface)" stroke="var(--dg-line-soft)" stroke-width="1"/>
+  <text x="32" y="160" font-size="11.5" fill="var(--dg-text)">filters.range — predicate mask on any dimension</text>
+  <circle cx="525" cy="155" r="6.5" fill="var(--dg-a)"/>
+  <circle cx="385" cy="155" r="6.5" fill="none" stroke="var(--dg-a)" stroke-width="1.6"/>
+  <rect x="20" y="170" width="330" height="26" rx="5" fill="var(--dg-surface)" stroke="var(--dg-line-soft)" stroke-width="1"/>
+  <text x="32" y="188" font-size="11.5" fill="var(--dg-text)">filters.hag_nn — HeightAboveGround per point</text>
+  <circle cx="665" cy="183" r="6.5" fill="var(--dg-a)"/>
+  <circle cx="455" cy="183" r="6.5" fill="none" stroke="var(--dg-a)" stroke-width="1.6"/>
+  <rect x="20" y="198" width="330" height="26" rx="5" fill="var(--dg-surface)" stroke="var(--dg-line-soft)" stroke-width="1"/>
+  <text x="32" y="216" font-size="11.5" fill="var(--dg-text)">writers.gdal — bin points onto a regular grid</text>
+  <circle cx="595" cy="211" r="6.5" fill="var(--dg-a)"/>
+  <rect x="20" y="226" width="330" height="26" rx="5" fill="var(--dg-surface)" stroke="var(--dg-line-soft)" stroke-width="1"/>
+  <text x="32" y="244" font-size="11.5" fill="var(--dg-text)">gdaldem — hillshade, slope and aspect rasters</text>
+  <circle cx="665" cy="239" r="6.5" fill="var(--dg-a)"/>
+  <circle cx="32" cy="268" r="6.5" fill="var(--dg-a)"/>
+  <text x="46" y="272" font-size="10.5" fill="var(--dg-muted)">primary job</text>
+  <circle cx="150" cy="268" r="6.5" fill="none" stroke="var(--dg-a)" stroke-width="1.6"/>
+  <text x="164" y="272" font-size="10.5" fill="var(--dg-muted)">side effect the stage also has</text>
+</svg>
 
 ## Annotated Reference Pipeline
 
@@ -351,6 +395,36 @@ Rasterization cost scales with output cell count, and cell count scales with the
 
 Ground filters `filters.smrf` and `filters.pmf` use OpenMP internally, so set `OMP_NUM_THREADS` to your physical core count for the classification stage. For area-wide production, the dominant pattern is file-level parallelism: tile the campaign, run one pipeline process per tile with a `ProcessPoolExecutor`, and add an overlap buffer equal to the search radius so DTM cells at tile edges have neighbours on both sides. Merging the tiles afterwards with `gdalbuildvrt` or `gdal_merge.py` produces a seamless mosaic.
 
+<svg viewBox="0 0 720 260" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Output cell count and peak memory for three DTM resolutions" style="width:100%;max-width:720px;display:block;margin:1.6rem auto">
+  <title>What halving the cell size costs</title>
+  <desc>Grouped bars on a logarithmic scale for a one square kilometre tile. At 2 metre resolution the raster holds about 250 thousand cells and writers.gdal peaks near 0.4 gigabytes. At 1 metre it is about 1 million cells and 1.4 gigabytes. At 0.25 metre it is about 16 million cells and 22 gigabytes — sixteen times the cells and roughly sixteen times the memory of the 1 metre product.</desc>
+  <rect x="0" y="0" width="720" height="260" fill="var(--dg-bg)" rx="10"/>
+  <rect x="80" y="38" width="14" height="14" rx="3" fill="var(--dg-a-soft)" stroke="var(--dg-a)" stroke-width="1.4"/>
+  <text x="102" y="50" font-size="10.5" fill="var(--dg-muted)">output cells</text>
+  <rect x="80" y="58" width="14" height="14" rx="3" fill="var(--dg-c-soft)" stroke="var(--dg-c)" stroke-width="1.4"/>
+  <text x="102" y="70" font-size="10.5" fill="var(--dg-muted)">peak RAM held by writers.gdal</text>
+  <line x1="60" y1="210" x2="690" y2="210" stroke="var(--dg-line)" stroke-width="1.5"/>
+  <rect x="112" y="184" width="54" height="26" fill="var(--dg-a-soft)" stroke="var(--dg-a)" stroke-width="1.4"/>
+  <text x="139" y="178" text-anchor="middle" font-size="10.5" fill="var(--dg-muted)">250 K</text>
+  <rect x="174" y="172" width="54" height="38" fill="var(--dg-c-soft)" stroke="var(--dg-c)" stroke-width="1.4"/>
+  <text x="201" y="166" text-anchor="middle" font-size="10.5" fill="var(--dg-muted)">0.4 GB</text>
+  <rect x="302" y="146" width="54" height="64" fill="var(--dg-a-soft)" stroke="var(--dg-a)" stroke-width="1.4"/>
+  <text x="329" y="140" text-anchor="middle" font-size="10.5" fill="var(--dg-muted)">1 M</text>
+  <rect x="364" y="136" width="54" height="74" fill="var(--dg-c-soft)" stroke="var(--dg-c)" stroke-width="1.4"/>
+  <text x="391" y="130" text-anchor="middle" font-size="10.5" fill="var(--dg-muted)">1.4 GB</text>
+  <rect x="492" y="69" width="54" height="141" fill="var(--dg-a-soft)" stroke="var(--dg-a)" stroke-width="1.4"/>
+  <text x="519" y="63" text-anchor="middle" font-size="10.5" fill="var(--dg-muted)">16 M</text>
+  <rect x="554" y="60" width="54" height="150" fill="var(--dg-c-soft)" stroke="var(--dg-c)" stroke-width="1.4"/>
+  <text x="581" y="54" text-anchor="middle" font-size="10.5" fill="var(--dg-muted)">22 GB</text>
+  <text x="170" y="228" text-anchor="middle" font-size="11.5" font-weight="600" fill="var(--dg-text)">resolution 2.0 m</text>
+  <text x="360" y="228" text-anchor="middle" font-size="11.5" font-weight="600" fill="var(--dg-text)">1.0 m</text>
+  <text x="550" y="228" text-anchor="middle" font-size="11.5" font-weight="600" fill="var(--dg-text)">0.25 m</text>
+  <text x="60" y="248" font-size="10.5" fill="var(--dg-muted)">bar height is logarithmic — each step is roughly a four-fold change in cells and memory</text>
+  <text x="26" y="130" text-anchor="middle" font-size="11" fill="var(--dg-text)" transform="rotate(-90 26 130)">relative cost</text>
+</svg>
+
+Once ground is classified, the same machinery answers a different question. [Canopy height models](https://www.pythonlidar.com/ground-filtering-dtm-dsm-generation/canopy-height-models/) subtract the terrain from every return rather than from a raster, which keeps sub-cell detail and leaves a normalised cloud that also yields canopy cover, height percentiles and understory density.
+
 ## Production Deployment
 
 ### Classify once, rasterize many
@@ -420,3 +494,4 @@ The `resolution` value is expressed in the units of the pipeline CRS. If the clo
 - [DTM Raster Generation](https://www.pythonlidar.com/ground-filtering-dtm-dsm-generation/dtm-raster-generation/) — building bare-earth GeoTIFFs, interpolation choices, and void filling with writers.gdal
 - [DSM Generation](https://www.pythonlidar.com/ground-filtering-dtm-dsm-generation/dsm-generation/) — first-return surface models and choosing between DTM and DSM
 - [Hillshade, Slope and Aspect](https://www.pythonlidar.com/ground-filtering-dtm-dsm-generation/hillshade-slope-aspect/) — deriving shaded relief and terrain gradients from a LiDAR DTM
+- [Canopy Height Models](https://www.pythonlidar.com/ground-filtering-dtm-dsm-generation/canopy-height-models/) — height above ground per return, and the products that follow from it

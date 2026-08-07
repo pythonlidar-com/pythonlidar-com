@@ -76,9 +76,10 @@ This guide is part of [DTM Raster Generation with PDAL](https://www.pythonlidar.
 
 Filling those voids is a balancing act rather than a one-liner. Fill too timidly and derived products still fail on the remaining holes; fill too aggressively and you smooth invented terrain across a lake or a warehouse roof, corrupting the very measurements a survey exists to provide. This guide walks the three tools that matter — the in-writer `window_size`, GDAL's `gdal_fillnodata`, and `rasterio.fill.fillnodata` — and shows how to bound each so it closes honest gaps without manufacturing terrain. The worked raster is a coastal 2 m DTM in `EPSG:32610` (WGS 84 / UTM zone 10N), where tidal flats and forest edges create exactly the mix of small and large voids that makes this decision matter.
 
-<svg viewBox="0 0 720 250" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Three void-filling stages: window_size during writing, then bounded fillnodata, leaving a large void untouched" style="width:100%;max-width:720px;display:block;margin:1.5rem auto">
+<svg viewBox="-8 15 736 207" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Three void-filling stages: window_size during writing, then bounded fillnodata, leaving a large void untouched" style="width:100%;max-width:720px;display:block;margin:1.5rem auto">
   <title>Void-filling decision flow for a DTM</title>
   <desc>A DTM grid with two small holes and one large hole. Stage one uses window_size in writers.gdal to close the small holes. Stage two uses a distance-bounded fillnodata pass to close a slightly larger constrained gap. The large void, representing a building or lake, is deliberately left as NoData with a flag.</desc>
+  <rect x="-8" y="15" width="736" height="207" fill="var(--dg-bg)" rx="10"/>
   <defs>
     <marker id="fn-arr" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto">
       <path d="M0,0 L0,6 L8,3 z" fill="currentColor" opacity="0.6"/>
@@ -201,6 +202,163 @@ gdal_fillnodata.py -md 6 -si 0 \
 ```
 
 `-md 6` is the maximum search distance in pixels and `-si 0` disables smoothing iterations, keeping filled values honest to their neighbours.
+
+<svg viewBox="0 0 720 254" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Three kinds of NoData void in a DTM and the treatment each one wants" style="width:100%;max-width:720px;display:block;margin:1.6rem auto">
+  <title>Not every void wants to be filled</title>
+  <desc>A DTM grid with three clusters of NoData cells. A building shadow should be interpolated from its neighbours, a water body should be left as NoData because there is no bare earth to estimate, and a dense canopy void should be filled but flagged as lower confidence.</desc>
+  <rect x="0" y="0" width="720" height="254" fill="var(--dg-bg)" rx="10"/>
+  <rect x="48" y="48" width="26" height="26" fill="var(--dg-b)" fill-opacity="0.14" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="74" y="48" width="26" height="26" fill="var(--dg-b)" fill-opacity="0.17" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="100" y="48" width="26" height="26" fill="var(--dg-b)" fill-opacity="0.2" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="126" y="48" width="26" height="26" fill="var(--dg-b)" fill-opacity="0.23" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="152" y="48" width="26" height="26" fill="var(--dg-b)" fill-opacity="0.26" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="178" y="48" width="26" height="26" fill="var(--dg-e)" fill-opacity="0.45" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="204" y="48" width="26" height="26" fill="var(--dg-e)" fill-opacity="0.45" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="230" y="48" width="26" height="26" fill="var(--dg-b)" fill-opacity="0.35" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="256" y="48" width="26" height="26" fill="var(--dg-b)" fill-opacity="0.14" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="282" y="48" width="26" height="26" fill="var(--dg-b)" fill-opacity="0.17" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="308" y="48" width="26" height="26" fill="var(--dg-b)" fill-opacity="0.2" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="334" y="48" width="26" height="26" fill="var(--dg-b)" fill-opacity="0.23" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="360" y="48" width="26" height="26" fill="var(--dg-b)" fill-opacity="0.26" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="386" y="48" width="26" height="26" fill="var(--dg-b)" fill-opacity="0.29" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="412" y="48" width="26" height="26" fill="var(--dg-b)" fill-opacity="0.32" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="438" y="48" width="26" height="26" fill="var(--dg-b)" fill-opacity="0.35" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="464" y="48" width="26" height="26" fill="var(--dg-b)" fill-opacity="0.14" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="490" y="48" width="26" height="26" fill="var(--dg-b)" fill-opacity="0.17" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="516" y="48" width="26" height="26" fill="var(--dg-b)" fill-opacity="0.2" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="542" y="48" width="26" height="26" fill="var(--dg-b)" fill-opacity="0.23" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="568" y="48" width="26" height="26" fill="var(--dg-b)" fill-opacity="0.26" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="594" y="48" width="26" height="26" fill="var(--dg-b)" fill-opacity="0.29" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="620" y="48" width="26" height="26" fill="var(--dg-b)" fill-opacity="0.32" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="646" y="48" width="26" height="26" fill="var(--dg-b)" fill-opacity="0.35" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="48" y="74" width="26" height="26" fill="var(--dg-b)" fill-opacity="0.29" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="74" y="74" width="26" height="26" fill="var(--dg-b)" fill-opacity="0.32" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="100" y="74" width="26" height="26" fill="var(--dg-b)" fill-opacity="0.35" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="126" y="74" width="26" height="26" fill="var(--dg-b)" fill-opacity="0.14" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="152" y="74" width="26" height="26" fill="var(--dg-b)" fill-opacity="0.17" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="178" y="74" width="26" height="26" fill="var(--dg-e)" fill-opacity="0.45" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="204" y="74" width="26" height="26" fill="var(--dg-e)" fill-opacity="0.45" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="230" y="74" width="26" height="26" fill="var(--dg-e)" fill-opacity="0.45" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="256" y="74" width="26" height="26" fill="var(--dg-b)" fill-opacity="0.29" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="282" y="74" width="26" height="26" fill="var(--dg-b)" fill-opacity="0.32" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="308" y="74" width="26" height="26" fill="var(--dg-b)" fill-opacity="0.35" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="334" y="74" width="26" height="26" fill="var(--dg-b)" fill-opacity="0.14" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="360" y="74" width="26" height="26" fill="var(--dg-b)" fill-opacity="0.17" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="386" y="74" width="26" height="26" fill="var(--dg-b)" fill-opacity="0.2" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="412" y="74" width="26" height="26" fill="var(--dg-b)" fill-opacity="0.23" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="438" y="74" width="26" height="26" fill="var(--dg-b)" fill-opacity="0.26" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="464" y="74" width="26" height="26" fill="var(--dg-b)" fill-opacity="0.29" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="490" y="74" width="26" height="26" fill="var(--dg-b)" fill-opacity="0.32" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="516" y="74" width="26" height="26" fill="var(--dg-b)" fill-opacity="0.35" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="542" y="74" width="26" height="26" fill="var(--dg-b)" fill-opacity="0.14" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="568" y="74" width="26" height="26" fill="var(--dg-b)" fill-opacity="0.17" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="594" y="74" width="26" height="26" fill="var(--dg-b)" fill-opacity="0.2" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="620" y="74" width="26" height="26" fill="var(--dg-b)" fill-opacity="0.23" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="646" y="74" width="26" height="26" fill="var(--dg-b)" fill-opacity="0.26" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="48" y="100" width="26" height="26" fill="var(--dg-b)" fill-opacity="0.2" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="74" y="100" width="26" height="26" fill="var(--dg-b)" fill-opacity="0.23" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="100" y="100" width="26" height="26" fill="var(--dg-b)" fill-opacity="0.26" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="126" y="100" width="26" height="26" fill="var(--dg-b)" fill-opacity="0.29" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="152" y="100" width="26" height="26" fill="var(--dg-b)" fill-opacity="0.32" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="178" y="100" width="26" height="26" fill="var(--dg-b)" fill-opacity="0.35" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="204" y="100" width="26" height="26" fill="var(--dg-b)" fill-opacity="0.14" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="230" y="100" width="26" height="26" fill="var(--dg-b)" fill-opacity="0.17" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="256" y="100" width="26" height="26" fill="var(--dg-b)" fill-opacity="0.2" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="282" y="100" width="26" height="26" fill="var(--dg-b)" fill-opacity="0.23" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="308" y="100" width="26" height="26" fill="var(--dg-b)" fill-opacity="0.26" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="334" y="100" width="26" height="26" fill="var(--dg-b)" fill-opacity="0.29" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="360" y="100" width="26" height="26" fill="var(--dg-b)" fill-opacity="0.32" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="386" y="100" width="26" height="26" fill="var(--dg-e)" fill-opacity="0.45" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="412" y="100" width="26" height="26" fill="var(--dg-e)" fill-opacity="0.45" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="438" y="100" width="26" height="26" fill="var(--dg-b)" fill-opacity="0.17" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="464" y="100" width="26" height="26" fill="var(--dg-b)" fill-opacity="0.2" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="490" y="100" width="26" height="26" fill="var(--dg-b)" fill-opacity="0.23" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="516" y="100" width="26" height="26" fill="var(--dg-b)" fill-opacity="0.26" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="542" y="100" width="26" height="26" fill="var(--dg-b)" fill-opacity="0.29" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="568" y="100" width="26" height="26" fill="var(--dg-b)" fill-opacity="0.32" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="594" y="100" width="26" height="26" fill="var(--dg-b)" fill-opacity="0.35" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="620" y="100" width="26" height="26" fill="var(--dg-b)" fill-opacity="0.14" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="646" y="100" width="26" height="26" fill="var(--dg-b)" fill-opacity="0.17" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="48" y="126" width="26" height="26" fill="var(--dg-b)" fill-opacity="0.35" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="74" y="126" width="26" height="26" fill="var(--dg-b)" fill-opacity="0.14" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="100" y="126" width="26" height="26" fill="var(--dg-b)" fill-opacity="0.17" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="126" y="126" width="26" height="26" fill="var(--dg-b)" fill-opacity="0.2" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="152" y="126" width="26" height="26" fill="var(--dg-b)" fill-opacity="0.23" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="178" y="126" width="26" height="26" fill="var(--dg-b)" fill-opacity="0.26" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="204" y="126" width="26" height="26" fill="var(--dg-b)" fill-opacity="0.29" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="230" y="126" width="26" height="26" fill="var(--dg-b)" fill-opacity="0.32" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="256" y="126" width="26" height="26" fill="var(--dg-b)" fill-opacity="0.35" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="282" y="126" width="26" height="26" fill="var(--dg-b)" fill-opacity="0.14" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="308" y="126" width="26" height="26" fill="var(--dg-b)" fill-opacity="0.17" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="334" y="126" width="26" height="26" fill="var(--dg-b)" fill-opacity="0.2" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="360" y="126" width="26" height="26" fill="var(--dg-b)" fill-opacity="0.23" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="386" y="126" width="26" height="26" fill="var(--dg-e)" fill-opacity="0.45" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="412" y="126" width="26" height="26" fill="var(--dg-e)" fill-opacity="0.45" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="438" y="126" width="26" height="26" fill="var(--dg-b)" fill-opacity="0.32" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="464" y="126" width="26" height="26" fill="var(--dg-b)" fill-opacity="0.35" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="490" y="126" width="26" height="26" fill="var(--dg-b)" fill-opacity="0.14" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="516" y="126" width="26" height="26" fill="var(--dg-b)" fill-opacity="0.17" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="542" y="126" width="26" height="26" fill="var(--dg-b)" fill-opacity="0.2" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="568" y="126" width="26" height="26" fill="var(--dg-b)" fill-opacity="0.23" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="594" y="126" width="26" height="26" fill="var(--dg-b)" fill-opacity="0.26" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="620" y="126" width="26" height="26" fill="var(--dg-b)" fill-opacity="0.29" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="646" y="126" width="26" height="26" fill="var(--dg-b)" fill-opacity="0.32" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="48" y="152" width="26" height="26" fill="var(--dg-b)" fill-opacity="0.26" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="74" y="152" width="26" height="26" fill="var(--dg-b)" fill-opacity="0.29" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="100" y="152" width="26" height="26" fill="var(--dg-b)" fill-opacity="0.32" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="126" y="152" width="26" height="26" fill="var(--dg-b)" fill-opacity="0.35" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="152" y="152" width="26" height="26" fill="var(--dg-b)" fill-opacity="0.14" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="178" y="152" width="26" height="26" fill="var(--dg-b)" fill-opacity="0.17" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="204" y="152" width="26" height="26" fill="var(--dg-b)" fill-opacity="0.2" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="230" y="152" width="26" height="26" fill="var(--dg-b)" fill-opacity="0.23" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="256" y="152" width="26" height="26" fill="var(--dg-b)" fill-opacity="0.26" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="282" y="152" width="26" height="26" fill="var(--dg-b)" fill-opacity="0.29" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="308" y="152" width="26" height="26" fill="var(--dg-b)" fill-opacity="0.32" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="334" y="152" width="26" height="26" fill="var(--dg-b)" fill-opacity="0.35" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="360" y="152" width="26" height="26" fill="var(--dg-b)" fill-opacity="0.14" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="386" y="152" width="26" height="26" fill="var(--dg-b)" fill-opacity="0.17" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="412" y="152" width="26" height="26" fill="var(--dg-b)" fill-opacity="0.2" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="438" y="152" width="26" height="26" fill="var(--dg-b)" fill-opacity="0.23" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="464" y="152" width="26" height="26" fill="var(--dg-b)" fill-opacity="0.26" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="490" y="152" width="26" height="26" fill="var(--dg-b)" fill-opacity="0.29" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="516" y="152" width="26" height="26" fill="var(--dg-b)" fill-opacity="0.32" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="542" y="152" width="26" height="26" fill="var(--dg-e)" fill-opacity="0.45" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="568" y="152" width="26" height="26" fill="var(--dg-e)" fill-opacity="0.45" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="594" y="152" width="26" height="26" fill="var(--dg-b)" fill-opacity="0.17" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="620" y="152" width="26" height="26" fill="var(--dg-b)" fill-opacity="0.2" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="646" y="152" width="26" height="26" fill="var(--dg-b)" fill-opacity="0.23" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="48" y="178" width="26" height="26" fill="var(--dg-b)" fill-opacity="0.17" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="74" y="178" width="26" height="26" fill="var(--dg-b)" fill-opacity="0.2" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="100" y="178" width="26" height="26" fill="var(--dg-b)" fill-opacity="0.23" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="126" y="178" width="26" height="26" fill="var(--dg-b)" fill-opacity="0.26" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="152" y="178" width="26" height="26" fill="var(--dg-b)" fill-opacity="0.29" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="178" y="178" width="26" height="26" fill="var(--dg-b)" fill-opacity="0.32" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="204" y="178" width="26" height="26" fill="var(--dg-b)" fill-opacity="0.35" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="230" y="178" width="26" height="26" fill="var(--dg-b)" fill-opacity="0.14" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="256" y="178" width="26" height="26" fill="var(--dg-b)" fill-opacity="0.17" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="282" y="178" width="26" height="26" fill="var(--dg-b)" fill-opacity="0.2" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="308" y="178" width="26" height="26" fill="var(--dg-b)" fill-opacity="0.23" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="334" y="178" width="26" height="26" fill="var(--dg-b)" fill-opacity="0.26" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="360" y="178" width="26" height="26" fill="var(--dg-b)" fill-opacity="0.29" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="386" y="178" width="26" height="26" fill="var(--dg-b)" fill-opacity="0.32" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="412" y="178" width="26" height="26" fill="var(--dg-b)" fill-opacity="0.35" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="438" y="178" width="26" height="26" fill="var(--dg-b)" fill-opacity="0.14" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="464" y="178" width="26" height="26" fill="var(--dg-b)" fill-opacity="0.17" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="490" y="178" width="26" height="26" fill="var(--dg-b)" fill-opacity="0.2" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="516" y="178" width="26" height="26" fill="var(--dg-b)" fill-opacity="0.23" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="542" y="178" width="26" height="26" fill="var(--dg-e)" fill-opacity="0.45" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="568" y="178" width="26" height="26" fill="var(--dg-e)" fill-opacity="0.45" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="594" y="178" width="26" height="26" fill="var(--dg-e)" fill-opacity="0.45" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="620" y="178" width="26" height="26" fill="var(--dg-b)" fill-opacity="0.35" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="646" y="178" width="26" height="26" fill="var(--dg-b)" fill-opacity="0.14" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <line x1="204" y1="100" x2="204" y2="216" stroke="var(--dg-line-soft)" stroke-width="1"/>
+  <line x1="412" y1="126" x2="412" y2="216" stroke="var(--dg-line-soft)" stroke-width="1"/>
+  <line x1="568" y1="204" x2="568" y2="216" stroke="var(--dg-line-soft)" stroke-width="1"/>
+  <text x="180" y="232" text-anchor="middle" font-size="10.5" fill="var(--dg-text)">building shadow — fill</text>
+  <text x="404" y="232" text-anchor="middle" font-size="10.5" fill="var(--dg-text)">water — keep NoData</text>
+  <text x="600" y="232" text-anchor="middle" font-size="10.5" fill="var(--dg-text)">canopy void — fill, flag it</text>
+  <text x="48" y="34" font-size="10.5" fill="var(--dg-muted)">voids in one 1 m DTM, coloured by cause</text>
+</svg>
 
 ## Complete Working Example
 
@@ -330,6 +488,26 @@ print(f"Filled values outside the 1-99 pct terrain band: {outliers}")
 ```
 
 Zero outliers and a still-present largest void (the building or lake you meant to protect) confirm the fill closed genuine gaps without inventing terrain.
+
+<svg viewBox="0 0 720 240" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="A gully crossing a void, filled at three different window sizes" style="width:100%;max-width:720px;display:block;margin:1.6rem auto">
+  <title>What a wide fill window does to real terrain</title>
+  <desc>A profile crossing a NoData void that happens to contain a gully. Nearest-neighbour filling produces a stepped surface. A window of four cells reconstructs the gully approximately. A window of twelve cells reaches so far for donors that it bridges straight over the gully and leaves a flat shelf where a drainage line should be.</desc>
+  <rect x="0" y="0" width="720" height="240" fill="var(--dg-bg)" rx="10"/>
+  <rect x="280" y="50" width="170" height="140" fill="var(--dg-e)" fill-opacity="0.14"/>
+  <text x="365" y="42" text-anchor="middle" font-size="10.5" fill="var(--dg-e)">NoData void, 12 cells wide</text>
+  <path d="M40 120 L140 126 L240 132 L300 140 L340 176 L365 182 L392 172 L450 138 L560 130 L690 124" fill="none" stroke="var(--dg-line)" stroke-width="2.4"/>
+  <path d="M300 140 L330 140 L330 168 L400 168 L400 150 L450 150" fill="none" stroke="var(--dg-c)" stroke-width="2" stroke-dasharray="5 3"/>
+  <path d="M300 140 L340 172 L365 178 L392 170 L450 138" fill="none" stroke="var(--dg-d)" stroke-width="2"/>
+  <path d="M300 140 L365 146 L450 138" fill="none" stroke="var(--dg-e)" stroke-width="2"/>
+  <line x1="60" y1="206" x2="90" y2="206" stroke="var(--dg-line)" stroke-width="2.4"/>
+  <text x="98" y="210" font-size="10.5" fill="var(--dg-text)">true terrain</text>
+  <line x1="200" y1="206" x2="230" y2="206" stroke="var(--dg-c)" stroke-width="2" stroke-dasharray="5 3"/>
+  <text x="238" y="210" font-size="10.5" fill="var(--dg-text)">nearest neighbour — steps</text>
+  <line x1="420" y1="206" x2="450" y2="206" stroke="var(--dg-d)" stroke-width="2"/>
+  <text x="458" y="210" font-size="10.5" fill="var(--dg-text)">window 4 — gully kept</text>
+  <line x1="60" y1="228" x2="90" y2="228" stroke="var(--dg-e)" stroke-width="2"/>
+  <text x="98" y="232" font-size="10.5" fill="var(--dg-text)">window 12 — bridged flat, the drainage line is gone</text>
+</svg>
 
 ## Gotchas and Edge Cases
 

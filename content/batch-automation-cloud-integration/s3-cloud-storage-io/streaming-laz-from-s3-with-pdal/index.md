@@ -80,6 +80,7 @@ The common way teams first read cloud LiDAR is clumsy: call boto3 `download_file
 <svg viewBox="0 0 720 210" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Streaming a LAZ object from S3 into readers.las without a local temp file" style="width:100%;max-width:720px;display:block;margin:1.5rem auto">
   <title>Streaming LAZ from S3 versus the download-then-read pattern</title>
   <desc>Top row shows the old pattern: S3 object copied to a local temp file then read by PDAL. Bottom row shows the streaming pattern: readers.las reads directly through the /vsis3/ handler from S3 with no temp file.</desc>
+  <rect x="0" y="0" width="720" height="210" fill="var(--dg-bg)" rx="10"/>
   <defs>
     <marker id="laz-arr" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto">
       <path d="M0,0 L0,6 L8,3 z" fill="currentColor" opacity="0.6"/>
@@ -195,6 +196,41 @@ os.environ["CPL_VSIL_CURL_ALLOWED_EXTENSIONS"] = ".laz,.copc.laz"
 os.environ["CPL_VSIL_CURL_CACHE_SIZE"] = str(128 * 1024 * 1024)
 ```
 
+<svg viewBox="0 0 720 246" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="The sequence of ranged GET requests a streaming LAZ read issues" style="width:100%;max-width:720px;display:block;margin:1.6rem auto">
+  <title>What a streaming read looks like on the wire</title>
+  <desc>A streaming read of a LAZ object on S3, request by request. The reader fetches the header, then the chunk table at the end of the file, then walks the chunks it needs in order. Each chunk request overlaps the processing of the previous one, so the network and the CPU are busy at the same time and neither waits for the whole object.</desc>
+  <rect x="0" y="0" width="720" height="246" fill="var(--dg-bg)" rx="10"/>
+  <line x1="60" y1="180" x2="690" y2="180" stroke="var(--dg-line)" stroke-width="1.5"/>
+  <rect x="70" y="58" width="26" height="26" rx="4" fill="var(--dg-a-soft)" stroke="var(--dg-a)" stroke-width="1.2"/>
+  <text x="83" y="100" text-anchor="middle" font-size="9" fill="var(--dg-muted)">header</text>
+  <rect x="108" y="58" width="34" height="26" rx="4" fill="var(--dg-a-soft)" stroke="var(--dg-a)" stroke-width="1.2"/>
+  <text x="125" y="100" text-anchor="middle" font-size="9" fill="var(--dg-muted)">chunk table</text>
+  <rect x="156" y="58" width="84" height="26" rx="4" fill="var(--dg-b-soft)" stroke="var(--dg-b)" stroke-width="1.2"/>
+  <text x="198" y="100" text-anchor="middle" font-size="9" fill="var(--dg-muted)">chunk 1</text>
+  <rect x="250" y="58" width="84" height="26" rx="4" fill="var(--dg-b-soft)" stroke="var(--dg-b)" stroke-width="1.2"/>
+  <text x="292" y="100" text-anchor="middle" font-size="9" fill="var(--dg-muted)">chunk 2</text>
+  <rect x="344" y="58" width="84" height="26" rx="4" fill="var(--dg-b-soft)" stroke="var(--dg-b)" stroke-width="1.2"/>
+  <text x="386" y="100" text-anchor="middle" font-size="9" fill="var(--dg-muted)">chunk 3</text>
+  <rect x="438" y="58" width="84" height="26" rx="4" fill="var(--dg-b-soft)" stroke="var(--dg-b)" stroke-width="1.2"/>
+  <text x="480" y="100" text-anchor="middle" font-size="9" fill="var(--dg-muted)">chunk 4</text>
+  <rect x="532" y="58" width="84" height="26" rx="4" fill="var(--dg-b-soft)" stroke="var(--dg-b)" stroke-width="1.2"/>
+  <text x="574" y="100" text-anchor="middle" font-size="9" fill="var(--dg-muted)">chunk 5</text>
+  <rect x="176" y="122" width="84" height="26" rx="4" fill="var(--dg-d-soft)" stroke="var(--dg-d)" stroke-width="1.2"/>
+  <text x="218" y="140" text-anchor="middle" font-size="9" fill="var(--dg-text)">filter 1</text>
+  <rect x="270" y="122" width="84" height="26" rx="4" fill="var(--dg-d-soft)" stroke="var(--dg-d)" stroke-width="1.2"/>
+  <text x="312" y="140" text-anchor="middle" font-size="9" fill="var(--dg-text)">filter 2</text>
+  <rect x="364" y="122" width="84" height="26" rx="4" fill="var(--dg-d-soft)" stroke="var(--dg-d)" stroke-width="1.2"/>
+  <text x="406" y="140" text-anchor="middle" font-size="9" fill="var(--dg-text)">filter 3</text>
+  <rect x="458" y="122" width="84" height="26" rx="4" fill="var(--dg-d-soft)" stroke="var(--dg-d)" stroke-width="1.2"/>
+  <text x="500" y="140" text-anchor="middle" font-size="9" fill="var(--dg-text)">filter 4</text>
+  <rect x="552" y="122" width="84" height="26" rx="4" fill="var(--dg-d-soft)" stroke="var(--dg-d)" stroke-width="1.2"/>
+  <text x="594" y="140" text-anchor="middle" font-size="9" fill="var(--dg-text)">filter 5</text>
+  <text x="60" y="52" font-size="10.5" fill="var(--dg-a)">network — ranged GET requests</text>
+  <text x="60" y="116" font-size="10.5" fill="var(--dg-d)">CPU — pipeline stages on the chunk just delivered</text>
+  <text x="375" y="198" text-anchor="middle" font-size="11" fill="var(--dg-text)">elapsed time</text>
+  <text x="60" y="226" font-size="10.5" fill="var(--dg-muted)">the overlap is the whole benefit — a pipeline that has to buffer everything before it can start turns this back into a download</text>
+</svg>
+
 ## Complete Working Example
 
 Save as `stream_laz_from_s3.py` and run against any accessible LAZ object. It configures the environment, rewrites the URI, streams the tile, and cross-checks the streamed count against a boto3 `head_object`.
@@ -303,6 +339,26 @@ assert count > 0, "Streamed 0 points — credentials, region, or key is wrong"
 ```bash
 aws s3api head-object --bucket ny-lidar-2021 --key tiles/u_18TWL_4501.laz --region us-west-2
 ```
+
+<svg viewBox="0 0 720 254" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Request count and wall-clock for four range sizes reading the same object" style="width:100%;max-width:720px;display:block;margin:1.6rem auto">
+  <title>Too many small requests is as slow as one big one</title>
+  <desc>The same 1.4 gigabyte object read four ways. Sixty-four kilobyte ranges issue 22,400 requests and spend twelve seconds mostly on per-request latency. One megabyte ranges need 1,400 requests and finish in under two. Eight megabyte ranges fetch more than needed and drift back up. Downloading the object outright takes 46 seconds.</desc>
+  <rect x="0" y="0" width="720" height="254" fill="var(--dg-bg)" rx="10"/>
+  <text x="170" y="78" text-anchor="end" font-size="11" fill="var(--dg-text)">64 KB chunks</text>
+  <rect x="180" y="56" width="89" height="32" rx="4" fill="var(--dg-e-soft)" stroke="var(--dg-e)" stroke-width="1.2"/>
+  <text x="277" y="78" font-size="10.5" fill="var(--dg-muted)">12.4 s · 22,400 requests</text>
+  <text x="170" y="122" text-anchor="end" font-size="11" fill="var(--dg-text)">1 MB chunks</text>
+  <rect x="180" y="100" width="13" height="32" rx="4" fill="var(--dg-d-soft)" stroke="var(--dg-d)" stroke-width="1.2"/>
+  <text x="201" y="122" font-size="10.5" fill="var(--dg-muted)">1.9 s · 1,400 requests</text>
+  <text x="170" y="166" text-anchor="end" font-size="11" fill="var(--dg-text)">8 MB chunks</text>
+  <rect x="180" y="144" width="18" height="32" rx="4" fill="var(--dg-c-soft)" stroke="var(--dg-c)" stroke-width="1.2"/>
+  <text x="206" y="166" font-size="10.5" fill="var(--dg-muted)">2.6 s · 175 requests</text>
+  <text x="170" y="210" text-anchor="end" font-size="11" fill="var(--dg-text)">whole object</text>
+  <rect x="180" y="188" width="331" height="32" rx="4" fill="var(--dg-e-soft)" stroke="var(--dg-e)" stroke-width="1.2"/>
+  <text x="519" y="210" font-size="10.5" fill="var(--dg-muted)">46.0 s · 1 requests</text>
+  <text x="180" y="40" font-size="10.5" fill="var(--dg-muted)">reading one 1.4 GB LAZ object from the same region</text>
+  <text x="60" y="244" font-size="10.5" fill="var(--dg-muted)">CPL_VSIL_CURL_CHUNK_SIZE=1048576 is the default for a reason — change it only with a measurement in hand</text>
+</svg>
 
 ## Gotchas and Edge Cases
 

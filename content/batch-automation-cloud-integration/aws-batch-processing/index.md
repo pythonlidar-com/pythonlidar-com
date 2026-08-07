@@ -73,6 +73,7 @@ A regional LiDAR acquisition arrives as tens of thousands of LAZ tiles sitting i
 <svg viewBox="0 0 760 300" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="AWS Batch array job fanning PDAL tile containers out over an S3 tile manifest" style="width:100%;max-width:760px;display:block;margin:1.5rem auto">
   <title>AWS Batch array job architecture for PDAL tile processing</title>
   <desc>A submit_job call creates an array job that fans out into three indexed child containers. Each child reads its own array index, looks up a tile key in a manifest stored in S3, pulls that tile, runs a PDAL pipeline, and writes a result object back to the output prefix in S3.</desc>
+  <rect x="0" y="0" width="760" height="300" fill="var(--dg-bg)" rx="10"/>
   <defs>
     <marker id="arr-batch" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto">
       <path d="M0,0 L0,6 L8,3 z" fill="currentColor" opacity="0.6"/>
@@ -322,6 +323,34 @@ if __name__ == "__main__":
     main()
 ```
 
+<svg viewBox="0 0 720 272" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="How an AWS Batch job definition, queue and compute environment fit together" style="width:100%;max-width:720px;display:block;margin:1.6rem auto">
+  <title>Three Batch objects, and which one holds which setting</title>
+  <desc>A job definition holds the container image, the vCPU and memory request and the retry strategy. A job queue holds priority and points at one or more compute environments. A compute environment holds the instance types, the spot bid and the maximum vCPUs. Submitting an array job names a definition and a queue, and every scaling limit you hit lives in the third box.</desc>
+  <rect x="0" y="0" width="720" height="272" fill="var(--dg-bg)" rx="10"/>
+  <defs><marker id="bat-arw" markerWidth="9" markerHeight="7" refX="9" refY="3.5" orient="auto"><path d="M0,0 L0,7 L9,3.5 z" fill="var(--dg-line)"/></marker></defs>
+  <rect x="20" y="56" width="200" height="120" rx="8" fill="var(--dg-a-soft)" stroke="var(--dg-a)" stroke-width="1.4"/>
+  <text x="120" y="80" text-anchor="middle" font-size="12" font-weight="600" fill="var(--dg-text)">job definition</text>
+  <text x="120" y="106" text-anchor="middle" font-size="10.5" fill="var(--dg-muted)">container image</text>
+  <text x="120" y="128" text-anchor="middle" font-size="10.5" fill="var(--dg-muted)">vCPU and memory</text>
+  <text x="120" y="150" text-anchor="middle" font-size="10.5" fill="var(--dg-muted)">retry strategy</text>
+  <rect x="260" y="56" width="200" height="120" rx="8" fill="var(--dg-c-soft)" stroke="var(--dg-c)" stroke-width="1.4"/>
+  <text x="360" y="80" text-anchor="middle" font-size="12" font-weight="600" fill="var(--dg-text)">job queue</text>
+  <text x="360" y="106" text-anchor="middle" font-size="10.5" fill="var(--dg-muted)">priority</text>
+  <text x="360" y="128" text-anchor="middle" font-size="10.5" fill="var(--dg-muted)">which environments</text>
+  <text x="360" y="150" text-anchor="middle" font-size="10.5" fill="var(--dg-muted)">and in what order</text>
+  <rect x="500" y="56" width="200" height="120" rx="8" fill="var(--dg-d-soft)" stroke="var(--dg-d)" stroke-width="1.4"/>
+  <text x="600" y="80" text-anchor="middle" font-size="12" font-weight="600" fill="var(--dg-text)">compute environment</text>
+  <text x="600" y="106" text-anchor="middle" font-size="10.5" fill="var(--dg-muted)">instance types</text>
+  <text x="600" y="128" text-anchor="middle" font-size="10.5" fill="var(--dg-muted)">spot bid percentage</text>
+  <text x="600" y="150" text-anchor="middle" font-size="10.5" fill="var(--dg-muted)">max vCPUs — the ceiling</text>
+  <line x1="220" y1="116" x2="254" y2="116" stroke="var(--dg-line)" stroke-width="1.5" marker-end="url(#bat-arw)"/>
+  <line x1="460" y1="116" x2="494" y2="116" stroke="var(--dg-line)" stroke-width="1.5" marker-end="url(#bat-arw)"/>
+  <rect x="20" y="200" width="680" height="34" rx="7" fill="var(--dg-surface)" stroke="var(--dg-line-soft)" stroke-width="1.2"/>
+  <text x="34" y="222" font-size="11" fill="var(--dg-text)">submit_job(arrayProperties={"size": 12500}) names the first two — and runs at the speed the third one allows</text>
+  <text x="20" y="260" font-size="10.5" fill="var(--dg-muted)">when 12,500 tiles run at a steady 40 concurrent, the max vCPUs of the compute environment is what to raise, not the array size</text>
+  <text x="20" y="40" font-size="10.5" fill="var(--dg-muted)">the three objects, and the setting each one owns</text>
+</svg>
+
 ## Code Breakdown
 
 ### Index resolution is the whole trick
@@ -395,6 +424,32 @@ assert count_outputs("lidar-derived-east", "dtm/acq_2026_east/") == 4000
 ```
 
 For anything that ran, the container log stream in CloudWatch (log group `/aws/batch/job`) carries the `index=... points=...` line printed by the entrypoint. Grepping those lines reconstructs exactly which tiles produced how many points, which is invaluable when a handful of tiles come back suspiciously empty.
+
+<svg viewBox="0 0 720 250" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="A spot interruption two minutes into a tile and the work it costs" style="width:100%;max-width:720px;display:block;margin:1.6rem auto">
+  <title>What a spot reclaim actually costs you</title>
+  <desc>A tile job timeline. Six minutes of work is interrupted at four minutes by a spot reclaim notice with a two minute warning. Without checkpointing the whole four minutes is lost and the retry starts over. With the output written per sub-tile the retry resumes from the last durable object and loses only the sub-tile in flight.</desc>
+  <rect x="0" y="0" width="720" height="250" fill="var(--dg-bg)" rx="10"/>
+  <text x="20" y="46" font-size="11.5" font-weight="600" fill="var(--dg-e)">no checkpointing</text>
+  <rect x="180" y="30" width="380" height="26" rx="4" fill="var(--dg-e-soft)" stroke="var(--dg-e)" stroke-width="1.2"/>
+  <rect x="560" y="30" width="120" height="26" rx="4" fill="var(--dg-surface-2)" stroke="var(--dg-line-soft)" stroke-width="1.2"/>
+  <text x="620" y="48" text-anchor="middle" font-size="10" fill="var(--dg-muted)">lost</text>
+  <text x="370" y="48" text-anchor="middle" font-size="10.5" fill="var(--dg-text)">4 min of work, all of it discarded</text>
+  <text x="20" y="106" font-size="11.5" font-weight="600" fill="var(--dg-d)">sub-tile checkpoints</text>
+  <rect x="180" y="90" width="70" height="26" rx="4" fill="var(--dg-d-soft)" stroke="var(--dg-d)" stroke-width="1.2"/>
+  <text x="215" y="108" text-anchor="middle" font-size="9.5" fill="var(--dg-text)">saved</text>
+  <rect x="256" y="90" width="70" height="26" rx="4" fill="var(--dg-d-soft)" stroke="var(--dg-d)" stroke-width="1.2"/>
+  <text x="291" y="108" text-anchor="middle" font-size="9.5" fill="var(--dg-text)">saved</text>
+  <rect x="332" y="90" width="70" height="26" rx="4" fill="var(--dg-d-soft)" stroke="var(--dg-d)" stroke-width="1.2"/>
+  <text x="367" y="108" text-anchor="middle" font-size="9.5" fill="var(--dg-text)">saved</text>
+  <rect x="408" y="90" width="70" height="26" rx="4" fill="var(--dg-c-soft)" stroke="var(--dg-c)" stroke-width="1.2"/>
+  <text x="443" y="108" text-anchor="middle" font-size="9.5" fill="var(--dg-text)">in flight</text>
+  <text x="500" y="108" font-size="10.5" fill="var(--dg-d)">retry resumes here — 45 s lost, not 4 min</text>
+  <line x1="560" y1="20" x2="560" y2="130" stroke="var(--dg-c)" stroke-width="2" stroke-dasharray="5 4"/>
+  <text x="552" y="150" text-anchor="end" font-size="10.5" fill="var(--dg-c)">reclaim notice — two minutes of warning</text>
+  <text x="20" y="182" font-size="10.5" fill="var(--dg-muted)">trap SIGTERM in the entrypoint: the two minute warning is enough to flush the current sub-tile and write its marker,</text>
+  <text x="20" y="202" font-size="10.5" fill="var(--dg-muted)">which turns an interruption from lost work into a resumption point.</text>
+  <text x="20" y="230" font-size="10.5" fill="var(--dg-muted)">Spot is roughly a third of the on-demand price; at a 5% interruption rate the arithmetic is not close.</text>
+</svg>
 
 ## Performance and Cost
 

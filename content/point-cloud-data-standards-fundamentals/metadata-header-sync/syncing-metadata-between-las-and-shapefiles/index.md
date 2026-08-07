@@ -84,9 +84,10 @@ When engineering teams generate delivery boundaries by deriving a bounding polyg
 
 Understanding how a LAS header is structured is covered in [LAS/LAZ File Structure](https://www.pythonlidar.com/point-cloud-data-standards-fundamentals/laslaz-file-structure/). Resolving CRS discrepancies before synchronization is covered in [Coordinate Reference Systems](https://www.pythonlidar.com/point-cloud-data-standards-fundamentals/coordinate-reference-systems/).
 
-<svg viewBox="0 0 720 200" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="LAS-to-shapefile metadata sync: header extraction, CRS resolution, bounding polygon, DBF attribute mapping, and shapefile export" style="width:100%;max-width:720px;display:block;margin:1.5rem auto;">
+<svg viewBox="-14 42 744 159" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="LAS-to-shapefile metadata sync: header extraction, CRS resolution, bounding polygon, DBF attribute mapping, and shapefile export" style="width:100%;max-width:720px;display:block;margin:1.5rem auto;">
   <title>LAS to Shapefile Metadata Synchronization Flow</title>
   <desc>Five sequential stages: (1) LAS header parsed for VLRs and extents, (2) CRS resolved via WKT2 VLR or fallback EPSG, (3) bounding box polygon built in GeoDataFrame, (4) DBF attributes mapped with 10-char name and 254-char value limits enforced, (5) shapefile written with .prj, .dbf, .shp sidecars.</desc>
+  <rect x="-14" y="42" width="744" height="159" fill="var(--dg-bg)" rx="10"/>
   <defs>
     <marker id="arw" markerWidth="7" markerHeight="5" refX="6" refY="2.5" orient="auto">
       <polygon points="0 0, 7 2.5, 0 5" fill="currentColor" opacity="0.55"/>
@@ -249,6 +250,59 @@ gdf.to_file("survey_tile_boundary.shp", driver="ESRI Shapefile")
 
 `geopandas` generates four sidecars: `.shp` (geometry), `.shx` (index), `.dbf` (attributes), and `.prj` (CRS as WKT). The `.prj` content is derived directly from the `crs` you passed in step 4.
 
+<svg viewBox="0 0 720 276" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="LAS header values mapped to shapefile attribute fields with DBF types" style="width:100%;max-width:720px;display:block;margin:1.6rem auto">
+  <title>A tile index is a header, one row per file</title>
+  <desc>Six header values with the DBF field name and type each becomes in a tile index shapefile. Counts and elevations become numeric fields with explicit widths, the EPSG code a short integer, the acquisition date a date field, and the source file name a 64 character text field. DBF field names are capped at ten characters, which is what forces the abbreviations.</desc>
+  <rect x="0" y="0" width="720" height="276" fill="var(--dg-bg)" rx="10"/>
+  <defs><marker id="dbf-arw" markerWidth="9" markerHeight="7" refX="9" refY="3.5" orient="auto"><path d="M0,0 L0,7 L9,3.5 z" fill="var(--dg-line)"/></marker></defs>
+  <rect x="20" y="52" width="240" height="30" rx="5" fill="var(--dg-b-soft)" stroke="var(--dg-b)" stroke-width="1.2"/>
+  <text x="140" y="72" text-anchor="middle" font-size="11" fill="var(--dg-text)">point count</text>
+  <line x1="260" y1="67" x2="290" y2="67" stroke="var(--dg-line)" stroke-width="1.4" marker-end="url(#dbf-arw)"/>
+  <rect x="296" y="52" width="200" height="30" rx="5" fill="var(--dg-d-soft)" stroke="var(--dg-d)" stroke-width="1.2"/>
+  <text x="396" y="72" text-anchor="middle" font-size="11" fill="var(--dg-text)">PT_COUNT</text>
+  <rect x="516" y="52" width="170" height="30" rx="5" fill="var(--dg-surface)" stroke="var(--dg-line-soft)" stroke-width="1"/>
+  <text x="601" y="72" text-anchor="middle" font-size="11" fill="var(--dg-muted)">N(10,0)</text>
+  <rect x="20" y="88" width="240" height="30" rx="5" fill="var(--dg-b-soft)" stroke="var(--dg-b)" stroke-width="1.2"/>
+  <text x="140" y="108" text-anchor="middle" font-size="11" fill="var(--dg-text)">min/max Z</text>
+  <line x1="260" y1="103" x2="290" y2="103" stroke="var(--dg-line)" stroke-width="1.4" marker-end="url(#dbf-arw)"/>
+  <rect x="296" y="88" width="200" height="30" rx="5" fill="var(--dg-d-soft)" stroke="var(--dg-d)" stroke-width="1.2"/>
+  <text x="396" y="108" text-anchor="middle" font-size="11" fill="var(--dg-text)">ZMIN / ZMAX</text>
+  <rect x="516" y="88" width="170" height="30" rx="5" fill="var(--dg-surface)" stroke="var(--dg-line-soft)" stroke-width="1"/>
+  <text x="601" y="108" text-anchor="middle" font-size="11" fill="var(--dg-muted)">N(12,3)</text>
+  <rect x="20" y="124" width="240" height="30" rx="5" fill="var(--dg-b-soft)" stroke="var(--dg-b)" stroke-width="1.2"/>
+  <text x="140" y="144" text-anchor="middle" font-size="11" fill="var(--dg-text)">CRS EPSG code</text>
+  <line x1="260" y1="139" x2="290" y2="139" stroke="var(--dg-line)" stroke-width="1.4" marker-end="url(#dbf-arw)"/>
+  <rect x="296" y="124" width="200" height="30" rx="5" fill="var(--dg-d-soft)" stroke="var(--dg-d)" stroke-width="1.2"/>
+  <text x="396" y="144" text-anchor="middle" font-size="11" fill="var(--dg-text)">EPSG</text>
+  <rect x="516" y="124" width="170" height="30" rx="5" fill="var(--dg-surface)" stroke="var(--dg-line-soft)" stroke-width="1"/>
+  <text x="601" y="144" text-anchor="middle" font-size="11" fill="var(--dg-muted)">N(6,0)</text>
+  <rect x="20" y="160" width="240" height="30" rx="5" fill="var(--dg-b-soft)" stroke="var(--dg-b)" stroke-width="1.2"/>
+  <text x="140" y="180" text-anchor="middle" font-size="11" fill="var(--dg-text)">acquisition date</text>
+  <line x1="260" y1="175" x2="290" y2="175" stroke="var(--dg-line)" stroke-width="1.4" marker-end="url(#dbf-arw)"/>
+  <rect x="296" y="160" width="200" height="30" rx="5" fill="var(--dg-d-soft)" stroke="var(--dg-d)" stroke-width="1.2"/>
+  <text x="396" y="180" text-anchor="middle" font-size="11" fill="var(--dg-text)">ACQ_DATE</text>
+  <rect x="516" y="160" width="170" height="30" rx="5" fill="var(--dg-surface)" stroke="var(--dg-line-soft)" stroke-width="1"/>
+  <text x="601" y="180" text-anchor="middle" font-size="11" fill="var(--dg-muted)">D</text>
+  <rect x="20" y="196" width="240" height="30" rx="5" fill="var(--dg-b-soft)" stroke="var(--dg-b)" stroke-width="1.2"/>
+  <text x="140" y="216" text-anchor="middle" font-size="11" fill="var(--dg-text)">source file name</text>
+  <line x1="260" y1="211" x2="290" y2="211" stroke="var(--dg-line)" stroke-width="1.4" marker-end="url(#dbf-arw)"/>
+  <rect x="296" y="196" width="200" height="30" rx="5" fill="var(--dg-d-soft)" stroke="var(--dg-d)" stroke-width="1.2"/>
+  <text x="396" y="216" text-anchor="middle" font-size="11" fill="var(--dg-text)">SRC_FILE</text>
+  <rect x="516" y="196" width="170" height="30" rx="5" fill="var(--dg-surface)" stroke="var(--dg-line-soft)" stroke-width="1"/>
+  <text x="601" y="216" text-anchor="middle" font-size="11" fill="var(--dg-muted)">C(64)</text>
+  <rect x="20" y="232" width="240" height="30" rx="5" fill="var(--dg-b-soft)" stroke="var(--dg-b)" stroke-width="1.2"/>
+  <text x="140" y="252" text-anchor="middle" font-size="11" fill="var(--dg-text)">mean point density</text>
+  <line x1="260" y1="247" x2="290" y2="247" stroke="var(--dg-line)" stroke-width="1.4" marker-end="url(#dbf-arw)"/>
+  <rect x="296" y="232" width="200" height="30" rx="5" fill="var(--dg-d-soft)" stroke="var(--dg-d)" stroke-width="1.2"/>
+  <text x="396" y="252" text-anchor="middle" font-size="11" fill="var(--dg-text)">PT_DENS</text>
+  <rect x="516" y="232" width="170" height="30" rx="5" fill="var(--dg-surface)" stroke="var(--dg-line-soft)" stroke-width="1"/>
+  <text x="601" y="252" text-anchor="middle" font-size="11" fill="var(--dg-muted)">N(8,2)</text>
+  <text x="140" y="40" text-anchor="middle" font-size="10.5" fill="var(--dg-muted)">LAS header</text>
+  <text x="396" y="40" text-anchor="middle" font-size="10.5" fill="var(--dg-muted)">DBF field</text>
+  <text x="601" y="40" text-anchor="middle" font-size="10.5" fill="var(--dg-muted)">type and width</text>
+  <text x="20" y="270" font-size="10.5" fill="var(--dg-muted)">declare the widths yourself — a driver that guesses from the first row will truncate the tile that needs an extra digit</text>
+</svg>
+
 ## Complete Working Example
 
 ```python
@@ -366,6 +420,32 @@ ogrinfo -al -so survey_tile_boundary.shp
 ```
 
 Look for any field name that has been auto-truncated (shorter than the original column name) and any `String(n)` where `n < len(original_value)`.
+
+<svg viewBox="0 0 720 250" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Three long attribute names truncated by DBF to the same ten characters" style="width:100%;max-width:720px;display:block;margin:1.6rem auto">
+  <title>Ten characters is not a style guide, it is a hard limit</title>
+  <desc>Three attribute names that read clearly in code — acquisition_date, acquisition_sensor and acquisition_agency — all truncate to the same first ten characters in a DBF file. Two of the three are silently renamed with a numeric suffix or dropped entirely depending on the driver, and nothing in the run says so.</desc>
+  <rect x="0" y="0" width="720" height="250" fill="var(--dg-bg)" rx="10"/>
+  <defs><marker id="trunc-arw" markerWidth="9" markerHeight="7" refX="9" refY="3.5" orient="auto"><path d="M0,0 L0,7 L9,3.5 z" fill="var(--dg-line)"/></marker></defs>
+  <text x="20" y="42" font-size="10.5" fill="var(--dg-muted)">what you asked for</text>
+  <text x="430" y="42" font-size="10.5" fill="var(--dg-muted)">what the DBF stored</text>
+  <rect x="20" y="54" width="330" height="34" rx="6" fill="var(--dg-surface)" stroke="var(--dg-line-soft)" stroke-width="1.1"/>
+  <text x="34" y="76" font-size="11.5" fill="var(--dg-text)">acquisition_date</text>
+  <rect x="20" y="98" width="330" height="34" rx="6" fill="var(--dg-surface)" stroke="var(--dg-line-soft)" stroke-width="1.1"/>
+  <text x="34" y="120" font-size="11.5" fill="var(--dg-text)">acquisition_sensor</text>
+  <rect x="20" y="142" width="330" height="34" rx="6" fill="var(--dg-surface)" stroke="var(--dg-line-soft)" stroke-width="1.1"/>
+  <text x="34" y="164" font-size="11.5" fill="var(--dg-text)">acquisition_agency</text>
+  <line x1="350" y1="71" x2="424" y2="71" stroke="var(--dg-line)" stroke-width="1.4" marker-end="url(#trunc-arw)"/>
+  <line x1="350" y1="115" x2="424" y2="115" stroke="var(--dg-line)" stroke-width="1.4" marker-end="url(#trunc-arw)"/>
+  <line x1="350" y1="159" x2="424" y2="159" stroke="var(--dg-line)" stroke-width="1.4" marker-end="url(#trunc-arw)"/>
+  <rect x="430" y="54" width="260" height="34" rx="6" fill="var(--dg-d-soft)" stroke="var(--dg-d)" stroke-width="1.2"/>
+  <text x="444" y="76" font-size="11.5" fill="var(--dg-text)">acquisiti</text>
+  <rect x="430" y="98" width="260" height="34" rx="6" fill="var(--dg-e-soft)" stroke="var(--dg-e)" stroke-width="1.2"/>
+  <text x="444" y="120" font-size="11.5" fill="var(--dg-text)">acquisiti — collision, renamed</text>
+  <rect x="430" y="142" width="260" height="34" rx="6" fill="var(--dg-e-soft)" stroke="var(--dg-e)" stroke-width="1.2"/>
+  <text x="444" y="164" font-size="11.5" fill="var(--dg-text)">acquisiti — collision, dropped</text>
+  <text x="20" y="206" font-size="10.5" fill="var(--dg-muted)">name the fields for the DBF from the start — ACQ_DATE, ACQ_SENS, ACQ_AGCY — or write GeoPackage instead, which has no such limit</text>
+  <text x="20" y="230" font-size="10.5" fill="var(--dg-muted)">and check the layer definition after writing rather than trusting the field list you passed in.</text>
+</svg>
 
 ## Gotchas and Edge Cases
 

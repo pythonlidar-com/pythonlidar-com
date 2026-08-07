@@ -90,9 +90,10 @@ A common pitfall is validating against synthetic test data that lacks the dimens
 
 ---
 
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 220" role="img" aria-label="Five-phase PDAL pipeline validation workflow diagram" style="width:100%;height:auto;display:block;margin:1.5rem 0">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-14 26 788 191" role="img" aria-label="Five-phase PDAL pipeline validation workflow diagram" style="width:100%;height:auto;display:block;margin:1.5rem 0">
   <title>PDAL Pipeline Validation Workflow</title>
   <desc>Five sequential validation phases arranged left to right: 1. JSON Syntax (jsonschema), 2. Stage Dependencies (pdal --validate), 3. Filter Parameters (range/outlier/smrf), 4. Dry-Run Profiling (psutil/sample), 5. Output Integrity (count/CRS/dims). Arrows connect each phase to the next. A dashed red arc below shows the FAIL path looping back to phase 1. A green PASS label appears after phase 5.</desc>
+  <rect x="-14" y="26" width="788" height="191" fill="var(--dg-bg)" rx="10"/>
   <defs>
     <marker id="pv-arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
       <polygon points="0 0, 8 3, 0 6" fill="currentColor" opacity="0.5"/>
@@ -132,10 +133,10 @@ A common pitfall is validating against synthetic test data that lacks the dimens
   <text x="683" y="88" text-anchor="middle" font-size="12" fill="currentColor" font-weight="600" opacity="0.9">Integrity</text>
   <text x="683" y="108" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.55">count / CRS / dims</text>
   <!-- FAIL arc -->
-  <path d="M 683 120 Q 683 170 373 170 Q 63 170 70 120" fill="none" stroke="#b91c1c" stroke-width="1.4" stroke-dasharray="5 3" opacity="0.8"/>
-  <text x="373" y="192" text-anchor="middle" font-size="10" fill="#b91c1c" opacity="0.85">FAIL — fix and re-validate</text>
+  <path d="M 683 120 Q 683 170 373 170 Q 63 170 70 120" fill="none" stroke="var(--dg-e)" stroke-width="1.4" stroke-dasharray="5 3" opacity="0.8"/>
+  <text x="373" y="192" text-anchor="middle" font-size="10" fill="var(--dg-e)" opacity="0.85">FAIL — fix and re-validate</text>
   <!-- PASS label -->
-  <text x="683" y="155" text-anchor="middle" font-size="11" fill="#15803d" opacity="0.9">PASS — promote</text>
+  <text x="683" y="155" text-anchor="middle" font-size="11" fill="var(--dg-d)" opacity="0.9">PASS — promote</text>
 </svg>
 
 ---
@@ -493,6 +494,35 @@ Lossless pipelines (reprojection, attribute assignment) should return exactly th
 **Why check for `"epsg"` or `"wkt"` in metadata strings?**
 `pipeline.metadata` returns a JSON-serialized dict. CRS information is nested under stage-specific keys that differ between PDAL versions. String-searching for `"epsg"` or `"wkt"` is more robust than navigating the full metadata tree, which changed structure between PDAL 2.4 and 2.6.
 
+<svg viewBox="-2 5 545 319" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Five levels of pipeline validation, what each catches and what each costs" style="width:100%;max-width:720px;display:block;margin:1.6rem auto">
+  <title>Five things "valid" can mean, cheapest first</title>
+  <desc>A ladder of validation levels. Parsing the JSON catches typos in milliseconds. Resolving stage types catches a misspelled filter name. Checking options catches a parameter the stage never had. A dry run over a thousand points catches schema and CRS mismatches. Executing a fixture tile catches wrong point counts and empty output, and is the only level that proves the pipeline does what it claims.</desc>
+  <rect x="-2" y="5" width="545" height="319" fill="var(--dg-bg)" rx="10"/>
+  <rect x="20" y="58" width="210" height="34" rx="6" fill="var(--dg-a-soft)" stroke="var(--dg-a)" stroke-width="1.3"/>
+  <text x="34" y="80" font-size="11" fill="var(--dg-text)">1. JSON parses</text>
+  <text x="244" y="74" font-size="10.5" fill="var(--dg-muted)">catches syntax typos</text>
+  <text x="244" y="88" font-size="10.5" fill="var(--dg-c)">3 ms</text>
+  <rect x="20" y="100" width="234" height="34" rx="6" fill="var(--dg-a-soft)" stroke="var(--dg-a)" stroke-width="1.3"/>
+  <text x="34" y="122" font-size="11" fill="var(--dg-text)">2. stage types exist</text>
+  <text x="268" y="116" font-size="10.5" fill="var(--dg-muted)">catches a misspelled filter name</text>
+  <text x="268" y="130" font-size="10.5" fill="var(--dg-c)">40 ms</text>
+  <rect x="20" y="142" width="258" height="34" rx="6" fill="var(--dg-a-soft)" stroke="var(--dg-a)" stroke-width="1.3"/>
+  <text x="34" y="164" font-size="11" fill="var(--dg-text)">3. options accepted</text>
+  <text x="292" y="158" font-size="10.5" fill="var(--dg-muted)">catches a parameter that stage never had</text>
+  <text x="292" y="172" font-size="10.5" fill="var(--dg-c)">120 ms</text>
+  <rect x="20" y="184" width="282" height="34" rx="6" fill="var(--dg-a-soft)" stroke="var(--dg-a)" stroke-width="1.3"/>
+  <text x="34" y="206" font-size="11" fill="var(--dg-text)">4. dry run on 1000 points</text>
+  <text x="316" y="200" font-size="10.5" fill="var(--dg-muted)">catches schema and CRS mismatches</text>
+  <text x="316" y="214" font-size="10.5" fill="var(--dg-c)">2 s</text>
+  <rect x="20" y="226" width="306" height="34" rx="6" fill="var(--dg-a-soft)" stroke="var(--dg-a)" stroke-width="1.3"/>
+  <text x="34" y="248" font-size="11" fill="var(--dg-text)">5. fixture tile executes</text>
+  <text x="340" y="242" font-size="10.5" fill="var(--dg-muted)">catches wrong counts, empty output</text>
+  <text x="340" y="256" font-size="10.5" fill="var(--dg-c)">9 s</text>
+  <text x="20" y="38" font-size="10.5" fill="var(--dg-muted)">each level assumes the ones above it already passed</text>
+  <text x="20" y="280" font-size="10.5" fill="var(--dg-muted)">run levels 1 to 3 on every save, level 4 on every commit, level 5 on every pull request —</text>
+  <text x="20" y="298" font-size="10.5" fill="var(--dg-muted)">the cost ladder and the feedback ladder are the same ladder.</text>
+</svg>
+
 ## Parameter Reference
 
 | Parameter | Stage | Type | Default | Valid Range | Effect |
@@ -551,6 +581,35 @@ For pipelines that include [spatial reprojection](https://www.pythonlidar.com/pd
 | CI/CD validation runs add >2 min to pipeline | Full dry-run on 1 M-point sample in every build | Cache validated pipeline hash; only re-run dry-run when pipeline JSON changes |
 
 For [parallel execution](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/parallel-execution/) environments, run validation on one worker before dispatching the pipeline to a pool. A pipeline that passes validation on a 1 M-point sample can be safely broadcast to a `ProcessPoolExecutor` without per-worker re-validation overhead.
+
+<svg viewBox="0 0 720 250" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Where each validation level runs across the change lifecycle" style="width:100%;max-width:720px;display:block;margin:1.6rem auto">
+  <title>The same checks, spread across the lifecycle</title>
+  <desc>A timeline from editor to production. Syntax and stage resolution run on save in the editor. A dry run runs in the pre-commit hook. The fixture execution runs on the pull request. A full tile regression runs nightly, and the deployment gate re-checks the pinned versions before anything reaches production.</desc>
+  <rect x="0" y="0" width="720" height="250" fill="var(--dg-bg)" rx="10"/>
+  <line x1="40" y1="120" x2="686" y2="120" stroke="var(--dg-line)" stroke-width="2"/>
+  <circle cx="70" cy="120" r="8" fill="var(--dg-a-soft)" stroke="var(--dg-a)" stroke-width="2"/>
+  <text x="70" y="98" text-anchor="middle" font-size="11" font-weight="600" fill="var(--dg-text)">editor</text>
+  <text x="70" y="146" text-anchor="middle" font-size="10" fill="var(--dg-muted)">levels 1–2</text>
+  <text x="70" y="162" text-anchor="middle" font-size="10" fill="var(--dg-muted)">on save</text>
+  <circle cx="224" cy="120" r="8" fill="var(--dg-a-soft)" stroke="var(--dg-a)" stroke-width="2"/>
+  <text x="224" y="98" text-anchor="middle" font-size="11" font-weight="600" fill="var(--dg-text)">pre-commit</text>
+  <text x="224" y="146" text-anchor="middle" font-size="10" fill="var(--dg-muted)">levels 3–4</text>
+  <text x="224" y="162" text-anchor="middle" font-size="10" fill="var(--dg-muted)">2 s</text>
+  <circle cx="378" cy="120" r="8" fill="var(--dg-c-soft)" stroke="var(--dg-c)" stroke-width="2"/>
+  <text x="378" y="98" text-anchor="middle" font-size="11" font-weight="600" fill="var(--dg-text)">pull request</text>
+  <text x="378" y="146" text-anchor="middle" font-size="10" fill="var(--dg-muted)">level 5, fixture tile</text>
+  <text x="378" y="162" text-anchor="middle" font-size="10" fill="var(--dg-muted)">9 s, blocking</text>
+  <circle cx="532" cy="120" r="8" fill="var(--dg-c-soft)" stroke="var(--dg-c)" stroke-width="2"/>
+  <text x="532" y="98" text-anchor="middle" font-size="11" font-weight="600" fill="var(--dg-text)">nightly</text>
+  <text x="532" y="146" text-anchor="middle" font-size="10" fill="var(--dg-muted)">full tile regression</text>
+  <text x="532" y="162" text-anchor="middle" font-size="10" fill="var(--dg-muted)">40 min</text>
+  <circle cx="676" cy="120" r="8" fill="var(--dg-d-soft)" stroke="var(--dg-d)" stroke-width="2"/>
+  <text x="676" y="98" text-anchor="middle" font-size="11" font-weight="600" fill="var(--dg-text)">deploy</text>
+  <text x="676" y="146" text-anchor="middle" font-size="10" fill="var(--dg-muted)">version pins</text>
+  <text x="676" y="162" text-anchor="middle" font-size="10" fill="var(--dg-muted)">re-checked</text>
+  <text x="40" y="56" font-size="10.5" fill="var(--dg-muted)">feedback gets slower and more thorough from left to right; nothing on the right replaces anything on the left</text>
+  <text x="40" y="212" font-size="10.5" fill="var(--dg-muted)">a check that only runs nightly tells you what broke, not who broke it — keep the blocking gate cheap enough to stay on the pull request</text>
+</svg>
 
 ## Automating Validation in CI/CD
 

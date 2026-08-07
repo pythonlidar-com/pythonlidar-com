@@ -69,6 +69,7 @@ The stakes are concrete. Slope, aspect, and contour products amplify small eleva
 <svg viewBox="0 0 700 260" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Comparison of IDW and mean interpolation weighting three points at different distances from a cell centre" style="width:100%;max-width:700px;display:block;margin:1.5rem auto">
   <title>IDW versus mean cell interpolation</title>
   <desc>A single raster cell with three ground points at increasing distance from its centre. On the left the IDW panel shows the near point receiving a large weight and the far point a small weight. On the right the mean panel shows all three points receiving equal weight. Labels note that IDW damps distant points while mean treats them equally.</desc>
+  <rect x="0" y="0" width="700" height="260" fill="var(--dg-bg)" rx="10"/>
   <rect x="30" y="40" width="290" height="180" rx="8" fill="none" stroke="currentColor" stroke-width="1.3" opacity="0.7"/>
   <text x="175" y="30" text-anchor="middle" font-size="13" fill="currentColor" font-weight="600">output_type: idw</text>
   <circle cx="120" cy="130" r="4" fill="currentColor"/>
@@ -106,6 +107,33 @@ Both statistics gather the ground points that fall within `radius` of a cell cen
 - **`mean`** ignores distance entirely and returns the arithmetic average of every point in the radius. That same sparse cell returns the midpoint of the two elevations, pulling the surface toward the more distant sample and, across many cells, flattening relief.
 
 Because both use the identical point set, they fill exactly the same cells. Neither can conjure a value for a cell whose radius contains no points — that remains NoData regardless of `output_type`, a property that matters when you plan the separate void-fill work in [Filling NoData Voids in DTM Rasters](https://www.pythonlidar.com/ground-filtering-dtm-dsm-generation/dtm-raster-generation/filling-nodata-voids-in-dtm-rasters/).
+
+<svg viewBox="0 0 720 250" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Weight against distance for inverse distance power one, power two, and a plain mean" style="width:100%;max-width:720px;display:block;margin:1.6rem auto">
+  <title>How much say a point has, by how far away it is</title>
+  <desc>Weight against distance from the cell centre. With inverse distance squared the weight collapses almost to nothing by half a metre, so the nearest point dominates. With power one it decays more gently. A plain mean gives every point inside the radius the same weight regardless of distance, which is why it smooths harder.</desc>
+  <rect x="0" y="0" width="720" height="250" fill="var(--dg-bg)" rx="10"/>
+  <line x1="538" y1="44" x2="538" y2="200" stroke="var(--dg-line-soft)" stroke-width="1.2" stroke-dasharray="5 4"/>
+  <text x="530" y="58" text-anchor="end" font-size="10.5" fill="var(--dg-muted)">radius 1.4 m — nothing beyond it counts</text>
+  <line x1="80" y1="44" x2="80" y2="200" stroke="var(--dg-line)" stroke-width="1.5"/>
+  <line x1="80" y1="200" x2="690" y2="200" stroke="var(--dg-line)" stroke-width="1.5"/>
+  <polyline points="156,44 232,161 309,183 385,190 538,196 690,198" fill="none" stroke="var(--dg-a)" stroke-width="2.4"/>
+  <polyline points="156,44 232,122 309,148 385,161 538,174 690,181" fill="none" stroke="var(--dg-b)" stroke-width="2.4" stroke-dasharray="8 4"/>
+  <line x1="156" y1="138" x2="690" y2="138" stroke="var(--dg-c)" stroke-width="2.4" stroke-dasharray="2 4"/>
+  <line x1="420" y1="76" x2="450" y2="76" stroke="var(--dg-a)" stroke-width="2.4"/>
+  <text x="458" y="80" font-size="11" fill="var(--dg-text)">idw, power 2 — default</text>
+  <line x1="420" y1="98" x2="450" y2="98" stroke="var(--dg-b)" stroke-width="2.4" stroke-dasharray="8 4"/>
+  <text x="458" y="102" font-size="11" fill="var(--dg-text)">idw, power 1</text>
+  <line x1="420" y1="120" x2="450" y2="120" stroke="var(--dg-c)" stroke-width="2.4" stroke-dasharray="2 4"/>
+  <text x="458" y="124" font-size="11" fill="var(--dg-text)">mean — flat weighting</text>
+  <text x="72" y="204" text-anchor="end" font-size="10.5" fill="var(--dg-muted)">0</text>
+  <text x="72" y="48" text-anchor="end" font-size="10.5" fill="var(--dg-muted)">1</text>
+  <text x="156" y="220" text-anchor="middle" font-size="10.5" fill="var(--dg-muted)">0.25</text>
+  <text x="309" y="220" text-anchor="middle" font-size="10.5" fill="var(--dg-muted)">0.75</text>
+  <text x="461" y="220" text-anchor="middle" font-size="10.5" fill="var(--dg-muted)">1.25</text>
+  <text x="614" y="220" text-anchor="middle" font-size="10.5" fill="var(--dg-muted)">1.75</text>
+  <text x="385" y="240" text-anchor="middle" font-size="11.5" fill="var(--dg-text)">distance from cell centre (m)</text>
+  <text x="26" y="122" text-anchor="middle" font-size="11.5" fill="var(--dg-text)" transform="rotate(-90 26 122)">weight</text>
+</svg>
 
 ## Side-by-Side Comparison
 
@@ -213,6 +241,36 @@ On the rolling `EPSG:26918` test tile at 0.5 m with a deliberately wide `radius`
 | `resolution` | Sets cell occupancy | Finer resolution creates more sparse cells, widening the gap |
 | `window_size` | Post-bin gap fill | Applies after interpolation; independent of `output_type` |
 | `nodata` | Shared void sentinel | Identical mask under both interpolators |
+
+<svg viewBox="0 0 720 250" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Histogram of per-cell differences between an inverse-distance and a mean DTM" style="width:100%;max-width:720px;display:block;margin:1.6rem auto">
+  <title>Where the two interpolators actually disagree</title>
+  <desc>A histogram of idw minus mean elevation differences over one tile. The distribution peaks sharply at zero — most cells are dense enough that the two reducers agree to within a couple of centimetres — but a long positive tail runs to plus thirty centimetres, made up of sparse cells where inverse distance weighting pulls the value toward the single nearest point.</desc>
+  <rect x="0" y="0" width="720" height="250" fill="var(--dg-bg)" rx="10"/>
+  <rect x="36" y="198.5" width="42" height="1.5" fill="var(--dg-a-soft)" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="80" y="197.5" width="42" height="2.5" fill="var(--dg-a-soft)" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="124" y="195.1" width="42" height="4.9" fill="var(--dg-a-soft)" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="168" y="188.9" width="42" height="11.1" fill="var(--dg-a-soft)" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="212" y="177.8" width="42" height="22.2" fill="var(--dg-a-soft)" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="256" y="153.1" width="42" height="46.9" fill="var(--dg-a-soft)" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="300" y="111.2" width="42" height="88.8" fill="var(--dg-a-soft)" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="344" y="52.0" width="42" height="148.0" fill="var(--dg-a)" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="388" y="93.9" width="42" height="106.1" fill="var(--dg-a-soft)" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="432" y="135.9" width="42" height="64.1" fill="var(--dg-a-soft)" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="476" y="158.1" width="42" height="41.9" fill="var(--dg-a-soft)" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="520" y="167.9" width="42" height="32.1" fill="var(--dg-a-soft)" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="564" y="175.3" width="42" height="24.7" fill="var(--dg-a-soft)" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="608" y="182.7" width="42" height="17.3" fill="var(--dg-a-soft)" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="652" y="188.9" width="42" height="11.1" fill="var(--dg-a-soft)" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <line x1="36" y1="200" x2="696" y2="200" stroke="var(--dg-line)" stroke-width="1.5"/>
+  <text x="36" y="30" font-size="10.5" fill="var(--dg-muted)">per-cell difference, idw − mean, over one 1 km² tile at 1 m</text>
+  <text x="57" y="218" text-anchor="middle" font-size="10.5" fill="var(--dg-muted)">−30</text>
+  <text x="233" y="218" text-anchor="middle" font-size="10.5" fill="var(--dg-muted)">−15</text>
+  <text x="365" y="218" text-anchor="middle" font-size="10.5" fill="var(--dg-muted)">0</text>
+  <text x="541" y="218" text-anchor="middle" font-size="10.5" fill="var(--dg-muted)">+15</text>
+  <text x="674" y="218" text-anchor="middle" font-size="10.5" fill="var(--dg-muted)">+30</text>
+  <text x="365" y="240" text-anchor="middle" font-size="11.5" fill="var(--dg-text)">difference (cm)</text>
+  <text x="500" y="86" font-size="10.5" fill="var(--dg-c)">sparse cells — idw follows the nearest point</text>
+</svg>
 
 ## Verification
 

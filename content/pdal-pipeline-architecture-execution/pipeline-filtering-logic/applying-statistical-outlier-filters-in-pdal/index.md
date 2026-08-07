@@ -92,6 +92,7 @@ Within a broader [PDAL Pipeline Architecture & Execution](https://www.pythonlida
 <svg viewBox="0 0 700 260" role="img" aria-label="Statistical outlier removal: k-d tree neighborhood query diagram" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:700px;display:block;margin:1.5rem auto;">
   <title>SOR algorithm: each point queries k nearest neighbours; outliers exceed mean+multiplier×stddev</title>
   <desc>Left panel: pipeline stage flow showing readers.las feeding into filters.outlier then into classification or writers.las. Right panel: scatter of points showing a normal point surrounded by neighbours within the sigma band, and an outlier point isolated far from its neighbours.</desc>
+  <rect x="0" y="0" width="700" height="260" fill="var(--dg-bg)" rx="10"/>
   <defs>
     <marker id="sorArr" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
       <polygon points="0 0,8 3,0 6" fill="currentColor" opacity="0.55"/>
@@ -238,6 +239,42 @@ print(f"Points retained: {count}")
 ```
 
 `pipeline.execute()` returns the total number of points that passed through to the final stage. For typical airborne acquisitions you should see 0.1–2 % of points removed by SOR; more than 5 % warrants investigating whether `multiplier` is too aggressive for your data density.
+
+<svg viewBox="0 0 720 252" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Distribution of mean nearest-neighbour distance with the rejection threshold marked" style="width:100%;max-width:720px;display:block;margin:1.6rem auto">
+  <title>Where the outlier threshold actually falls</title>
+  <desc>A histogram of each point's mean distance to its twelve nearest neighbours. The bulk of the cloud sits in a tight mode near 0.3 metres. The threshold, the mean plus 2.5 standard deviations, lands at about 0.94 metres, and everything to its right — a long thin tail of isolated points — is what filters.outlier flags as class 7.</desc>
+  <rect x="0" y="0" width="720" height="252" fill="var(--dg-bg)" rx="10"/>
+  <rect x="44" y="200.1" width="30" height="1.9" fill="var(--dg-a-soft)" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="77" y="196.3" width="30" height="5.7" fill="var(--dg-a-soft)" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="110" y="184.8" width="30" height="17.2" fill="var(--dg-a-soft)" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="143" y="158.1" width="30" height="43.9" fill="var(--dg-a-soft)" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="176" y="114.2" width="30" height="87.8" fill="var(--dg-a-soft)" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="209" y="70.2" width="30" height="131.8" fill="var(--dg-a-soft)" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="242" y="54.0" width="30" height="148.0" fill="var(--dg-a-soft)" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="275" y="76.0" width="30" height="126.0" fill="var(--dg-a-soft)" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="308" y="110.3" width="30" height="91.7" fill="var(--dg-a-soft)" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="341" y="142.8" width="30" height="59.2" fill="var(--dg-a-soft)" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="374" y="165.7" width="30" height="36.3" fill="var(--dg-a-soft)" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="407" y="181.0" width="30" height="21.0" fill="var(--dg-a-soft)" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="440" y="189.6" width="30" height="12.4" fill="var(--dg-e-soft)" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="473" y="194.4" width="30" height="7.6" fill="var(--dg-e-soft)" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="506" y="197.2" width="30" height="4.8" fill="var(--dg-e-soft)" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="539" y="199.1" width="30" height="2.9" fill="var(--dg-e-soft)" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="572" y="200.1" width="30" height="1.9" fill="var(--dg-e-soft)" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="605" y="200.1" width="30" height="1.9" fill="var(--dg-e-soft)" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="638" y="200.5" width="30" height="1.5" fill="var(--dg-e-soft)" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="671" y="200.5" width="30" height="1.5" fill="var(--dg-e-soft)" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <line x1="440" y1="46" x2="440" y2="202" stroke="var(--dg-e)" stroke-width="2" stroke-dasharray="5 4"/>
+  <text x="450" y="62" font-size="11" fill="var(--dg-e)">mean + 2.5 σ  =  0.94 m</text>
+  <text x="450" y="80" font-size="11" fill="var(--dg-e)">everything right of here becomes class 7</text>
+  <line x1="44" y1="202" x2="700" y2="202" stroke="var(--dg-line)" stroke-width="1.5"/>
+  <text x="44" y="34" font-size="10.5" fill="var(--dg-muted)">mean distance to the 12 nearest neighbours, per point</text>
+  <text x="59" y="220" text-anchor="middle" font-size="10.5" fill="var(--dg-muted)">0.1</text>
+  <text x="290" y="220" text-anchor="middle" font-size="10.5" fill="var(--dg-muted)">0.5</text>
+  <text x="521" y="220" text-anchor="middle" font-size="10.5" fill="var(--dg-muted)">1.2</text>
+  <text x="685" y="220" text-anchor="middle" font-size="10.5" fill="var(--dg-muted)">1.8</text>
+  <text x="372" y="242" text-anchor="middle" font-size="11.5" fill="var(--dg-text)">mean neighbour distance (m)</text>
+</svg>
 
 ## Complete Working Example
 
@@ -405,6 +442,40 @@ print(reader_meta.get("srs", {}).get("wkt", "No CRS embedded"))
 ```
 
 You can also run `pdal info --stats output_clean.laz` from the command line and compare the Z range and point count against the raw file to spot gross over-filtering quickly.
+
+<svg viewBox="0 0 720 248" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="The statistical and radius outlier methods applied to a legitimately sparse tile edge" style="width:100%;max-width:720px;display:block;margin:1.6rem auto">
+  <title>Where each outlier method misjudges a sparse edge</title>
+  <desc>The same tile edge under two methods. The statistical method compares every point to the tile-wide mean neighbour distance, so the naturally sparse strip at the swath edge is flagged wholesale. The radius method asks only whether a point has enough neighbours within a fixed distance, so it keeps the sparse but real edge and still removes the isolated speck above it.</desc>
+  <rect x="0" y="0" width="720" height="248" fill="var(--dg-bg)" rx="10"/>
+  <text x="185" y="36" text-anchor="middle" font-size="12" font-weight="600" fill="var(--dg-text)">method: statistical</text>
+  <text x="535" y="36" text-anchor="middle" font-size="12" font-weight="600" fill="var(--dg-text)">method: radius</text>
+  <rect x="20" y="46" width="330" height="140" rx="8" fill="var(--dg-surface)" stroke="var(--dg-line-soft)" stroke-width="1.2"/>
+  <rect x="370" y="46" width="330" height="140" rx="8" fill="var(--dg-surface)" stroke="var(--dg-line-soft)" stroke-width="1.2"/>
+  <line x1="256" y1="56" x2="256" y2="176" stroke="var(--dg-line-soft)" stroke-width="1.2" stroke-dasharray="4 4"/>
+  <line x1="606" y1="56" x2="606" y2="176" stroke="var(--dg-line-soft)" stroke-width="1.2" stroke-dasharray="4 4"/>
+  <circle cx="52" cy="150" r="3" fill="var(--dg-line)"/><circle cx="72" cy="146" r="3" fill="var(--dg-line)"/>
+  <circle cx="92" cy="152" r="3" fill="var(--dg-line)"/><circle cx="112" cy="147" r="3" fill="var(--dg-line)"/>
+  <circle cx="132" cy="151" r="3" fill="var(--dg-line)"/><circle cx="152" cy="148" r="3" fill="var(--dg-line)"/>
+  <circle cx="172" cy="152" r="3" fill="var(--dg-line)"/><circle cx="192" cy="147" r="3" fill="var(--dg-line)"/>
+  <circle cx="212" cy="151" r="3" fill="var(--dg-line)"/><circle cx="232" cy="148" r="3" fill="var(--dg-line)"/>
+  <circle cx="278" cy="150" r="3.6" fill="var(--dg-e)"/><circle cx="306" cy="146" r="3.6" fill="var(--dg-e)"/>
+  <circle cx="334" cy="152" r="3.6" fill="var(--dg-e)"/>
+  <circle cx="300" cy="86" r="3.6" fill="var(--dg-e)"/>
+  <circle cx="402" cy="150" r="3" fill="var(--dg-line)"/><circle cx="422" cy="146" r="3" fill="var(--dg-line)"/>
+  <circle cx="442" cy="152" r="3" fill="var(--dg-line)"/><circle cx="462" cy="147" r="3" fill="var(--dg-line)"/>
+  <circle cx="482" cy="151" r="3" fill="var(--dg-line)"/><circle cx="502" cy="148" r="3" fill="var(--dg-line)"/>
+  <circle cx="522" cy="152" r="3" fill="var(--dg-line)"/><circle cx="542" cy="147" r="3" fill="var(--dg-line)"/>
+  <circle cx="562" cy="151" r="3" fill="var(--dg-line)"/><circle cx="582" cy="148" r="3" fill="var(--dg-line)"/>
+  <circle cx="628" cy="150" r="3.6" fill="var(--dg-d)"/><circle cx="656" cy="146" r="3.6" fill="var(--dg-d)"/>
+  <circle cx="684" cy="152" r="3.6" fill="var(--dg-d)"/>
+  <circle cx="650" cy="86" r="3.6" fill="var(--dg-e)"/>
+  <text x="303" y="70" text-anchor="middle" font-size="10" fill="var(--dg-e)">removed</text>
+  <text x="653" y="70" text-anchor="middle" font-size="10" fill="var(--dg-e)">removed</text>
+  <text x="185" y="206" text-anchor="middle" font-size="10.5" fill="var(--dg-e)">the whole sparse edge is flagged</text>
+  <text x="535" y="206" text-anchor="middle" font-size="10.5" fill="var(--dg-d)">the sparse edge survives</text>
+  <text x="185" y="228" text-anchor="middle" font-size="10.5" fill="var(--dg-muted)">mean_k 12, multiplier 2.5</text>
+  <text x="535" y="228" text-anchor="middle" font-size="10.5" fill="var(--dg-muted)">radius 1.0, min_k 4</text>
+</svg>
 
 ## Gotchas and Edge Cases
 

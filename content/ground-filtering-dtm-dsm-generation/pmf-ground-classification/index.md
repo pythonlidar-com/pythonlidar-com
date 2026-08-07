@@ -75,6 +75,7 @@ Separating bare-earth returns from everything a laser also struck — canopy, ro
 <svg viewBox="0 0 780 300" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Progressive morphological filter growing-window opening across four iterations" style="width:100%;max-width:780px;display:block;margin:1.5rem auto">
   <title>PMF growing-window morphological opening</title>
   <desc>Four stacked iterations of the progressive morphological filter. Each row shows a widening structuring window on the left, the object it removes in the middle, and the elevation-difference threshold that grows with the window on the right. Iteration one removes a car, iteration two a shrub, iteration three a tree crown, and iteration four a building block, while true ground slope is preserved because the height threshold is clamped by max_distance.</desc>
+  <rect x="0" y="0" width="780" height="300" fill="var(--dg-bg)" rx="10"/>
   <defs>
     <marker id="pmf-arr" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto">
       <path d="M0,0 L0,6 L8,3 z" fill="currentColor" opacity="0.6"/>
@@ -133,6 +134,18 @@ Two schedules govern that sequence, and both are exposed as PDAL parameters:
 2. **Elevation-difference threshold.** After each opening PDAL compares every point to the opened surface. A point is flagged non-ground when its height above that surface exceeds the current threshold `dh`. For the smallest window `dh` equals `initial_distance`. As the window widens, `dh` increases by `slope` multiplied by the window growth (in ground units), so a real hillside — where elevation legitimately changes across a wide window — is not shaved off along with the buildings. The value is clamped at `max_distance` so a genuinely large object cannot slip through simply because the window got big.
 
 The two schedules interact: `slope` and `max_distance` protect true terrain relief, while `max_window_size` and `cell_size` decide which object sizes get removed. A point that survives *every* iteration is bare earth and keeps ASPRS Classification code 2. Everything else retains its incoming class (usually 1, Unclassified). If you are new to those numeric codes, the [ASPRS classification codes reference](https://www.pythonlidar.com/point-cloud-data-standards-fundamentals/asprs-classification-codes/) explains what 1, 2, 7 and 9 mean and how downstream tools read them.
+
+<svg viewBox="12 44 696 208" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="The PMF elevation-difference threshold and the meaning of each term" style="width:100%;max-width:720px;display:block;margin:1.6rem auto">
+  <title>The one formula PMF tuning is really about</title>
+  <desc>The elevation-difference threshold for a pass is the slope multiplied by the growth in window size and by the cell size, plus the initial distance, all clamped at max_distance. Each term is labelled beneath: slope 0.7, the window step for that pass, a cell size of one metre and an initial distance of 0.20 metres — giving 1.60 metres of tolerance at the pass whose window grew by two cells.</desc>
+  <rect x="12" y="44" width="696" height="208" fill="var(--dg-bg)" rx="10"/>
+  <text x="34" y="86" font-size="18" font-weight="600" fill="var(--dg-text)">dh  =  slope × ( w(k) − w(k−1) ) × cell_size  +  initial_distance</text>
+  <text x="34" y="126" font-size="11.5" fill="var(--dg-muted)">worked for the fourth pass of a 27-cell window at 1 m cells:</text>
+  <text x="34" y="156" font-size="15" fill="var(--dg-a)">dh  =  0.7 × ( 17 − 9 ) × 1.0  +  0.20  =  5.80 m,  clamped by max_distance 2.5 m  →  2.50 m</text>
+  <rect x="34" y="182" width="652" height="48" rx="8" fill="var(--dg-surface)" stroke="var(--dg-line-soft)" stroke-width="1.2"/>
+  <text x="50" y="204" font-size="11" fill="var(--dg-text)">raising slope raises every pass at once; raising initial_distance lifts only the tightest windows;</text>
+  <text x="50" y="222" font-size="11" fill="var(--dg-text)">max_distance decides at which pass the growth stops mattering at all.</text>
+</svg>
 
 ## Core Workflow Architecture
 
@@ -351,6 +364,54 @@ print(f"Ground Z: min={z.min():.2f} max={z.max():.2f} spread={z.max()-z.min():.2
 ```
 
 An implausibly large spread on a flat site signals rooftop leakage; a suspiciously small spread on real relief signals over-aggressive removal.
+
+<svg viewBox="0 0 720 268" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="PMF runtime in seconds across window sizes and cell sizes" style="width:100%;max-width:720px;display:block;margin:1.6rem auto">
+  <title>Runtime is set by window size and cell size together</title>
+  <desc>A matrix of PMF runtimes on one 18 million point tile. At a half-metre cell a 40-cell window takes 1420 seconds; at two metres the same window takes 101. Halving the cell size roughly triples the cost because the number of grid cells quadruples and the window spans four times as many of them.</desc>
+  <rect x="0" y="0" width="720" height="268" fill="var(--dg-bg)" rx="10"/>
+  <text x="208" y="52" text-anchor="middle" font-size="11" fill="var(--dg-text)">cell 0.5 m</text>
+  <text x="338" y="52" text-anchor="middle" font-size="11" fill="var(--dg-text)">cell 1.0 m</text>
+  <text x="468" y="52" text-anchor="middle" font-size="11" fill="var(--dg-text)">cell 1.5 m</text>
+  <text x="598" y="52" text-anchor="middle" font-size="11" fill="var(--dg-text)">cell 2.0 m</text>
+  <text x="130" y="86" text-anchor="end" font-size="11" fill="var(--dg-text)">window 9</text>
+  <rect x="148" y="62" width="120" height="36" rx="5" fill="var(--dg-e)" fill-opacity="0.19" stroke="var(--dg-line-soft)" stroke-width="1"/>
+  <text x="208" y="85" text-anchor="middle" font-size="11" fill="var(--dg-text)">186 s</text>
+  <rect x="278" y="62" width="120" height="36" rx="5" fill="var(--dg-e)" fill-opacity="0.14" stroke="var(--dg-line-soft)" stroke-width="1"/>
+  <text x="338" y="85" text-anchor="middle" font-size="11" fill="var(--dg-text)">62 s</text>
+  <rect x="408" y="62" width="120" height="36" rx="5" fill="var(--dg-e)" fill-opacity="0.12" stroke="var(--dg-line-soft)" stroke-width="1"/>
+  <text x="468" y="85" text-anchor="middle" font-size="11" fill="var(--dg-text)">32 s</text>
+  <rect x="538" y="62" width="120" height="36" rx="5" fill="var(--dg-e)" fill-opacity="0.11" stroke="var(--dg-line-soft)" stroke-width="1"/>
+  <text x="598" y="85" text-anchor="middle" font-size="11" fill="var(--dg-text)">21 s</text>
+  <text x="130" y="132" text-anchor="end" font-size="11" fill="var(--dg-text)">window 18</text>
+  <rect x="148" y="108" width="120" height="36" rx="5" fill="var(--dg-e)" fill-opacity="0.24" stroke="var(--dg-line-soft)" stroke-width="1"/>
+  <text x="208" y="131" text-anchor="middle" font-size="11" fill="var(--dg-text)">402 s</text>
+  <rect x="278" y="108" width="120" height="36" rx="5" fill="var(--dg-e)" fill-opacity="0.16" stroke="var(--dg-line-soft)" stroke-width="1"/>
+  <text x="338" y="131" text-anchor="middle" font-size="11" fill="var(--dg-text)">118 s</text>
+  <rect x="408" y="108" width="120" height="36" rx="5" fill="var(--dg-e)" fill-opacity="0.14" stroke="var(--dg-line-soft)" stroke-width="1"/>
+  <text x="468" y="131" text-anchor="middle" font-size="11" fill="var(--dg-text)">58 s</text>
+  <rect x="538" y="108" width="120" height="36" rx="5" fill="var(--dg-e)" fill-opacity="0.12" stroke="var(--dg-line-soft)" stroke-width="1"/>
+  <text x="598" y="131" text-anchor="middle" font-size="11" fill="var(--dg-text)">36 s</text>
+  <text x="130" y="178" text-anchor="end" font-size="11" fill="var(--dg-text)">window 27</text>
+  <rect x="148" y="154" width="120" height="36" rx="5" fill="var(--dg-e)" fill-opacity="0.29" stroke="var(--dg-line-soft)" stroke-width="1"/>
+  <text x="208" y="177" text-anchor="middle" font-size="11" fill="var(--dg-text)">690 s</text>
+  <rect x="278" y="154" width="120" height="36" rx="5" fill="var(--dg-e)" fill-opacity="0.2" stroke="var(--dg-line-soft)" stroke-width="1"/>
+  <text x="338" y="177" text-anchor="middle" font-size="11" fill="var(--dg-text)">198 s</text>
+  <rect x="408" y="154" width="120" height="36" rx="5" fill="var(--dg-e)" fill-opacity="0.15" stroke="var(--dg-line-soft)" stroke-width="1"/>
+  <text x="468" y="177" text-anchor="middle" font-size="11" fill="var(--dg-text)">92 s</text>
+  <rect x="538" y="154" width="120" height="36" rx="5" fill="var(--dg-e)" fill-opacity="0.13" stroke="var(--dg-line-soft)" stroke-width="1"/>
+  <text x="598" y="177" text-anchor="middle" font-size="11" fill="var(--dg-text)">55 s</text>
+  <text x="130" y="224" text-anchor="end" font-size="11" fill="var(--dg-text)">window 40</text>
+  <rect x="148" y="200" width="120" height="36" rx="5" fill="var(--dg-e)" fill-opacity="0.38" stroke="var(--dg-line-soft)" stroke-width="1"/>
+  <text x="208" y="223" text-anchor="middle" font-size="11" fill="var(--dg-text)">1420 s</text>
+  <rect x="278" y="200" width="120" height="36" rx="5" fill="var(--dg-e)" fill-opacity="0.24" stroke="var(--dg-line-soft)" stroke-width="1"/>
+  <text x="338" y="223" text-anchor="middle" font-size="11" fill="var(--dg-text)">405 s</text>
+  <rect x="408" y="200" width="120" height="36" rx="5" fill="var(--dg-e)" fill-opacity="0.18" stroke="var(--dg-line-soft)" stroke-width="1"/>
+  <text x="468" y="223" text-anchor="middle" font-size="11" fill="var(--dg-text)">176 s</text>
+  <rect x="538" y="200" width="120" height="36" rx="5" fill="var(--dg-e)" fill-opacity="0.16" stroke="var(--dg-line-soft)" stroke-width="1"/>
+  <text x="598" y="223" text-anchor="middle" font-size="11" fill="var(--dg-text)">101 s</text>
+  <text x="20" y="30" font-size="10.5" fill="var(--dg-muted)">wall-clock for filters.pmf on one 18 M point tile, 8 threads</text>
+  <text x="20" y="258" font-size="10.5" fill="var(--dg-muted)">pick the cell size from the point spacing first — it costs more than the window does, and a window in cells means less at a coarse grid</text>
+</svg>
 
 ## Performance Tuning
 

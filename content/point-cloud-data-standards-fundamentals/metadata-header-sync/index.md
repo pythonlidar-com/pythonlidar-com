@@ -73,9 +73,10 @@ Point cloud integrity begins at the file header. When processing LiDAR data at s
 
 ---
 
-<svg viewBox="0 0 780 220" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Four-phase LAS header synchronization pipeline: ingest, validate, correct and sync, write and verify" style="width:100%;max-width:780px;display:block;margin:1.5rem auto;">
+<svg viewBox="-12 38 764 162" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Four-phase LAS header synchronization pipeline: ingest, validate, correct and sync, write and verify" style="width:100%;max-width:780px;display:block;margin:1.5rem auto;">
   <title>LAS Metadata and Header Sync Workflow</title>
   <desc>Four sequential stages for synchronizing LAS/LAZ file headers with point data: (1) Ingest + Parse header fields and VLRs, (2) Validate bounds, scale, and CRS against ground truth, (3) Correct + Sync offsets and inject updated VLRs, (4) Write atomically and verify point count and bounding box.</desc>
+  <rect x="-12" y="38" width="764" height="162" fill="var(--dg-bg)" rx="10"/>
   <defs>
     <marker id="mhsarr" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
       <polygon points="0 0, 8 3, 0 6" fill="currentColor" opacity="0.55"/>
@@ -421,6 +422,56 @@ verify_sync(OUTPUT, expected_count=actual_count,
             expected_mins=mins, expected_maxs=maxs, expected_epsg=EPSG)
 ```
 
+<svg viewBox="0 0 720 298" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Header fields that go stale during a pipeline and who is responsible for each" style="width:100%;max-width:720px;display:block;margin:1.6rem auto">
+  <title>Which header fields go stale, and who fixes them</title>
+  <desc>Seven header fields, what invalidates each, and who updates it. Point counts, the bounding box and the return histogram are recomputed by the writer without being asked. The CRS record follows the last stage. Scale and offset are the exception: nothing recomputes them, so a reprojection into a different unit leaves a header that quietly quantises every coordinate.</desc>
+  <rect x="0" y="0" width="720" height="298" fill="var(--dg-bg)" rx="10"/>
+  <rect x="20" y="50" width="180" height="28" rx="5" fill="var(--dg-surface)" stroke="var(--dg-line-soft)" stroke-width="1"/>
+  <text x="32" y="69" font-size="11" fill="var(--dg-text)">point count</text>
+  <rect x="212" y="50" width="250" height="28" rx="5" fill="var(--dg-c-soft)" stroke="var(--dg-c)" stroke-width="1.1"/>
+  <text x="337" y="69" text-anchor="middle" font-size="10.5" fill="var(--dg-text)">any filter that drops points</text>
+  <rect x="474" y="50" width="212" height="28" rx="5" fill="var(--dg-d-soft)" stroke="var(--dg-d)" stroke-width="1.1"/>
+  <text x="580" y="69" text-anchor="middle" font-size="10.5" fill="var(--dg-text)">writer, automatically</text>
+  <rect x="20" y="84" width="180" height="28" rx="5" fill="var(--dg-surface)" stroke="var(--dg-line-soft)" stroke-width="1"/>
+  <text x="32" y="103" font-size="11" fill="var(--dg-text)">bounding box</text>
+  <rect x="212" y="84" width="250" height="28" rx="5" fill="var(--dg-c-soft)" stroke="var(--dg-c)" stroke-width="1.1"/>
+  <text x="337" y="103" text-anchor="middle" font-size="10.5" fill="var(--dg-text)">crop, reprojection, outlier</text>
+  <rect x="474" y="84" width="212" height="28" rx="5" fill="var(--dg-d-soft)" stroke="var(--dg-d)" stroke-width="1.1"/>
+  <text x="580" y="103" text-anchor="middle" font-size="10.5" fill="var(--dg-text)">writer, automatically</text>
+  <rect x="20" y="118" width="180" height="28" rx="5" fill="var(--dg-surface)" stroke="var(--dg-line-soft)" stroke-width="1"/>
+  <text x="32" y="137" font-size="11" fill="var(--dg-text)">return count histogram</text>
+  <rect x="212" y="118" width="250" height="28" rx="5" fill="var(--dg-c-soft)" stroke="var(--dg-c)" stroke-width="1.1"/>
+  <text x="337" y="137" text-anchor="middle" font-size="10.5" fill="var(--dg-text)">any filter that drops points</text>
+  <rect x="474" y="118" width="212" height="28" rx="5" fill="var(--dg-d-soft)" stroke="var(--dg-d)" stroke-width="1.1"/>
+  <text x="580" y="137" text-anchor="middle" font-size="10.5" fill="var(--dg-text)">writer, automatically</text>
+  <rect x="20" y="152" width="180" height="28" rx="5" fill="var(--dg-surface)" stroke="var(--dg-line-soft)" stroke-width="1"/>
+  <text x="32" y="171" font-size="11" fill="var(--dg-text)">CRS record</text>
+  <rect x="212" y="152" width="250" height="28" rx="5" fill="var(--dg-c-soft)" stroke="var(--dg-c)" stroke-width="1.1"/>
+  <text x="337" y="171" text-anchor="middle" font-size="10.5" fill="var(--dg-text)">reprojection</text>
+  <rect x="474" y="152" width="212" height="28" rx="5" fill="var(--dg-d-soft)" stroke="var(--dg-d)" stroke-width="1.1"/>
+  <text x="580" y="171" text-anchor="middle" font-size="10.5" fill="var(--dg-text)">writer, from the last stage</text>
+  <rect x="20" y="186" width="180" height="28" rx="5" fill="var(--dg-surface)" stroke="var(--dg-line-soft)" stroke-width="1"/>
+  <text x="32" y="205" font-size="11" fill="var(--dg-text)">scale and offset</text>
+  <rect x="212" y="186" width="250" height="28" rx="5" fill="var(--dg-c-soft)" stroke="var(--dg-c)" stroke-width="1.1"/>
+  <text x="337" y="205" text-anchor="middle" font-size="10.5" fill="var(--dg-text)">reprojection to a new unit</text>
+  <rect x="474" y="186" width="212" height="28" rx="5" fill="var(--dg-e-soft)" stroke="var(--dg-e)" stroke-width="1.1"/>
+  <text x="580" y="205" text-anchor="middle" font-size="10.5" fill="var(--dg-text)">you, explicitly</text>
+  <rect x="20" y="220" width="180" height="28" rx="5" fill="var(--dg-surface)" stroke="var(--dg-line-soft)" stroke-width="1"/>
+  <text x="32" y="239" font-size="11" fill="var(--dg-text)">generating software</text>
+  <rect x="212" y="220" width="250" height="28" rx="5" fill="var(--dg-c-soft)" stroke="var(--dg-c)" stroke-width="1.1"/>
+  <text x="337" y="239" text-anchor="middle" font-size="10.5" fill="var(--dg-text)">every run</text>
+  <rect x="474" y="220" width="212" height="28" rx="5" fill="var(--dg-d-soft)" stroke="var(--dg-d)" stroke-width="1.1"/>
+  <text x="580" y="239" text-anchor="middle" font-size="10.5" fill="var(--dg-text)">writer, as PDAL</text>
+  <rect x="20" y="254" width="180" height="28" rx="5" fill="var(--dg-surface)" stroke="var(--dg-line-soft)" stroke-width="1"/>
+  <text x="32" y="273" font-size="11" fill="var(--dg-text)">file creation date</text>
+  <rect x="212" y="254" width="250" height="28" rx="5" fill="var(--dg-c-soft)" stroke="var(--dg-c)" stroke-width="1.1"/>
+  <text x="337" y="273" text-anchor="middle" font-size="10.5" fill="var(--dg-text)">every run</text>
+  <rect x="474" y="254" width="212" height="28" rx="5" fill="var(--dg-d-soft)" stroke="var(--dg-d)" stroke-width="1.1"/>
+  <text x="580" y="273" text-anchor="middle" font-size="10.5" fill="var(--dg-text)">writer, as today</text>
+  <text x="20" y="36" font-size="10.5" fill="var(--dg-muted)">field · what invalidates it · who puts it right</text>
+  <text x="20" y="292" font-size="10.5" fill="var(--dg-muted)">the single red row is where most header bugs live</text>
+</svg>
+
 ## Code Breakdown
 
 **`parse_header`** opens the file with `laspy.open()` in read-only mode and never reads the point block, so it completes in milliseconds regardless of file size. It explicitly hunts for `record_id` 2112 because `laspy` does not yet expose a dedicated WKT2 accessor across all versions.
@@ -456,6 +507,37 @@ After writing a synchronized file, a three-layer check closes the loop:
 **Layer 3 — CRS round-trip.** Parse the written WKT2 VLR back through `pyproj.CRS.from_wkt()` and assert `to_authority()` returns the expected EPSG. This catches encoding bugs where the WKT2 string is written but fails to parse on the read side.
 
 For files that also carry [ASPRS classification codes](https://www.pythonlidar.com/point-cloud-data-standards-fundamentals/asprs-classification-codes/), add a fourth assertion: enumerate unique `classification` values in the output and verify they fall within the expected set (e.g., 1–6 for standard aerial LiDAR). Classification arrays that survive the sync unchanged confirm that the dimension-copy loop did not silently drop the `Classification` field.
+
+<svg viewBox="0 0 720 262" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Header claims and actual tile contents diverging across four pipeline stages" style="width:100%;max-width:720px;display:block;margin:1.6rem auto">
+  <title>Where the header stops describing the file</title>
+  <desc>Four stages of one pipeline with what the header claims and what the tile actually holds at each point. They agree after the read. The crop removes points but an in-place header edit does not, so the count diverges. The reprojection moves the coordinates while the bounding box stays where it was. Only a full rewrite through a writer brings the two back together.</desc>
+  <rect x="0" y="0" width="720" height="262" fill="var(--dg-bg)" rx="10"/>
+  <line x1="60" y1="80" x2="680" y2="80" stroke="var(--dg-line-soft)" stroke-width="1.4"/>
+  <line x1="60" y1="176" x2="680" y2="176" stroke="var(--dg-line-soft)" stroke-width="1.4"/>
+  <text x="60" y="60" font-size="11" font-weight="600" fill="var(--dg-c)">what the header claims</text>
+  <text x="60" y="212" font-size="11" font-weight="600" fill="var(--dg-b)">what the tile holds</text>
+  <circle cx="120" cy="80" r="7" fill="var(--dg-c-soft)" stroke="var(--dg-c)" stroke-width="2"/>
+  <circle cx="120" cy="176" r="7" fill="var(--dg-b-soft)" stroke="var(--dg-b)" stroke-width="2"/>
+  <text x="120" y="104" text-anchor="middle" font-size="10" fill="var(--dg-muted)">18.4 M</text>
+  <text x="120" y="164" text-anchor="middle" font-size="10" fill="var(--dg-muted)">18.4 M</text>
+  <text x="120" y="234" text-anchor="middle" font-size="10.5" fill="var(--dg-text)">read</text>
+  <circle cx="310" cy="80" r="7" fill="var(--dg-c-soft)" stroke="var(--dg-c)" stroke-width="2"/>
+  <circle cx="310" cy="176" r="7" fill="var(--dg-e-soft)" stroke="var(--dg-e)" stroke-width="2"/>
+  <text x="310" y="104" text-anchor="middle" font-size="10" fill="var(--dg-muted)">18.4 M</text>
+  <text x="310" y="164" text-anchor="middle" font-size="10" fill="var(--dg-e)">12.6 M</text>
+  <text x="310" y="234" text-anchor="middle" font-size="10.5" fill="var(--dg-text)">crop</text>
+  <circle cx="500" cy="80" r="7" fill="var(--dg-c-soft)" stroke="var(--dg-c)" stroke-width="2"/>
+  <circle cx="500" cy="176" r="7" fill="var(--dg-e-soft)" stroke="var(--dg-e)" stroke-width="2"/>
+  <text x="500" y="104" text-anchor="middle" font-size="10" fill="var(--dg-muted)">UTM bbox</text>
+  <text x="500" y="164" text-anchor="middle" font-size="10" fill="var(--dg-e)">degrees</text>
+  <text x="500" y="234" text-anchor="middle" font-size="10.5" fill="var(--dg-text)">reproject</text>
+  <circle cx="660" cy="80" r="7" fill="var(--dg-d-soft)" stroke="var(--dg-d)" stroke-width="2"/>
+  <circle cx="660" cy="176" r="7" fill="var(--dg-d-soft)" stroke="var(--dg-d)" stroke-width="2"/>
+  <text x="660" y="104" text-anchor="middle" font-size="10" fill="var(--dg-d)">12.6 M</text>
+  <text x="660" y="164" text-anchor="middle" font-size="10" fill="var(--dg-d)">12.6 M</text>
+  <text x="660" y="234" text-anchor="middle" font-size="10.5" fill="var(--dg-text)">write</text>
+  <text x="60" y="34" font-size="10.5" fill="var(--dg-muted)">the gap between the two lines is the bug, and nothing in the run reports it</text>
+</svg>
 
 ## Performance Tuning
 

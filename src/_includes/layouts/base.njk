@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 
-  {%- set pageTitle = seoTitle or title -%}
+  {%- set pageTitle = headTitle or title -%}
   {%- if page.url == "/" -%}
     {%- set fullTitle = site.name -%}
   {%- elif pageTitle.length > 50 -%}
@@ -47,6 +47,21 @@
   <meta name="twitter:title" content="{{ pageTitle or site.name }}">
   <meta name="twitter:description" content="{{ pageDesc }}">
   <meta name="twitter:image" content="{{ site.url }}/assets/img/og-image.png">
+
+  <script>
+    /* No-flash theme resolution: stored choice wins, else the OS preference. */
+    (function () {
+      try {
+        var stored = localStorage.getItem("theme");
+        var theme = stored === "dark" || stored === "light"
+          ? stored
+          : (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+        document.documentElement.setAttribute("data-theme", theme);
+      } catch (e) {
+        document.documentElement.setAttribute("data-theme", "light");
+      }
+    })();
+  </script>
 
   <link rel="stylesheet" href="{{ '/assets/css/styles.css' | assetHash }}">
 

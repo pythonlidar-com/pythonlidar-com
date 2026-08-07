@@ -80,6 +80,7 @@ LAZ is LAS with LASzip compression applied to the point records; the two formats
 <svg viewBox="0 0 760 290" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="LAS to LAZ conversion preserving header, VLRs, extra dimensions and point records through PDAL writers.las" style="width:100%;max-width:760px;display:block;margin:1.5rem auto;">
   <title>What carries across a LAS to LAZ conversion with forward:all and extra_dims:all</title>
   <desc>On the left a LAS file is drawn as a stack of four parts: Public Header Block, VLRs including the CRS record, point data records, and an Extra Bytes dimension. An arrow labelled writers.las with compression true, forward all, and extra_dims all points to a LAZ file on the right with the same four parts, where only the point data block is shown compressed. A note states the codec is lossless and the round trip back to LAS is byte-identical.</desc>
+  <rect x="0" y="0" width="760" height="290" fill="var(--dg-bg)" rx="10"/>
   <defs>
     <marker id="cv-arr" markerWidth="9" markerHeight="9" refX="7" refY="3.2" orient="auto">
       <path d="M0,0 L0,6.4 L8,3.2 z" fill="currentColor"/>
@@ -202,6 +203,37 @@ def convert_las_to_laz(src: Path, dst: Path) -> int:
 ### Step 4 — Verify parity before deleting the source
 
 Never delete the LAS until you have confirmed the LAZ holds the same points and header. The verification step below compares point count and key header fields with `laspy`.
+
+<svg viewBox="0 0 720 266" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="How much of a LAS file survives LAZ compression, by which dimensions it carries" style="width:100%;max-width:720px;display:block;margin:1.6rem auto">
+  <title>What LAZ can and cannot squeeze</title>
+  <desc>Compressed size as a share of the uncompressed file for five point layouts. Coordinates alone compress to about 18 percent because neighbouring points differ by very little. Adding intensity, GPS time and colour each add poorly-correlated bytes, and four custom float dimensions push the compressed file to 58 percent — the extra dimensions are stored with far less cleverness than the coordinates are.</desc>
+  <rect x="0" y="0" width="720" height="266" fill="var(--dg-bg)" rx="10"/>
+  <rect x="200" y="56" width="460" height="14" rx="3" fill="var(--dg-surface-2)" stroke="var(--dg-line-soft)" stroke-width="1"/>
+  <rect x="200" y="74" width="82" height="14" rx="3" fill="var(--dg-d-soft)" stroke="var(--dg-d)" stroke-width="1.1"/>
+  <text x="190" y="78" text-anchor="end" font-size="11" fill="var(--dg-text)">XYZ only</text>
+  <text x="288" y="86" font-size="10" fill="var(--dg-muted)">18%</text>
+  <rect x="200" y="96" width="460" height="14" rx="3" fill="var(--dg-surface-2)" stroke="var(--dg-line-soft)" stroke-width="1"/>
+  <rect x="200" y="114" width="110" height="14" rx="3" fill="var(--dg-d-soft)" stroke="var(--dg-d)" stroke-width="1.1"/>
+  <text x="190" y="118" text-anchor="end" font-size="11" fill="var(--dg-text)">+ Intensity</text>
+  <text x="316" y="126" font-size="10" fill="var(--dg-muted)">24%</text>
+  <rect x="200" y="136" width="460" height="14" rx="3" fill="var(--dg-surface-2)" stroke="var(--dg-line-soft)" stroke-width="1"/>
+  <rect x="200" y="154" width="151" height="14" rx="3" fill="var(--dg-d-soft)" stroke="var(--dg-d)" stroke-width="1.1"/>
+  <text x="190" y="158" text-anchor="end" font-size="11" fill="var(--dg-text)">+ GpsTime</text>
+  <text x="357" y="166" font-size="10" fill="var(--dg-muted)">33%</text>
+  <rect x="200" y="176" width="460" height="14" rx="3" fill="var(--dg-surface-2)" stroke="var(--dg-line-soft)" stroke-width="1"/>
+  <rect x="200" y="194" width="188" height="14" rx="3" fill="var(--dg-d-soft)" stroke="var(--dg-d)" stroke-width="1.1"/>
+  <text x="190" y="198" text-anchor="end" font-size="11" fill="var(--dg-text)">+ RGB</text>
+  <text x="394" y="206" font-size="10" fill="var(--dg-muted)">41%</text>
+  <rect x="200" y="216" width="460" height="14" rx="3" fill="var(--dg-surface-2)" stroke="var(--dg-line-soft)" stroke-width="1"/>
+  <rect x="200" y="234" width="266" height="14" rx="3" fill="var(--dg-d-soft)" stroke="var(--dg-d)" stroke-width="1.1"/>
+  <text x="190" y="238" text-anchor="end" font-size="11" fill="var(--dg-text)">+ 4 extra floats</text>
+  <text x="472" y="246" font-size="10" fill="var(--dg-muted)">58%</text>
+  <rect x="200" y="34" width="14" height="10" rx="2" fill="var(--dg-surface-2)" stroke="var(--dg-line-soft)" stroke-width="1"/>
+  <text x="220" y="43" font-size="10.5" fill="var(--dg-muted)">uncompressed LAS</text>
+  <rect x="360" y="34" width="14" height="10" rx="2" fill="var(--dg-d-soft)" stroke="var(--dg-d)" stroke-width="1.1"/>
+  <text x="380" y="43" font-size="10.5" fill="var(--dg-muted)">the same tile as LAZ</text>
+  <text x="60" y="258" font-size="10.5" fill="var(--dg-muted)">if your compression ratio is worse than you expected, look at what the point record carries before blaming the encoder</text>
+</svg>
 
 ## Complete Working Example
 
@@ -348,6 +380,42 @@ def assert_round_trip(las_path: str, laz_path: str) -> None:
 ```
 
 Because LASzip is lossless, `np.array_equal` holds for every dimension including custom Extra Bytes fields. If any dimension fails, suspect a missing `extra_dims: "all"` or a point-format downgrade, not the codec. Comparing on-disk sizes with `os.stat` gives the compression ratio, which typically lands between 5x and 8x for airborne LiDAR depending on point format width.
+
+<svg viewBox="0 0 720 300" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="What a LAS to LAZ conversion carries across by default and what needs an explicit option" style="width:100%;max-width:720px;display:block;margin:1.6rem auto">
+  <title>Conversion is lossless about points and careless about everything else</title>
+  <desc>Seven things a LAS file holds, and whether a plain conversion keeps them. Point records, header fields and the coordinate reference system always survive. Extra dimensions, other variable length records and extended VLRs survive only when you ask for them by name. Point order is never guaranteed, which matters if anything downstream indexes by row number.</desc>
+  <rect x="0" y="0" width="720" height="300" fill="var(--dg-bg)" rx="10"/>
+  <rect x="20" y="50" width="330" height="28" rx="5" fill="var(--dg-surface)" stroke="var(--dg-line-soft)" stroke-width="1"/>
+  <text x="34" y="69" font-size="11" fill="var(--dg-text)">point records</text>
+  <rect x="380" y="50" width="300" height="28" rx="5" fill="var(--dg-d-soft)" stroke="var(--dg-d)" stroke-width="1.1"/>
+  <text x="530" y="69" text-anchor="middle" font-size="11" fill="var(--dg-text)">always</text>
+  <rect x="20" y="84" width="330" height="28" rx="5" fill="var(--dg-surface)" stroke="var(--dg-line-soft)" stroke-width="1"/>
+  <text x="34" y="103" font-size="11" fill="var(--dg-text)">public header fields</text>
+  <rect x="380" y="84" width="300" height="28" rx="5" fill="var(--dg-d-soft)" stroke="var(--dg-d)" stroke-width="1.1"/>
+  <text x="530" y="103" text-anchor="middle" font-size="11" fill="var(--dg-text)">always</text>
+  <rect x="20" y="118" width="330" height="28" rx="5" fill="var(--dg-surface)" stroke="var(--dg-line-soft)" stroke-width="1"/>
+  <text x="34" y="137" font-size="11" fill="var(--dg-text)">CRS records</text>
+  <rect x="380" y="118" width="300" height="28" rx="5" fill="var(--dg-d-soft)" stroke="var(--dg-d)" stroke-width="1.1"/>
+  <text x="530" y="137" text-anchor="middle" font-size="11" fill="var(--dg-text)">always</text>
+  <rect x="20" y="152" width="330" height="28" rx="5" fill="var(--dg-surface)" stroke="var(--dg-line-soft)" stroke-width="1"/>
+  <text x="34" y="171" font-size="11" fill="var(--dg-text)">extra dimensions</text>
+  <rect x="380" y="152" width="300" height="28" rx="5" fill="var(--dg-c-soft)" stroke="var(--dg-c)" stroke-width="1.1"/>
+  <text x="530" y="171" text-anchor="middle" font-size="11" fill="var(--dg-text)">only with extra_dims</text>
+  <rect x="20" y="186" width="330" height="28" rx="5" fill="var(--dg-surface)" stroke="var(--dg-line-soft)" stroke-width="1"/>
+  <text x="34" y="205" font-size="11" fill="var(--dg-text)">other VLRs</text>
+  <rect x="380" y="186" width="300" height="28" rx="5" fill="var(--dg-c-soft)" stroke="var(--dg-c)" stroke-width="1.1"/>
+  <text x="530" y="205" text-anchor="middle" font-size="11" fill="var(--dg-text)">only with forward</text>
+  <rect x="20" y="220" width="330" height="28" rx="5" fill="var(--dg-surface)" stroke="var(--dg-line-soft)" stroke-width="1"/>
+  <text x="34" y="239" font-size="11" fill="var(--dg-text)">EVLRs past the points</text>
+  <rect x="380" y="220" width="300" height="28" rx="5" fill="var(--dg-c-soft)" stroke="var(--dg-c)" stroke-width="1.1"/>
+  <text x="530" y="239" text-anchor="middle" font-size="11" fill="var(--dg-text)">only with forward</text>
+  <rect x="20" y="254" width="330" height="28" rx="5" fill="var(--dg-surface)" stroke="var(--dg-line-soft)" stroke-width="1"/>
+  <text x="34" y="273" font-size="11" fill="var(--dg-text)">the original file order</text>
+  <rect x="380" y="254" width="300" height="28" rx="5" fill="var(--dg-e-soft)" stroke="var(--dg-e)" stroke-width="1.1"/>
+  <text x="530" y="273" text-anchor="middle" font-size="11" fill="var(--dg-text)">never guaranteed</text>
+  <text x="20" y="36" font-size="10.5" fill="var(--dg-muted)">one pdal translate in.las out.laz, and what comes out the other side</text>
+  <text x="20" y="292" font-size="10.5" fill="var(--dg-muted)">"forward": "all" plus "extra_dims": "all" on the writer turns every amber row green — and is worth setting by default on any archival conversion</text>
+</svg>
 
 ## Gotchas and Edge Cases
 

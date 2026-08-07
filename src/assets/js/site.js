@@ -8,6 +8,25 @@
 (function () {
   "use strict";
 
+  // ---- theme toggle ----
+  // The resolved theme is already on <html> from the inline head script; this only
+  // flips it and persists the choice.
+  var themeToggle = document.getElementById("theme-toggle");
+  if (themeToggle) {
+    var syncLabel = function () {
+      var dark = document.documentElement.getAttribute("data-theme") === "dark";
+      themeToggle.setAttribute("aria-label", dark ? "Switch to light theme" : "Switch to dark theme");
+      themeToggle.setAttribute("aria-pressed", dark ? "true" : "false");
+    };
+    syncLabel();
+    themeToggle.addEventListener("click", function () {
+      var next = document.documentElement.getAttribute("data-theme") === "dark" ? "light" : "dark";
+      document.documentElement.setAttribute("data-theme", next);
+      try { localStorage.setItem("theme", next); } catch (e) {}
+      syncLabel();
+    });
+  }
+
   // ---- mobile nav ----
   var navToggle = document.querySelector(".nav-toggle");
   var nav = document.getElementById("primary-nav");

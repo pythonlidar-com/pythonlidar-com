@@ -81,6 +81,7 @@ The distinction is entirely about *which points become pixels*. A [DTM Raster Ge
 <svg viewBox="0 0 760 320" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Side-by-side comparison of a DTM bare-earth surface and a DSM top surface over the same scene, with a canopy height model as their difference" style="width:100%;max-width:760px;display:block;margin:1.5rem auto">
   <title>DTM bare earth versus DSM top surface, and their difference as a canopy height model</title>
   <desc>Left panel shows a DTM: a smooth ground line beneath a tree and a building, labelled bare earth from classified ground returns. Right panel shows a DSM: a surface tracing the tree crown and roof top, labelled top surface from first returns. A lower band shows CHM equals DSM minus DTM, the height above ground.</desc>
+  <rect x="0" y="0" width="760" height="320" fill="var(--dg-bg)" rx="10"/>
   <defs>
     <marker id="cmp-arr" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
       <path d="M0,0 L0,6 L8,3 z" fill="currentColor" opacity="0.6"/>
@@ -123,6 +124,36 @@ The distinction is entirely about *which points become pixels*. A [DTM Raster Ge
 | Failure if misused | Water routes over rooftops | Ground analysis blinded by canopy |
 
 The row that matters most is the prerequisite. A DSM needs no classification at all — you keep first returns and take the maximum, which is why the [Building a DSM from First Returns](https://www.pythonlidar.com/ground-filtering-dtm-dsm-generation/dsm-generation/building-a-dsm-from-first-returns/) recipe is a three-stage pipeline. A DTM must first separate ground from non-ground using a morphological filter, which is an entire upstream workflow in its own right. That asymmetry is why teams sometimes reach for a DSM when a DTM is what they actually need: the DSM is cheaper, so it is tempting, but cheapness is not correctness.
+
+<svg viewBox="0 0 720 262" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Decision tree choosing between a DTM, a DSM and a canopy height model" style="width:100%;max-width:720px;display:block;margin:1.6rem auto">
+  <title>Which surface answers the question you were asked</title>
+  <desc>A decision tree. From the question "what is being measured", three branches lead to three products: bare earth leads to a DTM built from ground returns, the top surface leads to a DSM built from first returns, and object height leads to a canopy height model computed as DSM minus DTM.</desc>
+  <defs><marker id="dvd-arw" markerWidth="9" markerHeight="7" refX="9" refY="3.5" orient="auto"><path d="M0,0 L0,7 L9,3.5 z" fill="var(--dg-line)"/></marker></defs>
+  <rect x="0" y="0" width="720" height="262" fill="var(--dg-bg)" rx="10"/>
+  <rect x="210" y="40" width="300" height="44" rx="8" fill="var(--dg-surface)" stroke="var(--dg-line)" stroke-width="1.5"/>
+  <text x="360" y="67" text-anchor="middle" font-size="12.5" font-weight="600" fill="var(--dg-text)">what is the question measuring?</text>
+  <path d="M360 84 L360 112 L120 112 L120 136" fill="none" stroke="var(--dg-line)" stroke-width="1.5" marker-end="url(#dvd-arw)"/>
+  <path d="M360 84 L360 136" fill="none" stroke="var(--dg-line)" stroke-width="1.5" marker-end="url(#dvd-arw)"/>
+  <path d="M360 84 L360 112 L600 112 L600 136" fill="none" stroke="var(--dg-line)" stroke-width="1.5" marker-end="url(#dvd-arw)"/>
+  <text x="134" y="130" font-size="10.5" fill="var(--dg-muted)">bare earth</text>
+  <text x="374" y="130" font-size="10.5" fill="var(--dg-muted)">top surface</text>
+  <text x="614" y="130" font-size="10.5" fill="var(--dg-muted)">object height</text>
+  <rect x="20" y="140" width="200" height="52" rx="8" fill="var(--dg-b-soft)" stroke="var(--dg-b)" stroke-width="1.5"/>
+  <text x="120" y="164" text-anchor="middle" font-size="12.5" font-weight="600" fill="var(--dg-text)">DTM</text>
+  <text x="120" y="182" text-anchor="middle" font-size="10.5" fill="var(--dg-muted)">ground returns, idw</text>
+  <rect x="260" y="140" width="200" height="52" rx="8" fill="var(--dg-c-soft)" stroke="var(--dg-c)" stroke-width="1.5"/>
+  <text x="360" y="164" text-anchor="middle" font-size="12.5" font-weight="600" fill="var(--dg-text)">DSM</text>
+  <text x="360" y="182" text-anchor="middle" font-size="10.5" fill="var(--dg-muted)">first returns, max</text>
+  <rect x="500" y="140" width="200" height="52" rx="8" fill="var(--dg-d-soft)" stroke="var(--dg-d)" stroke-width="1.5"/>
+  <text x="600" y="164" text-anchor="middle" font-size="12.5" font-weight="600" fill="var(--dg-text)">CHM</text>
+  <text x="600" y="182" text-anchor="middle" font-size="10.5" fill="var(--dg-muted)">DSM − DTM</text>
+  <text x="120" y="214" text-anchor="middle" font-size="10.5" fill="var(--dg-muted)">flood routing, cut and fill,</text>
+  <text x="120" y="230" text-anchor="middle" font-size="10.5" fill="var(--dg-muted)">contours, slope stability</text>
+  <text x="360" y="214" text-anchor="middle" font-size="10.5" fill="var(--dg-muted)">viewshed, solar, line of sight,</text>
+  <text x="360" y="230" text-anchor="middle" font-size="10.5" fill="var(--dg-muted)">obstruction surveys</text>
+  <text x="600" y="214" text-anchor="middle" font-size="10.5" fill="var(--dg-muted)">canopy height, biomass,</text>
+  <text x="600" y="230" text-anchor="middle" font-size="10.5" fill="var(--dg-muted)">building height extraction</text>
+</svg>
 
 ## When to Choose Each
 
@@ -264,6 +295,96 @@ if __name__ == "__main__":
 | `override_srs` | `writers.gdal` | `EPSG:6350` | `EPSG:6350` |
 
 The `idw` statistic suits the DTM because classified ground is sparse under dense canopy and inverse-distance weighting bridges the gaps smoothly; the `max` statistic suits the DSM because the top surface is defined by the tallest hit. Tuning the ground classifier itself — the `filters.smrf` slope and window above — is covered in [SMRF Ground Classification](https://www.pythonlidar.com/ground-filtering-dtm-dsm-generation/smrf-ground-classification/).
+
+<svg viewBox="0 0 720 230" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="A canopy height model as the cell-by-cell difference of a DSM and a DTM" style="width:100%;max-width:720px;display:block;margin:1.6rem auto">
+  <title>The canopy height model is one subtraction</title>
+  <desc>Three five-by-five rasters. The DSM grid is bright where canopy and roofs stand tall. The DTM grid varies gently with the terrain. Subtracting the second from the first leaves the canopy height model, which is near zero on open ground and bright only where something stands above it.</desc>
+  <rect x="0" y="0" width="720" height="230" fill="var(--dg-bg)" rx="10"/>
+  <text x="115" y="44" text-anchor="middle" font-size="11.5" font-weight="600" fill="var(--dg-text)">DSM — first returns</text>
+  <text x="355" y="44" text-anchor="middle" font-size="11.5" font-weight="600" fill="var(--dg-text)">DTM — ground returns</text>
+  <text x="595" y="44" text-anchor="middle" font-size="11.5" font-weight="600" fill="var(--dg-text)">CHM — height above ground</text>
+  <rect x="60" y="54" width="22" height="22" fill="var(--dg-c)" fill-opacity="0.31" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="82" y="54" width="22" height="22" fill="var(--dg-c)" fill-opacity="0.41" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="104" y="54" width="22" height="22" fill="var(--dg-c)" fill-opacity="0.88" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="126" y="54" width="22" height="22" fill="var(--dg-c)" fill-opacity="0.98" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="148" y="54" width="22" height="22" fill="var(--dg-c)" fill-opacity="0.41" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="60" y="76" width="22" height="22" fill="var(--dg-c)" fill-opacity="0.41" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="82" y="76" width="22" height="22" fill="var(--dg-c)" fill-opacity="0.5" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="104" y="76" width="22" height="22" fill="var(--dg-c)" fill-opacity="0.98" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="126" y="76" width="22" height="22" fill="var(--dg-c)" fill-opacity="0.98" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="148" y="76" width="22" height="22" fill="var(--dg-c)" fill-opacity="0.5" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="60" y="98" width="22" height="22" fill="var(--dg-c)" fill-opacity="0.5" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="82" y="98" width="22" height="22" fill="var(--dg-c)" fill-opacity="0.98" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="104" y="98" width="22" height="22" fill="var(--dg-c)" fill-opacity="0.98" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="126" y="98" width="22" height="22" fill="var(--dg-c)" fill-opacity="0.88" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="148" y="98" width="22" height="22" fill="var(--dg-c)" fill-opacity="0.6" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="60" y="120" width="22" height="22" fill="var(--dg-c)" fill-opacity="0.5" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="82" y="120" width="22" height="22" fill="var(--dg-c)" fill-opacity="0.6" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="104" y="120" width="22" height="22" fill="var(--dg-c)" fill-opacity="0.69" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="126" y="120" width="22" height="22" fill="var(--dg-c)" fill-opacity="0.6" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="148" y="120" width="22" height="22" fill="var(--dg-c)" fill-opacity="0.6" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="60" y="142" width="22" height="22" fill="var(--dg-c)" fill-opacity="0.6" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="82" y="142" width="22" height="22" fill="var(--dg-c)" fill-opacity="0.6" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="104" y="142" width="22" height="22" fill="var(--dg-c)" fill-opacity="0.6" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="126" y="142" width="22" height="22" fill="var(--dg-c)" fill-opacity="0.69" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="148" y="142" width="22" height="22" fill="var(--dg-c)" fill-opacity="0.69" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="300" y="54" width="22" height="22" fill="var(--dg-b)" fill-opacity="0.31" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="322" y="54" width="22" height="22" fill="var(--dg-b)" fill-opacity="0.41" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="344" y="54" width="22" height="22" fill="var(--dg-b)" fill-opacity="0.41" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="366" y="54" width="22" height="22" fill="var(--dg-b)" fill-opacity="0.41" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="388" y="54" width="22" height="22" fill="var(--dg-b)" fill-opacity="0.41" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="300" y="76" width="22" height="22" fill="var(--dg-b)" fill-opacity="0.41" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="322" y="76" width="22" height="22" fill="var(--dg-b)" fill-opacity="0.41" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="344" y="76" width="22" height="22" fill="var(--dg-b)" fill-opacity="0.5" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="366" y="76" width="22" height="22" fill="var(--dg-b)" fill-opacity="0.5" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="388" y="76" width="22" height="22" fill="var(--dg-b)" fill-opacity="0.5" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="300" y="98" width="22" height="22" fill="var(--dg-b)" fill-opacity="0.5" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="322" y="98" width="22" height="22" fill="var(--dg-b)" fill-opacity="0.5" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="344" y="98" width="22" height="22" fill="var(--dg-b)" fill-opacity="0.5" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="366" y="98" width="22" height="22" fill="var(--dg-b)" fill-opacity="0.5" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="388" y="98" width="22" height="22" fill="var(--dg-b)" fill-opacity="0.6" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="300" y="120" width="22" height="22" fill="var(--dg-b)" fill-opacity="0.5" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="322" y="120" width="22" height="22" fill="var(--dg-b)" fill-opacity="0.6" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="344" y="120" width="22" height="22" fill="var(--dg-b)" fill-opacity="0.6" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="366" y="120" width="22" height="22" fill="var(--dg-b)" fill-opacity="0.6" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="388" y="120" width="22" height="22" fill="var(--dg-b)" fill-opacity="0.6" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="300" y="142" width="22" height="22" fill="var(--dg-b)" fill-opacity="0.6" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="322" y="142" width="22" height="22" fill="var(--dg-b)" fill-opacity="0.6" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="344" y="142" width="22" height="22" fill="var(--dg-b)" fill-opacity="0.6" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="366" y="142" width="22" height="22" fill="var(--dg-b)" fill-opacity="0.69" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="388" y="142" width="22" height="22" fill="var(--dg-b)" fill-opacity="0.69" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="540" y="54" width="22" height="22" fill="var(--dg-d)" fill-opacity="0.12" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="562" y="54" width="22" height="22" fill="var(--dg-d)" fill-opacity="0.12" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="584" y="54" width="22" height="22" fill="var(--dg-d)" fill-opacity="0.6" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="606" y="54" width="22" height="22" fill="var(--dg-d)" fill-opacity="0.69" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="628" y="54" width="22" height="22" fill="var(--dg-d)" fill-opacity="0.12" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="540" y="76" width="22" height="22" fill="var(--dg-d)" fill-opacity="0.12" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="562" y="76" width="22" height="22" fill="var(--dg-d)" fill-opacity="0.22" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="584" y="76" width="22" height="22" fill="var(--dg-d)" fill-opacity="0.6" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="606" y="76" width="22" height="22" fill="var(--dg-d)" fill-opacity="0.6" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="628" y="76" width="22" height="22" fill="var(--dg-d)" fill-opacity="0.12" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="540" y="98" width="22" height="22" fill="var(--dg-d)" fill-opacity="0.12" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="562" y="98" width="22" height="22" fill="var(--dg-d)" fill-opacity="0.6" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="584" y="98" width="22" height="22" fill="var(--dg-d)" fill-opacity="0.6" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="606" y="98" width="22" height="22" fill="var(--dg-d)" fill-opacity="0.5" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="628" y="98" width="22" height="22" fill="var(--dg-d)" fill-opacity="0.12" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="540" y="120" width="22" height="22" fill="var(--dg-d)" fill-opacity="0.12" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="562" y="120" width="22" height="22" fill="var(--dg-d)" fill-opacity="0.12" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="584" y="120" width="22" height="22" fill="var(--dg-d)" fill-opacity="0.22" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="606" y="120" width="22" height="22" fill="var(--dg-d)" fill-opacity="0.12" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="628" y="120" width="22" height="22" fill="var(--dg-d)" fill-opacity="0.12" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="540" y="142" width="22" height="22" fill="var(--dg-d)" fill-opacity="0.12" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="562" y="142" width="22" height="22" fill="var(--dg-d)" fill-opacity="0.12" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="584" y="142" width="22" height="22" fill="var(--dg-d)" fill-opacity="0.12" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="606" y="142" width="22" height="22" fill="var(--dg-d)" fill-opacity="0.12" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="628" y="142" width="22" height="22" fill="var(--dg-d)" fill-opacity="0.12" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <text x="235" y="122" text-anchor="middle" font-size="24" font-weight="700" fill="var(--dg-muted)">−</text>
+  <text x="475" y="122" text-anchor="middle" font-size="24" font-weight="700" fill="var(--dg-muted)">=</text>
+  <text x="115" y="188" text-anchor="middle" font-size="10.5" fill="var(--dg-muted)">canopy and roofs stand out</text>
+  <text x="355" y="188" text-anchor="middle" font-size="10.5" fill="var(--dg-muted)">terrain only, gently varying</text>
+  <text x="595" y="188" text-anchor="middle" font-size="10.5" fill="var(--dg-muted)">near zero on open ground</text>
+  <text x="60" y="214" font-size="10.5" fill="var(--dg-muted)">the two rasters must share extent, resolution and CRS before the subtraction — build both in one pipeline run</text>
+</svg>
 
 ## Verification
 

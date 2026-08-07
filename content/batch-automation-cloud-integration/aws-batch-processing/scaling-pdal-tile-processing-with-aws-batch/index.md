@@ -76,6 +76,7 @@ The appeal of the array-job approach is that scaling is a number, not a rewrite.
 <svg viewBox="0 0 720 250" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Manifest sharding into two AWS Batch array jobs feeding a mosaic step" style="width:100%;max-width:720px;display:block;margin:1.5rem auto">
   <title>Sharding a 12,500-tile manifest into two AWS Batch array jobs</title>
   <desc>A full manifest of 12,500 tile keys is split into two shards of up to 10,000 rows. Each shard becomes a separate AWS Batch array job. Both arrays write per-tile DTM rasters into the same S3 output prefix, which a final VRT mosaic step reads.</desc>
+  <rect x="0" y="0" width="720" height="250" fill="var(--dg-bg)" rx="10"/>
   <defs>
     <marker id="arr-scale" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto">
       <path d="M0,0 L0,6 L8,3 z" fill="currentColor" opacity="0.6"/>
@@ -245,6 +246,44 @@ def aggregate_dtms(bucket: str, out_prefix: str, expected: int, vrt_path: str) -
     print(f"Built {vrt_path} over {len(uris)} tiles.")
 ```
 
+<svg viewBox="0 0 720 268" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="The array index environment variable selecting one line from a manifest in S3" style="width:100%;max-width:720px;display:block;margin:1.6rem auto">
+  <title>One environment variable is the whole fan-out</title>
+  <desc>AWS Batch runs the same container 12,500 times and changes exactly one thing: AWS_BATCH_JOB_ARRAY_INDEX. The entrypoint reads that number, selects the corresponding line from the manifest in S3, and processes that tile. There is no per-tile configuration, no job submission loop, and nothing to keep in sync.</desc>
+  <rect x="0" y="0" width="720" height="268" fill="var(--dg-bg)" rx="10"/>
+  <defs><marker id="arr-arw" markerWidth="9" markerHeight="7" refX="9" refY="3.5" orient="auto"><path d="M0,0 L0,7 L9,3.5 z" fill="var(--dg-line)"/></marker></defs>
+  <rect x="20" y="58" width="120" height="34" rx="5" fill="var(--dg-c-soft)" stroke="var(--dg-c)" stroke-width="1.2"/>
+  <text x="80" y="80" text-anchor="middle" font-size="11" fill="var(--dg-text)">index 0</text>
+  <line x1="140" y1="75" x2="176" y2="75" stroke="var(--dg-line)" stroke-width="1.4" marker-end="url(#arr-arw)"/>
+  <rect x="182" y="58" width="380" height="34" rx="5" fill="var(--dg-surface)" stroke="var(--dg-line-soft)" stroke-width="1"/>
+  <text x="196" y="80" font-size="11" fill="var(--dg-text)">s3://tiles/utm17/tile_0000.laz</text>
+  <rect x="586" y="58" width="114" height="34" rx="5" fill="var(--dg-d-soft)" stroke="var(--dg-d)" stroke-width="1.2"/>
+  <text x="643" y="80" text-anchor="middle" font-size="10.5" fill="var(--dg-text)">one container</text>
+  <rect x="20" y="102" width="120" height="34" rx="5" fill="var(--dg-c-soft)" stroke="var(--dg-c)" stroke-width="1.2"/>
+  <text x="80" y="124" text-anchor="middle" font-size="11" fill="var(--dg-text)">index 1</text>
+  <line x1="140" y1="119" x2="176" y2="119" stroke="var(--dg-line)" stroke-width="1.4" marker-end="url(#arr-arw)"/>
+  <rect x="182" y="102" width="380" height="34" rx="5" fill="var(--dg-surface)" stroke="var(--dg-line-soft)" stroke-width="1"/>
+  <text x="196" y="124" font-size="11" fill="var(--dg-text)">s3://tiles/utm17/tile_0001.laz</text>
+  <rect x="586" y="102" width="114" height="34" rx="5" fill="var(--dg-d-soft)" stroke="var(--dg-d)" stroke-width="1.2"/>
+  <text x="643" y="124" text-anchor="middle" font-size="10.5" fill="var(--dg-text)">one container</text>
+  <rect x="20" y="146" width="120" height="34" rx="5" fill="var(--dg-c-soft)" stroke="var(--dg-c)" stroke-width="1.2"/>
+  <text x="80" y="168" text-anchor="middle" font-size="11" fill="var(--dg-text)">index …</text>
+  <line x1="140" y1="163" x2="176" y2="163" stroke="var(--dg-line)" stroke-width="1.4" marker-end="url(#arr-arw)"/>
+  <rect x="182" y="146" width="380" height="34" rx="5" fill="var(--dg-surface)" stroke="var(--dg-line-soft)" stroke-width="1"/>
+  <text x="196" y="168" font-size="11" fill="var(--dg-text)">…</text>
+  <rect x="586" y="146" width="114" height="34" rx="5" fill="var(--dg-d-soft)" stroke="var(--dg-d)" stroke-width="1.2"/>
+  <text x="643" y="168" text-anchor="middle" font-size="10.5" fill="var(--dg-text)">one container</text>
+  <rect x="20" y="190" width="120" height="34" rx="5" fill="var(--dg-c-soft)" stroke="var(--dg-c)" stroke-width="1.2"/>
+  <text x="80" y="212" text-anchor="middle" font-size="11" fill="var(--dg-text)">index 12499</text>
+  <line x1="140" y1="207" x2="176" y2="207" stroke="var(--dg-line)" stroke-width="1.4" marker-end="url(#arr-arw)"/>
+  <rect x="182" y="190" width="380" height="34" rx="5" fill="var(--dg-surface)" stroke="var(--dg-line-soft)" stroke-width="1"/>
+  <text x="196" y="212" font-size="11" fill="var(--dg-text)">s3://tiles/utm17/tile_12499.laz</text>
+  <rect x="586" y="190" width="114" height="34" rx="5" fill="var(--dg-d-soft)" stroke="var(--dg-d)" stroke-width="1.2"/>
+  <text x="643" y="212" text-anchor="middle" font-size="10.5" fill="var(--dg-text)">one container</text>
+  <text x="20" y="44" font-size="10.5" fill="var(--dg-muted)">AWS_BATCH_JOB_ARRAY_INDEX · manifest line · the job it becomes</text>
+  <text x="20" y="240" font-size="10.5" fill="var(--dg-muted)">freeze the manifest as an immutable object and record its ETag with the run — a manifest that</text>
+  <text x="20" y="256" font-size="10.5" fill="var(--dg-muted)">changed between the submit and the retry silently reassigns tiles to the wrong containers.</text>
+</svg>
+
 ## Complete Working Example
 
 The following script is self-contained: it builds the manifest, submits the shards, waits, and mosaics. Save it as `scale_dtm.py` and run it against your bucket.
@@ -377,6 +416,31 @@ assert n == 12_500, f"Expected 12,500 DTMs, found {n}"
 ```
 
 **Mosaic opens cleanly.** `gdalinfo acq_2026_east_dtm.vrt` should report the full acquisition extent and 12,500 source rasters. A VRT that opens but shows gaps means specific tiles are missing — cross-reference the failed indices against the manifest to name them.
+
+<svg viewBox="0 0 720 268" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Four ways to shard 12,500 tiles across Batch array jobs" style="width:100%;max-width:720px;display:block;margin:1.6rem auto">
+  <title>Four shardings, and the one the API refuses</title>
+  <desc>Twelve and a half thousand tiles split four ways. A single array of 12,500 exceeds the ten thousand element limit and is rejected outright. Two arrays of 6,250 fit. Thirteen arrays of a thousand fit and make a partial re-run cheap. Submitting individual jobs also works and costs twelve and a half thousand API calls plus the throttling that comes with them.</desc>
+  <rect x="0" y="0" width="720" height="268" fill="var(--dg-bg)" rx="10"/>
+  <rect x="20" y="56" width="250" height="36" rx="6" fill="var(--dg-e-soft)" stroke="var(--dg-e)" stroke-width="1.3"/>
+  <text x="145" y="79" text-anchor="middle" font-size="11.5" fill="var(--dg-text)">1 array of 12,500</text>
+  <rect x="300" y="56" width="240" height="36" rx="4" fill="var(--dg-a-soft)" stroke="var(--dg-a)" stroke-width="1.1"/>
+  <text x="552" y="79" font-size="10.5" fill="var(--dg-muted)">over the 10,000 limit</text>
+  <rect x="20" y="102" width="250" height="36" rx="6" fill="var(--dg-d-soft)" stroke="var(--dg-d)" stroke-width="1.3"/>
+  <text x="145" y="125" text-anchor="middle" font-size="11.5" fill="var(--dg-text)">2 arrays of 6,250</text>
+  <rect x="300" y="102" width="120" height="36" rx="4" fill="var(--dg-a-soft)" stroke="var(--dg-a)" stroke-width="1.1"/>
+  <text x="432" y="125" font-size="10.5" fill="var(--dg-muted)">fits — two submissions</text>
+  <rect x="20" y="148" width="250" height="36" rx="6" fill="var(--dg-d-soft)" stroke="var(--dg-d)" stroke-width="1.3"/>
+  <text x="145" y="171" text-anchor="middle" font-size="11.5" fill="var(--dg-text)">13 arrays of 1,000</text>
+  <rect x="300" y="148" width="19" height="36" rx="4" fill="var(--dg-a-soft)" stroke="var(--dg-a)" stroke-width="1.1"/>
+  <text x="331" y="171" font-size="10.5" fill="var(--dg-muted)">fits — easy partial re-runs</text>
+  <rect x="20" y="194" width="250" height="36" rx="6" fill="var(--dg-d-soft)" stroke="var(--dg-d)" stroke-width="1.3"/>
+  <text x="145" y="217" text-anchor="middle" font-size="11.5" fill="var(--dg-text)">12,500 single jobs</text>
+  <rect x="300" y="194" width="8" height="36" rx="4" fill="var(--dg-a-soft)" stroke="var(--dg-a)" stroke-width="1.1"/>
+  <text x="320" y="217" font-size="10.5" fill="var(--dg-muted)">fits — 12,500 API calls</text>
+  <line x1="538" y1="46" x2="538" y2="242" stroke="var(--dg-e)" stroke-width="1.8" stroke-dasharray="5 4"/>
+  <text x="530" y="40" text-anchor="end" font-size="10.5" fill="var(--dg-e)">10,000 elements — the hard limit</text>
+  <text x="20" y="252" font-size="10.5" fill="var(--dg-muted)">shard by an amount you would be willing to re-run in full</text>
+</svg>
 
 ## Gotchas and Edge Cases
 

@@ -73,6 +73,7 @@ Once a bare-earth terrain surface exists as a raster, its raw elevation values a
 <svg viewBox="0 0 720 300" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="DTM feeding gdaldem to produce hillshade, slope, and aspect rasters" style="width:100%;max-width:720px;display:block;margin:1.5rem auto">
   <title>Terrain derivative fan-out from a single DTM</title>
   <desc>A DTM GeoTIFF box on the left feeds into a central gdal.DEMProcessing box, which fans out with three arrows to three output boxes: hillshade (0-255 grey), slope (0-90 degrees), and aspect (0-360 degrees). Each output box lists its parameters.</desc>
+  <rect x="0" y="0" width="720" height="300" fill="var(--dg-bg)" rx="10"/>
   <defs>
     <marker id="hsa-arr" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto">
       <path d="M0,0 L0,6 L8,3 z" fill="currentColor" opacity="0.6"/>
@@ -259,6 +260,36 @@ if __name__ == "__main__":
     logging.info("Derived products: %s", outputs)
 ```
 
+<svg viewBox="38 11 496 257" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Horn three by three stencil and the gradient formulas gdaldem derives from it" style="width:100%;max-width:720px;display:block;margin:1.6rem auto">
+  <title>The 3×3 stencil behind every gdaldem derivative</title>
+  <desc>A three by three cell stencil labelled a to i with the centre cell e highlighted. Beside it the two Horn gradients: the east-west gradient weights the right column against the left, the north-south gradient weights the bottom row against the top, and slope and aspect follow from those two numbers.</desc>
+  <rect x="38" y="11" width="496" height="257" fill="var(--dg-bg)" rx="10"/>
+  <rect x="60" y="60" width="56" height="56" fill="var(--dg-surface)" stroke="var(--dg-a)" stroke-width="1.3"/>
+  <text x="88" y="96" text-anchor="middle" font-size="15" font-weight="600" fill="var(--dg-text)">a</text>
+  <rect x="116" y="60" width="56" height="56" fill="var(--dg-surface)" stroke="var(--dg-a)" stroke-width="1.3"/>
+  <text x="144" y="96" text-anchor="middle" font-size="15" font-weight="600" fill="var(--dg-text)">b</text>
+  <rect x="172" y="60" width="56" height="56" fill="var(--dg-surface)" stroke="var(--dg-a)" stroke-width="1.3"/>
+  <text x="200" y="96" text-anchor="middle" font-size="15" font-weight="600" fill="var(--dg-text)">c</text>
+  <rect x="60" y="116" width="56" height="56" fill="var(--dg-surface)" stroke="var(--dg-a)" stroke-width="1.3"/>
+  <text x="88" y="152" text-anchor="middle" font-size="15" font-weight="600" fill="var(--dg-text)">d</text>
+  <rect x="116" y="116" width="56" height="56" fill="var(--dg-a-soft)" stroke="var(--dg-a)" stroke-width="1.3"/>
+  <text x="144" y="152" text-anchor="middle" font-size="15" font-weight="600" fill="var(--dg-text)">e</text>
+  <rect x="172" y="116" width="56" height="56" fill="var(--dg-surface)" stroke="var(--dg-a)" stroke-width="1.3"/>
+  <text x="200" y="152" text-anchor="middle" font-size="15" font-weight="600" fill="var(--dg-text)">f</text>
+  <rect x="60" y="172" width="56" height="56" fill="var(--dg-surface)" stroke="var(--dg-a)" stroke-width="1.3"/>
+  <text x="88" y="208" text-anchor="middle" font-size="15" font-weight="600" fill="var(--dg-text)">g</text>
+  <rect x="116" y="172" width="56" height="56" fill="var(--dg-surface)" stroke="var(--dg-a)" stroke-width="1.3"/>
+  <text x="144" y="208" text-anchor="middle" font-size="15" font-weight="600" fill="var(--dg-text)">h</text>
+  <rect x="172" y="172" width="56" height="56" fill="var(--dg-surface)" stroke="var(--dg-a)" stroke-width="1.3"/>
+  <text x="200" y="208" text-anchor="middle" font-size="15" font-weight="600" fill="var(--dg-text)">i</text>
+  <text x="60" y="44" font-size="10.5" fill="var(--dg-muted)">the cell being solved is e; its eight neighbours are all gdaldem ever reads</text>
+  <text x="286" y="92" font-size="11.5" fill="var(--dg-text)">dz/dx = ((c + 2f + i) − (a + 2d + g)) / (8 · cell)</text>
+  <text x="286" y="126" font-size="11.5" fill="var(--dg-text)">dz/dy = ((g + 2h + i) − (a + 2b + c)) / (8 · cell)</text>
+  <text x="286" y="160" font-size="11.5" fill="var(--dg-text)">slope = atan( √( (dz/dx)² + (dz/dy)² ) )</text>
+  <text x="286" y="194" font-size="11.5" fill="var(--dg-text)">aspect = atan2( dz/dy, −dz/dx )</text>
+  <text x="60" y="242" font-size="10.5" fill="var(--dg-muted)">an edge cell has no full stencil, so gdaldem writes NoData one pixel in from every border</text>
+</svg>
+
 ## Code Breakdown
 
 ### Unit probe: the first defence against a flat hillshade
@@ -289,6 +320,36 @@ Aspect needs no illumination parameters. It reports the compass bearing that the
 | slope | `slopeFormat` | string | `degree` | `degree`, `percent` | Reported steepness unit |
 | aspect | `zeroForFlat` | bool | False | — | Emit 0 for flat cells instead of the NoData sentinel |
 | all | `computeEdges` | bool | False | — | Estimate border-cell gradients instead of leaving NoData |
+
+<svg viewBox="0 0 720 282" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Aspect measured clockwise from north, with the values gdaldem writes" style="width:100%;max-width:720px;display:block;margin:1.6rem auto">
+  <title>Reading an aspect raster</title>
+  <desc>A compass wheel split into eight sectors from north clockwise through east, south and west. Beside it the values gdaldem writes: zero and 360 both mean a north-facing slope, 90 east, 180 south, 270 west, and a flat cell is written as minus 9999 rather than any direction.</desc>
+  <rect x="0" y="0" width="720" height="282" fill="var(--dg-bg)" rx="10"/>
+  <path d="M170 140 L139.4 66.1 A80 80 0 0 1 200.6 66.1 Z" fill="var(--dg-a)" fill-opacity="0.12" stroke="var(--dg-bg)" stroke-width="1.2"/>
+  <text x="170" y="44" text-anchor="middle" font-size="11" font-weight="600" fill="var(--dg-text)">N</text>
+  <path d="M170 140 L200.6 66.1 A80 80 0 0 1 243.9 109.4 Z" fill="var(--dg-a)" fill-opacity="0.21" stroke="var(--dg-bg)" stroke-width="1.2"/>
+  <text x="241" y="73" text-anchor="middle" font-size="11" font-weight="600" fill="var(--dg-text)">NE</text>
+  <path d="M170 140 L243.9 109.4 A80 80 0 0 1 243.9 170.6 Z" fill="var(--dg-a)" fill-opacity="0.3" stroke="var(--dg-bg)" stroke-width="1.2"/>
+  <text x="270" y="144" text-anchor="middle" font-size="11" font-weight="600" fill="var(--dg-text)">E</text>
+  <path d="M170 140 L243.9 170.6 A80 80 0 0 1 200.6 213.9 Z" fill="var(--dg-a)" fill-opacity="0.39" stroke="var(--dg-bg)" stroke-width="1.2"/>
+  <text x="241" y="215" text-anchor="middle" font-size="11" font-weight="600" fill="var(--dg-text)">SE</text>
+  <path d="M170 140 L200.6 213.9 A80 80 0 0 1 139.4 213.9 Z" fill="var(--dg-a)" fill-opacity="0.48" stroke="var(--dg-bg)" stroke-width="1.2"/>
+  <text x="170" y="244" text-anchor="middle" font-size="11" font-weight="600" fill="var(--dg-text)">S</text>
+  <path d="M170 140 L139.4 213.9 A80 80 0 0 1 96.1 170.6 Z" fill="var(--dg-a)" fill-opacity="0.12" stroke="var(--dg-bg)" stroke-width="1.2"/>
+  <text x="99" y="215" text-anchor="middle" font-size="11" font-weight="600" fill="var(--dg-text)">SW</text>
+  <path d="M170 140 L96.1 170.6 A80 80 0 0 1 96.1 109.4 Z" fill="var(--dg-a)" fill-opacity="0.21" stroke="var(--dg-bg)" stroke-width="1.2"/>
+  <text x="70" y="144" text-anchor="middle" font-size="11" font-weight="600" fill="var(--dg-text)">W</text>
+  <path d="M170 140 L96.1 109.4 A80 80 0 0 1 139.4 66.1 Z" fill="var(--dg-a)" fill-opacity="0.3" stroke="var(--dg-bg)" stroke-width="1.2"/>
+  <text x="99" y="73" text-anchor="middle" font-size="11" font-weight="600" fill="var(--dg-text)">NW</text>
+  <circle cx="170" cy="140" r="4" fill="var(--dg-c)"/>
+  <rect x="360" y="60" width="340" height="160" rx="8" fill="var(--dg-surface)" stroke="var(--dg-line-soft)" stroke-width="1.2"/>
+  <text x="378" y="92" font-size="11.5" fill="var(--dg-text)">0° and 360° — the slope faces north</text>
+  <text x="378" y="126" font-size="11.5" fill="var(--dg-text)">90° east · 180° south · 270° west</text>
+  <text x="378" y="160" font-size="11.5" fill="var(--dg-text)">measured clockwise, never anticlockwise</text>
+  <text x="378" y="194" font-size="11.5" fill="var(--dg-text)">−9999 — a flat cell has no aspect</text>
+  <text x="300" y="248" font-size="10.5" fill="var(--dg-muted)">averaging aspect numerically is meaningless:</text>
+  <text x="300" y="266" font-size="10.5" fill="var(--dg-muted)">350° and 10° average to 180°, the opposite way.</text>
+</svg>
 
 ## Validation and Integrity Checks
 

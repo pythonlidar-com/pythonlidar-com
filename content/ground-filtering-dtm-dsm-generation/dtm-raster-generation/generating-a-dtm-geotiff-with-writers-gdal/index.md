@@ -77,9 +77,10 @@ This guide is part of [DTM Raster Generation with PDAL](https://www.pythonlidar.
 
 The reason this deserves its own recipe is that a DTM is only as trustworthy as the small set of `writers.gdal` options behind it. A pipeline that omits the ground filter silently rasterizes tree canopy; one that forgets `gdalopts` emits a file several times larger than necessary; one that runs on a cloud still in degrees produces a raster with degree-sized pixels. Getting the exact stage list right once, and verifying it, saves hours of confused debugging in downstream slope, contour, and hydrology work. The classification step this recipe depends on is produced upstream by [SMRF Ground Classification](https://www.pythonlidar.com/ground-filtering-dtm-dsm-generation/smrf-ground-classification/).
 
-<svg viewBox="0 0 720 210" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Recipe flow: classified tile to ground filter to writers.gdal IDW rasterizer to compressed tiled GeoTIFF verified with rasterio" style="width:100%;max-width:720px;display:block;margin:1.5rem auto">
+<svg viewBox="-10 38 736 171" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Recipe flow: classified tile to ground filter to writers.gdal IDW rasterizer to compressed tiled GeoTIFF verified with rasterio" style="width:100%;max-width:720px;display:block;margin:1.5rem auto">
   <title>DTM GeoTIFF recipe stage flow</title>
   <desc>Three processing boxes connected left to right: a ground filter keeping Classification 2, a writers.gdal stage set to IDW at one metre resolution writing a DEFLATE-compressed tiled GeoTIFF, and a rasterio verification box confirming CRS, shape and NoData. A note below marks that the CRS travels from the points into the raster header.</desc>
+  <rect x="-10" y="38" width="736" height="171" fill="var(--dg-bg)" rx="10"/>
   <defs>
     <marker id="gt-arr" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto">
       <path d="M0,0 L0,6 L8,3 z" fill="currentColor" opacity="0.6"/>
@@ -203,6 +204,74 @@ with rasterio.open("dtm_utm15n_1m.tif") as ds:
 ```
 
 Expect `CRS: EPSG:32615`, a pixel size of `(1.0, 1.0)`, and a NoData of `-9999.0`.
+
+<svg viewBox="0 0 720 250" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="A DTM GeoTIFF grid with its origin, cell size and header facts" style="width:100%;max-width:720px;display:block;margin:1.6rem auto">
+  <title>Everything writers.gdal has to get right in the header</title>
+  <desc>A ten by five raster grid. Its upper-left corner is the georeferenced origin, one cell is one metre across, and six cells are marked as NoData. Beside it, the header facts the writer must set: driver and data type, CRS, NoData value, compression and tiling, and the raster dimensions.</desc>
+  <rect x="0" y="0" width="720" height="250" fill="var(--dg-bg)" rx="10"/>
+  <rect x="50" y="56" width="30" height="30" fill="var(--dg-b)" fill-opacity="0.15" stroke="var(--dg-line-soft)" stroke-width="0.9"/>
+  <rect x="80" y="56" width="30" height="30" fill="var(--dg-b)" fill-opacity="0.33" stroke="var(--dg-line-soft)" stroke-width="0.9"/>
+  <rect x="110" y="56" width="30" height="30" fill="var(--dg-b)" fill-opacity="0.51" stroke="var(--dg-line-soft)" stroke-width="0.9"/>
+  <rect x="140" y="56" width="30" height="30" fill="var(--dg-b)" fill-opacity="0.15" stroke="var(--dg-line-soft)" stroke-width="0.9"/>
+  <rect x="170" y="56" width="30" height="30" fill="var(--dg-b)" fill-opacity="0.33" stroke="var(--dg-line-soft)" stroke-width="0.9"/>
+  <rect x="200" y="56" width="30" height="30" fill="var(--dg-b)" fill-opacity="0.51" stroke="var(--dg-line-soft)" stroke-width="0.9"/>
+  <rect x="230" y="56" width="30" height="30" fill="var(--dg-b)" fill-opacity="0.15" stroke="var(--dg-line-soft)" stroke-width="0.9"/>
+  <rect x="260" y="56" width="30" height="30" fill="var(--dg-b)" fill-opacity="0.33" stroke="var(--dg-line-soft)" stroke-width="0.9"/>
+  <rect x="290" y="56" width="30" height="30" fill="var(--dg-b)" fill-opacity="0.51" stroke="var(--dg-line-soft)" stroke-width="0.9"/>
+  <rect x="320" y="56" width="30" height="30" fill="var(--dg-b)" fill-opacity="0.15" stroke="var(--dg-line-soft)" stroke-width="0.9"/>
+  <rect x="50" y="86" width="30" height="30" fill="var(--dg-b)" fill-opacity="0.57" stroke="var(--dg-line-soft)" stroke-width="0.9"/>
+  <rect x="80" y="86" width="30" height="30" fill="var(--dg-b)" fill-opacity="0.21" stroke="var(--dg-line-soft)" stroke-width="0.9"/>
+  <rect x="110" y="86" width="30" height="30" fill="var(--dg-b)" fill-opacity="0.39" stroke="var(--dg-line-soft)" stroke-width="0.9"/>
+  <rect x="140" y="86" width="30" height="30" fill="var(--dg-b)" fill-opacity="0.57" stroke="var(--dg-line-soft)" stroke-width="0.9"/>
+  <rect x="170" y="86" width="30" height="30" fill="var(--dg-e)" fill-opacity="0.35" stroke="var(--dg-line-soft)" stroke-width="0.9"/>
+  <rect x="200" y="86" width="30" height="30" fill="var(--dg-e)" fill-opacity="0.35" stroke="var(--dg-line-soft)" stroke-width="0.9"/>
+  <rect x="230" y="86" width="30" height="30" fill="var(--dg-b)" fill-opacity="0.57" stroke="var(--dg-line-soft)" stroke-width="0.9"/>
+  <rect x="260" y="86" width="30" height="30" fill="var(--dg-b)" fill-opacity="0.21" stroke="var(--dg-line-soft)" stroke-width="0.9"/>
+  <rect x="290" y="86" width="30" height="30" fill="var(--dg-b)" fill-opacity="0.39" stroke="var(--dg-line-soft)" stroke-width="0.9"/>
+  <rect x="320" y="86" width="30" height="30" fill="var(--dg-b)" fill-opacity="0.57" stroke="var(--dg-line-soft)" stroke-width="0.9"/>
+  <rect x="50" y="116" width="30" height="30" fill="var(--dg-b)" fill-opacity="0.45" stroke="var(--dg-line-soft)" stroke-width="0.9"/>
+  <rect x="80" y="116" width="30" height="30" fill="var(--dg-b)" fill-opacity="0.63" stroke="var(--dg-line-soft)" stroke-width="0.9"/>
+  <rect x="110" y="116" width="30" height="30" fill="var(--dg-b)" fill-opacity="0.27" stroke="var(--dg-line-soft)" stroke-width="0.9"/>
+  <rect x="140" y="116" width="30" height="30" fill="var(--dg-b)" fill-opacity="0.45" stroke="var(--dg-line-soft)" stroke-width="0.9"/>
+  <rect x="170" y="116" width="30" height="30" fill="var(--dg-e)" fill-opacity="0.35" stroke="var(--dg-line-soft)" stroke-width="0.9"/>
+  <rect x="200" y="116" width="30" height="30" fill="var(--dg-b)" fill-opacity="0.27" stroke="var(--dg-line-soft)" stroke-width="0.9"/>
+  <rect x="230" y="116" width="30" height="30" fill="var(--dg-b)" fill-opacity="0.45" stroke="var(--dg-line-soft)" stroke-width="0.9"/>
+  <rect x="260" y="116" width="30" height="30" fill="var(--dg-b)" fill-opacity="0.63" stroke="var(--dg-line-soft)" stroke-width="0.9"/>
+  <rect x="290" y="116" width="30" height="30" fill="var(--dg-b)" fill-opacity="0.27" stroke="var(--dg-line-soft)" stroke-width="0.9"/>
+  <rect x="320" y="116" width="30" height="30" fill="var(--dg-b)" fill-opacity="0.45" stroke="var(--dg-line-soft)" stroke-width="0.9"/>
+  <rect x="50" y="146" width="30" height="30" fill="var(--dg-b)" fill-opacity="0.33" stroke="var(--dg-line-soft)" stroke-width="0.9"/>
+  <rect x="80" y="146" width="30" height="30" fill="var(--dg-b)" fill-opacity="0.51" stroke="var(--dg-line-soft)" stroke-width="0.9"/>
+  <rect x="110" y="146" width="30" height="30" fill="var(--dg-b)" fill-opacity="0.15" stroke="var(--dg-line-soft)" stroke-width="0.9"/>
+  <rect x="140" y="146" width="30" height="30" fill="var(--dg-b)" fill-opacity="0.33" stroke="var(--dg-line-soft)" stroke-width="0.9"/>
+  <rect x="170" y="146" width="30" height="30" fill="var(--dg-b)" fill-opacity="0.51" stroke="var(--dg-line-soft)" stroke-width="0.9"/>
+  <rect x="200" y="146" width="30" height="30" fill="var(--dg-b)" fill-opacity="0.15" stroke="var(--dg-line-soft)" stroke-width="0.9"/>
+  <rect x="230" y="146" width="30" height="30" fill="var(--dg-b)" fill-opacity="0.33" stroke="var(--dg-line-soft)" stroke-width="0.9"/>
+  <rect x="260" y="146" width="30" height="30" fill="var(--dg-b)" fill-opacity="0.51" stroke="var(--dg-line-soft)" stroke-width="0.9"/>
+  <rect x="290" y="146" width="30" height="30" fill="var(--dg-e)" fill-opacity="0.35" stroke="var(--dg-line-soft)" stroke-width="0.9"/>
+  <rect x="320" y="146" width="30" height="30" fill="var(--dg-e)" fill-opacity="0.35" stroke="var(--dg-line-soft)" stroke-width="0.9"/>
+  <rect x="50" y="176" width="30" height="30" fill="var(--dg-b)" fill-opacity="0.21" stroke="var(--dg-line-soft)" stroke-width="0.9"/>
+  <rect x="80" y="176" width="30" height="30" fill="var(--dg-b)" fill-opacity="0.39" stroke="var(--dg-line-soft)" stroke-width="0.9"/>
+  <rect x="110" y="176" width="30" height="30" fill="var(--dg-b)" fill-opacity="0.57" stroke="var(--dg-line-soft)" stroke-width="0.9"/>
+  <rect x="140" y="176" width="30" height="30" fill="var(--dg-b)" fill-opacity="0.21" stroke="var(--dg-line-soft)" stroke-width="0.9"/>
+  <rect x="170" y="176" width="30" height="30" fill="var(--dg-b)" fill-opacity="0.39" stroke="var(--dg-line-soft)" stroke-width="0.9"/>
+  <rect x="200" y="176" width="30" height="30" fill="var(--dg-b)" fill-opacity="0.57" stroke="var(--dg-line-soft)" stroke-width="0.9"/>
+  <rect x="230" y="176" width="30" height="30" fill="var(--dg-b)" fill-opacity="0.21" stroke="var(--dg-line-soft)" stroke-width="0.9"/>
+  <rect x="260" y="176" width="30" height="30" fill="var(--dg-b)" fill-opacity="0.39" stroke="var(--dg-line-soft)" stroke-width="0.9"/>
+  <rect x="290" y="176" width="30" height="30" fill="var(--dg-b)" fill-opacity="0.57" stroke="var(--dg-line-soft)" stroke-width="0.9"/>
+  <rect x="320" y="176" width="30" height="30" fill="var(--dg-e)" fill-opacity="0.35" stroke="var(--dg-line-soft)" stroke-width="0.9"/>
+  <text x="50" y="44" font-size="10.5" fill="var(--dg-muted)">origin 512000.0 E, 4783000.0 N — upper-left corner of the upper-left cell</text>
+  <line x1="50" y1="222" x2="80" y2="222" stroke="var(--dg-c)" stroke-width="2"/>
+  <text x="88" y="226" font-size="10.5" fill="var(--dg-c)">1.0 m cell</text>
+  <rect x="176" y="212" width="12" height="12" fill="var(--dg-e)" fill-opacity="0.35" stroke="var(--dg-line-soft)" stroke-width="0.9"/>
+  <text x="194" y="223" font-size="10.5" fill="var(--dg-muted)">NoData cell</text>
+  <rect x="400" y="56" width="300" height="150" rx="8" fill="var(--dg-surface)" stroke="var(--dg-line-soft)" stroke-width="1.2"/>
+  <text x="416" y="82" font-size="11" fill="var(--dg-text)">gdaldriver GTiff · float32 · 1 band</text>
+  <text x="416" y="110" font-size="11" fill="var(--dg-text)">CRS EPSG:6347 — NAD83(2011) UTM 17N</text>
+  <text x="416" y="138" font-size="11" fill="var(--dg-text)">nodata −9999 — never 0 on a DTM</text>
+  <text x="416" y="166" font-size="11" fill="var(--dg-text)">COMPRESS=DEFLATE, TILED=YES</text>
+  <text x="416" y="194" font-size="11" fill="var(--dg-text)">300 × 150 cells for this 300 m tile</text>
+  <text x="400" y="240" font-size="10.5" fill="var(--dg-muted)">get nodata wrong and every void reads as sea level</text>
+</svg>
 
 ## Complete Working Example
 
@@ -330,6 +399,123 @@ print(f"Elevation p1={np.percentile(z.compressed(),1):.1f} "
 ```
 
 A DTM whose 1st-to-99th-percentile band matches the site's known relief, with the NoData fraction under a few percent, is ready for slope and hillshade derivation.
+
+<svg viewBox="0 0 720 236" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="A DTM seam between unbuffered tiles beside the same join built with a buffer" style="width:100%;max-width:720px;display:block;margin:1.6rem auto">
+  <title>Why unbuffered tiles leave a seam in the mosaic</title>
+  <desc>On the left two tiles rasterized independently: cells along the shared edge had neighbours on one side only, so the two surfaces disagree and a visible seam runs down the join. On the right the same area with each tile buffered by the search radius before rasterizing and clipped back afterwards, so the values match across the join.</desc>
+  <rect x="0" y="0" width="720" height="236" fill="var(--dg-bg)" rx="10"/>
+  <text x="185" y="38" text-anchor="middle" font-size="12" font-weight="600" fill="var(--dg-text)">tiles rasterized as-is</text>
+  <text x="535" y="38" text-anchor="middle" font-size="12" font-weight="600" fill="var(--dg-text)">tiles buffered by the radius</text>
+  <rect x="20" y="48" width="330" height="120" rx="8" fill="var(--dg-surface)" stroke="var(--dg-line-soft)" stroke-width="1.2"/>
+  <rect x="370" y="48" width="330" height="120" rx="8" fill="var(--dg-surface)" stroke="var(--dg-line-soft)" stroke-width="1.2"/>
+  <rect x="34" y="64" width="22" height="22" fill="var(--dg-b)" fill-opacity="0.18" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="190" y="64" width="22" height="22" fill="var(--dg-b)" fill-opacity="0.42" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="56" y="64" width="22" height="22" fill="var(--dg-b)" fill-opacity="0.23" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="212" y="64" width="22" height="22" fill="var(--dg-b)" fill-opacity="0.37" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="78" y="64" width="22" height="22" fill="var(--dg-b)" fill-opacity="0.28" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="234" y="64" width="22" height="22" fill="var(--dg-b)" fill-opacity="0.32" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="100" y="64" width="22" height="22" fill="var(--dg-b)" fill-opacity="0.33" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="256" y="64" width="22" height="22" fill="var(--dg-b)" fill-opacity="0.27" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="122" y="64" width="22" height="22" fill="var(--dg-b)" fill-opacity="0.38" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="278" y="64" width="22" height="22" fill="var(--dg-b)" fill-opacity="0.22" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="144" y="64" width="22" height="22" fill="var(--dg-b)" fill-opacity="0.43" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="300" y="64" width="22" height="22" fill="var(--dg-b)" fill-opacity="0.17" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="34" y="86" width="22" height="22" fill="var(--dg-b)" fill-opacity="0.23" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="190" y="86" width="22" height="22" fill="var(--dg-b)" fill-opacity="0.37" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="56" y="86" width="22" height="22" fill="var(--dg-b)" fill-opacity="0.28" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="212" y="86" width="22" height="22" fill="var(--dg-b)" fill-opacity="0.32" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="78" y="86" width="22" height="22" fill="var(--dg-b)" fill-opacity="0.33" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="234" y="86" width="22" height="22" fill="var(--dg-b)" fill-opacity="0.27" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="100" y="86" width="22" height="22" fill="var(--dg-b)" fill-opacity="0.38" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="256" y="86" width="22" height="22" fill="var(--dg-b)" fill-opacity="0.22" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="122" y="86" width="22" height="22" fill="var(--dg-b)" fill-opacity="0.43" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="278" y="86" width="22" height="22" fill="var(--dg-b)" fill-opacity="0.17" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="144" y="86" width="22" height="22" fill="var(--dg-b)" fill-opacity="0.18" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="300" y="86" width="22" height="22" fill="var(--dg-b)" fill-opacity="0.42" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="34" y="108" width="22" height="22" fill="var(--dg-b)" fill-opacity="0.28" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="190" y="108" width="22" height="22" fill="var(--dg-b)" fill-opacity="0.32" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="56" y="108" width="22" height="22" fill="var(--dg-b)" fill-opacity="0.33" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="212" y="108" width="22" height="22" fill="var(--dg-b)" fill-opacity="0.27" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="78" y="108" width="22" height="22" fill="var(--dg-b)" fill-opacity="0.38" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="234" y="108" width="22" height="22" fill="var(--dg-b)" fill-opacity="0.22" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="100" y="108" width="22" height="22" fill="var(--dg-b)" fill-opacity="0.43" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="256" y="108" width="22" height="22" fill="var(--dg-b)" fill-opacity="0.17" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="122" y="108" width="22" height="22" fill="var(--dg-b)" fill-opacity="0.18" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="278" y="108" width="22" height="22" fill="var(--dg-b)" fill-opacity="0.42" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="144" y="108" width="22" height="22" fill="var(--dg-b)" fill-opacity="0.23" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="300" y="108" width="22" height="22" fill="var(--dg-b)" fill-opacity="0.37" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="34" y="130" width="22" height="22" fill="var(--dg-b)" fill-opacity="0.33" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="190" y="130" width="22" height="22" fill="var(--dg-b)" fill-opacity="0.27" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="56" y="130" width="22" height="22" fill="var(--dg-b)" fill-opacity="0.38" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="212" y="130" width="22" height="22" fill="var(--dg-b)" fill-opacity="0.22" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="78" y="130" width="22" height="22" fill="var(--dg-b)" fill-opacity="0.43" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="234" y="130" width="22" height="22" fill="var(--dg-b)" fill-opacity="0.17" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="100" y="130" width="22" height="22" fill="var(--dg-b)" fill-opacity="0.18" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="256" y="130" width="22" height="22" fill="var(--dg-b)" fill-opacity="0.42" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="122" y="130" width="22" height="22" fill="var(--dg-b)" fill-opacity="0.23" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="278" y="130" width="22" height="22" fill="var(--dg-b)" fill-opacity="0.37" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="144" y="130" width="22" height="22" fill="var(--dg-b)" fill-opacity="0.28" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="300" y="130" width="22" height="22" fill="var(--dg-b)" fill-opacity="0.32" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="384" y="64" width="22" height="22" fill="var(--dg-b)" fill-opacity="0.18" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="406" y="64" width="22" height="22" fill="var(--dg-b)" fill-opacity="0.2" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="428" y="64" width="22" height="22" fill="var(--dg-b)" fill-opacity="0.22" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="450" y="64" width="22" height="22" fill="var(--dg-b)" fill-opacity="0.24" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="472" y="64" width="22" height="22" fill="var(--dg-b)" fill-opacity="0.26" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="494" y="64" width="22" height="22" fill="var(--dg-b)" fill-opacity="0.28" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="516" y="64" width="22" height="22" fill="var(--dg-b)" fill-opacity="0.3" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="538" y="64" width="22" height="22" fill="var(--dg-b)" fill-opacity="0.32" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="560" y="64" width="22" height="22" fill="var(--dg-b)" fill-opacity="0.34" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="582" y="64" width="22" height="22" fill="var(--dg-b)" fill-opacity="0.36" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="604" y="64" width="22" height="22" fill="var(--dg-b)" fill-opacity="0.38" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="626" y="64" width="22" height="22" fill="var(--dg-b)" fill-opacity="0.4" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="648" y="64" width="22" height="22" fill="var(--dg-b)" fill-opacity="0.42" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="384" y="86" width="22" height="22" fill="var(--dg-b)" fill-opacity="0.2" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="406" y="86" width="22" height="22" fill="var(--dg-b)" fill-opacity="0.22" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="428" y="86" width="22" height="22" fill="var(--dg-b)" fill-opacity="0.24" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="450" y="86" width="22" height="22" fill="var(--dg-b)" fill-opacity="0.26" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="472" y="86" width="22" height="22" fill="var(--dg-b)" fill-opacity="0.28" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="494" y="86" width="22" height="22" fill="var(--dg-b)" fill-opacity="0.3" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="516" y="86" width="22" height="22" fill="var(--dg-b)" fill-opacity="0.32" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="538" y="86" width="22" height="22" fill="var(--dg-b)" fill-opacity="0.34" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="560" y="86" width="22" height="22" fill="var(--dg-b)" fill-opacity="0.36" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="582" y="86" width="22" height="22" fill="var(--dg-b)" fill-opacity="0.38" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="604" y="86" width="22" height="22" fill="var(--dg-b)" fill-opacity="0.4" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="626" y="86" width="22" height="22" fill="var(--dg-b)" fill-opacity="0.42" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="648" y="86" width="22" height="22" fill="var(--dg-b)" fill-opacity="0.44" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="384" y="108" width="22" height="22" fill="var(--dg-b)" fill-opacity="0.22" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="406" y="108" width="22" height="22" fill="var(--dg-b)" fill-opacity="0.24" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="428" y="108" width="22" height="22" fill="var(--dg-b)" fill-opacity="0.26" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="450" y="108" width="22" height="22" fill="var(--dg-b)" fill-opacity="0.28" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="472" y="108" width="22" height="22" fill="var(--dg-b)" fill-opacity="0.3" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="494" y="108" width="22" height="22" fill="var(--dg-b)" fill-opacity="0.32" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="516" y="108" width="22" height="22" fill="var(--dg-b)" fill-opacity="0.34" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="538" y="108" width="22" height="22" fill="var(--dg-b)" fill-opacity="0.36" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="560" y="108" width="22" height="22" fill="var(--dg-b)" fill-opacity="0.38" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="582" y="108" width="22" height="22" fill="var(--dg-b)" fill-opacity="0.4" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="604" y="108" width="22" height="22" fill="var(--dg-b)" fill-opacity="0.42" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="626" y="108" width="22" height="22" fill="var(--dg-b)" fill-opacity="0.44" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="648" y="108" width="22" height="22" fill="var(--dg-b)" fill-opacity="0.46" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="384" y="130" width="22" height="22" fill="var(--dg-b)" fill-opacity="0.24" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="406" y="130" width="22" height="22" fill="var(--dg-b)" fill-opacity="0.26" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="428" y="130" width="22" height="22" fill="var(--dg-b)" fill-opacity="0.28" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="450" y="130" width="22" height="22" fill="var(--dg-b)" fill-opacity="0.3" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="472" y="130" width="22" height="22" fill="var(--dg-b)" fill-opacity="0.32" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="494" y="130" width="22" height="22" fill="var(--dg-b)" fill-opacity="0.34" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="516" y="130" width="22" height="22" fill="var(--dg-b)" fill-opacity="0.36" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="538" y="130" width="22" height="22" fill="var(--dg-b)" fill-opacity="0.38" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="560" y="130" width="22" height="22" fill="var(--dg-b)" fill-opacity="0.4" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="582" y="130" width="22" height="22" fill="var(--dg-b)" fill-opacity="0.42" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="604" y="130" width="22" height="22" fill="var(--dg-b)" fill-opacity="0.44" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="626" y="130" width="22" height="22" fill="var(--dg-b)" fill-opacity="0.46" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <rect x="648" y="130" width="22" height="22" fill="var(--dg-b)" fill-opacity="0.48" stroke="var(--dg-line-soft)" stroke-width="0.8"/>
+  <line x1="178" y1="60" x2="178" y2="156" stroke="var(--dg-e)" stroke-width="2.2" stroke-dasharray="5 3"/>
+  <line x1="472" y1="60" x2="472" y2="156" stroke="var(--dg-d)" stroke-width="1.6" stroke-dasharray="4 4"/>
+  <line x1="516" y1="60" x2="516" y2="156" stroke="var(--dg-d)" stroke-width="1.6" stroke-dasharray="4 4"/>
+  <text x="185" y="192" text-anchor="middle" font-size="10.5" fill="var(--dg-e)">edge cells saw half a neighbourhood</text>
+  <text x="535" y="192" text-anchor="middle" font-size="10.5" fill="var(--dg-d)">overlap read, then clipped away</text>
+  <text x="185" y="210" text-anchor="middle" font-size="10.5" fill="var(--dg-muted)">a 1-cell step survives the mosaic</text>
+  <text x="535" y="210" text-anchor="middle" font-size="10.5" fill="var(--dg-muted)">gdalbuildvrt joins it seamlessly</text>
+</svg>
 
 ## Gotchas and Edge Cases
 

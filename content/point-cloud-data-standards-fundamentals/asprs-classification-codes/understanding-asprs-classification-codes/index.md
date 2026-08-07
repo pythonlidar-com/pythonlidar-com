@@ -98,52 +98,53 @@ The diagram below shows how the 0–255 integer space is partitioned across LAS 
 <svg viewBox="0 0 760 400" role="img" aria-label="ASPRS LAS classification integer space and downstream products" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:760px;font-family:inherit;">
   <title>ASPRS LAS Classification Integer Space</title>
   <desc>Three zone bars at top show how the 0–255 integer range is divided: codes 0–18 are standard ASPRS classes, codes 19–63 are reserved for future ASPRS expansion, and codes 64–255 are user-defined for project-specific labeling. Below, arrows connect the standard zone to four downstream products: class 2 feeds bare-earth DTM, classes 3–5 feed canopy height modeling, class 6 feeds building footprints, and classes 13–16 feed power-line models. A note at the bottom explains the version constraint: LAS 1.0–1.3 allows only codes 0–31 via a 5-bit field, while LAS 1.4 allows the full 0–255 range via a dedicated 8-bit byte.</desc>
+  <rect x="0" y="0" width="760" height="400" fill="var(--dg-bg)" rx="10"/>
   <!-- Zone bars row -->
   <!-- Standard 0–18 -->
-  <rect x="20" y="30" width="160" height="54" rx="6" fill="#2563eb" fill-opacity="0.13" stroke="#2563eb" stroke-width="1.5"/>
+  <rect x="20" y="30" width="160" height="54" rx="6" fill="var(--dg-a)" fill-opacity="0.13" stroke="var(--dg-a)" stroke-width="1.5"/>
   <text x="100" y="54" text-anchor="middle" font-size="14" font-weight="700" fill="currentColor">0 – 18</text>
   <text x="100" y="72" text-anchor="middle" font-size="11" fill="currentColor">Standard (LAS 1.4)</text>
   <!-- Reserved 19–63 -->
-  <rect x="196" y="30" width="200" height="54" rx="6" fill="#6b7280" fill-opacity="0.11" stroke="#9ca3af" stroke-width="1.5" stroke-dasharray="6 3"/>
+  <rect x="196" y="30" width="200" height="54" rx="6" fill="var(--dg-muted)" fill-opacity="0.11" stroke="var(--dg-muted)" stroke-width="1.5" stroke-dasharray="6 3"/>
   <text x="296" y="54" text-anchor="middle" font-size="14" font-weight="700" fill="currentColor">19 – 63</text>
   <text x="296" y="72" text-anchor="middle" font-size="11" fill="currentColor">Reserved (future ASPRS)</text>
   <!-- User-defined 64–255 -->
-  <rect x="412" y="30" width="328" height="54" rx="6" fill="#059669" fill-opacity="0.11" stroke="#059669" stroke-width="1.5"/>
+  <rect x="412" y="30" width="328" height="54" rx="6" fill="var(--dg-d)" fill-opacity="0.11" stroke="var(--dg-d)" stroke-width="1.5"/>
   <text x="576" y="54" text-anchor="middle" font-size="14" font-weight="700" fill="currentColor">64 – 255</text>
   <text x="576" y="72" text-anchor="middle" font-size="11" fill="currentColor">User-Defined (project-specific)</text>
   <!-- Vertical drop from standard zone centre to horizontal rail -->
-  <line x1="100" y1="84" x2="100" y2="118" stroke="#2563eb" stroke-width="1.5"/>
+  <line x1="100" y1="84" x2="100" y2="118" stroke="var(--dg-a)" stroke-width="1.5"/>
   <!-- Horizontal rail connecting all four product drop points -->
-  <line x1="100" y1="118" x2="620" y2="118" stroke="#2563eb" stroke-width="1.5"/>
+  <line x1="100" y1="118" x2="620" y2="118" stroke="var(--dg-a)" stroke-width="1.5"/>
   <!-- Product drop lines -->
-  <line x1="100" y1="118" x2="100" y2="148" stroke="#2563eb" stroke-width="1.2"/>
-  <line x1="270" y1="118" x2="270" y2="148" stroke="#2563eb" stroke-width="1.2"/>
-  <line x1="450" y1="118" x2="450" y2="148" stroke="#2563eb" stroke-width="1.2"/>
-  <line x1="620" y1="118" x2="620" y2="148" stroke="#2563eb" stroke-width="1.2"/>
+  <line x1="100" y1="118" x2="100" y2="148" stroke="var(--dg-a)" stroke-width="1.2"/>
+  <line x1="270" y1="118" x2="270" y2="148" stroke="var(--dg-a)" stroke-width="1.2"/>
+  <line x1="450" y1="118" x2="450" y2="148" stroke="var(--dg-a)" stroke-width="1.2"/>
+  <line x1="620" y1="118" x2="620" y2="148" stroke="var(--dg-a)" stroke-width="1.2"/>
   <!-- Product boxes -->
-  <rect x="30" y="148" width="140" height="44" rx="5" fill="none" stroke="#2563eb" stroke-width="1.2"/>
+  <rect x="30" y="148" width="140" height="44" rx="5" fill="none" stroke="var(--dg-a)" stroke-width="1.2"/>
   <text x="100" y="167" text-anchor="middle" font-size="11" font-weight="600" fill="currentColor">Class 2 → DTM</text>
   <text x="100" y="182" text-anchor="middle" font-size="11" fill="currentColor">bare-earth DEM</text>
-  <rect x="200" y="148" width="140" height="44" rx="5" fill="none" stroke="#2563eb" stroke-width="1.2"/>
+  <rect x="200" y="148" width="140" height="44" rx="5" fill="none" stroke="var(--dg-a)" stroke-width="1.2"/>
   <text x="270" y="167" text-anchor="middle" font-size="11" font-weight="600" fill="currentColor">Classes 3–5 → CHM</text>
   <text x="270" y="182" text-anchor="middle" font-size="11" fill="currentColor">canopy modeling</text>
-  <rect x="375" y="148" width="150" height="44" rx="5" fill="none" stroke="#2563eb" stroke-width="1.2"/>
+  <rect x="375" y="148" width="150" height="44" rx="5" fill="none" stroke="var(--dg-a)" stroke-width="1.2"/>
   <text x="450" y="167" text-anchor="middle" font-size="11" font-weight="600" fill="currentColor">Class 6 → Buildings</text>
   <text x="450" y="182" text-anchor="middle" font-size="11" fill="currentColor">urban footprints</text>
-  <rect x="548" y="148" width="144" height="44" rx="5" fill="none" stroke="#2563eb" stroke-width="1.2"/>
+  <rect x="548" y="148" width="144" height="44" rx="5" fill="none" stroke="var(--dg-a)" stroke-width="1.2"/>
   <text x="620" y="167" text-anchor="middle" font-size="11" font-weight="600" fill="currentColor">Classes 13–16 →</text>
   <text x="620" y="182" text-anchor="middle" font-size="11" fill="currentColor">power-line model</text>
   <!-- Version constraint box -->
-  <rect x="20" y="218" width="720" height="60" rx="5" fill="none" stroke="#9ca3af" stroke-width="1.2" stroke-dasharray="5 3"/>
+  <rect x="20" y="218" width="720" height="60" rx="5" fill="none" stroke="var(--dg-muted)" stroke-width="1.2" stroke-dasharray="5 3"/>
   <text x="380" y="240" text-anchor="middle" font-size="12" font-weight="700" fill="currentColor">LAS version determines the maximum valid classification code</text>
   <text x="380" y="258" text-anchor="middle" font-size="11" fill="currentColor">LAS 1.0–1.3: 5-bit sub-field → codes 0–31 only (bits 0–4 of a shared byte)</text>
   <text x="380" y="274" text-anchor="middle" font-size="11" fill="currentColor">LAS 1.4: dedicated 8-bit byte → full range 0–255; overlap moved to Classification Flags</text>
   <!-- Legend -->
-  <rect x="20" y="300" width="13" height="13" rx="2" fill="#2563eb" fill-opacity="0.25" stroke="#2563eb" stroke-width="1.2"/>
+  <rect x="20" y="300" width="13" height="13" rx="2" fill="var(--dg-a)" fill-opacity="0.25" stroke="var(--dg-a)" stroke-width="1.2"/>
   <text x="39" y="312" font-size="11" fill="currentColor">Standard (ASPRS-defined)</text>
-  <rect x="220" y="300" width="13" height="13" rx="2" fill="#6b7280" fill-opacity="0.2" stroke="#9ca3af" stroke-width="1.2" stroke-dasharray="3 2"/>
+  <rect x="220" y="300" width="13" height="13" rx="2" fill="var(--dg-muted)" fill-opacity="0.2" stroke="var(--dg-muted)" stroke-width="1.2" stroke-dasharray="3 2"/>
   <text x="239" y="312" font-size="11" fill="currentColor">Reserved (unassigned)</text>
-  <rect x="420" y="300" width="13" height="13" rx="2" fill="#059669" fill-opacity="0.2" stroke="#059669" stroke-width="1.2"/>
+  <rect x="420" y="300" width="13" height="13" rx="2" fill="var(--dg-d)" fill-opacity="0.2" stroke="var(--dg-d)" stroke-width="1.2"/>
   <text x="439" y="312" font-size="11" fill="currentColor">User-defined (project-specific)</text>
   <!-- Standard class quick ref -->
   <text x="20" y="348" font-size="12" font-weight="700" fill="currentColor">Key standard codes:</text>
@@ -243,6 +244,127 @@ print(f"Written {len(las.classification):,} points")
 Skipping `update_header()` corrupts downstream GIS readers and breaks spatial indexing in tools like QGIS and ArcGIS Pro.
 
 ---
+
+<svg viewBox="0 0 720 260" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="A cross-section with every point coloured by its ASPRS classification code" style="width:100%;max-width:720px;display:block;margin:1.6rem auto">
+  <title>What the codes look like on one scene</title>
+  <desc>A road cutting, a building, a stand of trees and a pond in cross-section, with each return coloured by class: ground as two, low and high vegetation as three and five, building as six, water as nine, and a single noise return as seven. The classes are not layers in space — a building return and a vegetation return can sit at the same height.</desc>
+  <rect x="0" y="0" width="720" height="260" fill="var(--dg-bg)" rx="10"/>
+  <rect x="20" y="46" width="680" height="150" rx="8" fill="var(--dg-surface)" stroke="var(--dg-line-soft)" stroke-width="1.2"/>
+  <path d="M34 172 L180 168 L300 162 L430 166 L560 158 L686 162" fill="none" stroke="var(--dg-line)" stroke-width="1.6"/>
+  <circle cx="40" cy="172" r="3" fill="var(--dg-d)"/>
+  <circle cx="52" cy="170" r="3" fill="var(--dg-d)"/>
+  <circle cx="64" cy="170" r="3" fill="var(--dg-d)"/>
+  <circle cx="76" cy="171" r="3" fill="var(--dg-d)"/>
+  <circle cx="88" cy="167" r="3" fill="var(--dg-d)"/>
+  <circle cx="100" cy="170" r="3" fill="var(--dg-d)"/>
+  <circle cx="112" cy="168" r="3" fill="var(--dg-d)"/>
+  <circle cx="124" cy="167" r="3" fill="var(--dg-d)"/>
+  <circle cx="136" cy="167" r="3" fill="var(--dg-d)"/>
+  <circle cx="148" cy="166" r="3" fill="var(--dg-d)"/>
+  <circle cx="160" cy="168" r="3" fill="var(--dg-d)"/>
+  <circle cx="172" cy="169" r="3" fill="var(--dg-d)"/>
+  <circle cx="184" cy="167" r="3" fill="var(--dg-d)"/>
+  <circle cx="196" cy="169" r="3" fill="var(--dg-d)"/>
+  <circle cx="208" cy="169" r="3" fill="var(--dg-d)"/>
+  <circle cx="220" cy="165" r="3" fill="var(--dg-d)"/>
+  <circle cx="232" cy="169" r="3" fill="var(--dg-d)"/>
+  <circle cx="244" cy="166" r="3" fill="var(--dg-d)"/>
+  <circle cx="256" cy="165" r="3" fill="var(--dg-d)"/>
+  <circle cx="268" cy="165" r="3" fill="var(--dg-d)"/>
+  <circle cx="280" cy="167" r="3" fill="var(--dg-d)"/>
+  <circle cx="292" cy="166" r="3" fill="var(--dg-d)"/>
+  <circle cx="304" cy="165" r="3" fill="var(--dg-d)"/>
+  <circle cx="316" cy="167" r="3" fill="var(--dg-d)"/>
+  <circle cx="328" cy="165" r="3" fill="var(--dg-d)"/>
+  <circle cx="340" cy="163" r="3" fill="var(--dg-d)"/>
+  <circle cx="352" cy="164" r="3" fill="var(--dg-d)"/>
+  <circle cx="364" cy="167" r="3" fill="var(--dg-d)"/>
+  <circle cx="376" cy="167" r="3" fill="var(--dg-d)"/>
+  <circle cx="388" cy="166" r="3" fill="var(--dg-d)"/>
+  <circle cx="400" cy="163" r="3" fill="var(--dg-d)"/>
+  <circle cx="412" cy="163" r="3" fill="var(--dg-d)"/>
+  <circle cx="424" cy="162" r="3" fill="var(--dg-d)"/>
+  <circle cx="436" cy="162" r="3" fill="var(--dg-d)"/>
+  <circle cx="448" cy="163" r="3" fill="var(--dg-d)"/>
+  <circle cx="460" cy="163" r="3" fill="var(--dg-d)"/>
+  <circle cx="472" cy="162" r="3" fill="var(--dg-d)"/>
+  <circle cx="484" cy="162" r="3" fill="var(--dg-d)"/>
+  <circle cx="496" cy="163" r="3" fill="var(--dg-d)"/>
+  <circle cx="508" cy="163" r="3" fill="var(--dg-d)"/>
+  <circle cx="520" cy="162" r="3" fill="var(--dg-d)"/>
+  <circle cx="532" cy="165" r="3" fill="var(--dg-d)"/>
+  <circle cx="544" cy="161" r="3" fill="var(--dg-d)"/>
+  <circle cx="556" cy="161" r="3" fill="var(--dg-d)"/>
+  <circle cx="568" cy="161" r="3" fill="var(--dg-d)"/>
+  <circle cx="580" cy="163" r="3" fill="var(--dg-d)"/>
+  <circle cx="592" cy="162" r="3" fill="var(--dg-d)"/>
+  <circle cx="604" cy="159" r="3" fill="var(--dg-d)"/>
+  <circle cx="616" cy="161" r="3" fill="var(--dg-d)"/>
+  <circle cx="628" cy="162" r="3" fill="var(--dg-d)"/>
+  <circle cx="640" cy="160" r="3" fill="var(--dg-d)"/>
+  <circle cx="652" cy="160" r="3" fill="var(--dg-d)"/>
+  <circle cx="664" cy="161" r="3" fill="var(--dg-d)"/>
+  <circle cx="676" cy="158" r="3" fill="var(--dg-d)"/>
+  <rect x="210" y="118" width="5" height="5" fill="var(--dg-c)"/>
+  <rect x="221" y="118" width="5" height="5" fill="var(--dg-c)"/>
+  <rect x="232" y="120" width="5" height="5" fill="var(--dg-c)"/>
+  <rect x="243" y="120" width="5" height="5" fill="var(--dg-c)"/>
+  <rect x="254" y="116" width="5" height="5" fill="var(--dg-c)"/>
+  <rect x="265" y="120" width="5" height="5" fill="var(--dg-c)"/>
+  <rect x="276" y="118" width="5" height="5" fill="var(--dg-c)"/>
+  <rect x="287" y="116" width="5" height="5" fill="var(--dg-c)"/>
+  <rect x="298" y="118" width="5" height="5" fill="var(--dg-c)"/>
+  <rect x="208" y="118" width="94" height="46" fill="none" stroke="var(--dg-c)" stroke-width="1.4"/>
+  <circle cx="359" cy="96" r="3" fill="var(--dg-a)"/>
+  <circle cx="360" cy="113" r="3" fill="var(--dg-a)"/>
+  <circle cx="358" cy="133" r="3" fill="var(--dg-a)"/>
+  <circle cx="373" cy="94" r="3" fill="var(--dg-a)"/>
+  <circle cx="370" cy="112" r="3" fill="var(--dg-a)"/>
+  <circle cx="370" cy="131" r="3" fill="var(--dg-a)"/>
+  <circle cx="389" cy="98" r="3" fill="var(--dg-a)"/>
+  <circle cx="383" cy="116" r="3" fill="var(--dg-a)"/>
+  <circle cx="389" cy="132" r="3" fill="var(--dg-a)"/>
+  <circle cx="398" cy="98" r="3" fill="var(--dg-a)"/>
+  <circle cx="400" cy="108" r="3" fill="var(--dg-a)"/>
+  <circle cx="399" cy="126" r="3" fill="var(--dg-a)"/>
+  <circle cx="414" cy="94" r="3" fill="var(--dg-a)"/>
+  <circle cx="413" cy="111" r="3" fill="var(--dg-a)"/>
+  <circle cx="409" cy="129" r="3" fill="var(--dg-a)"/>
+  <circle cx="428" cy="99" r="3" fill="var(--dg-a)"/>
+  <circle cx="424" cy="116" r="3" fill="var(--dg-a)"/>
+  <circle cx="424" cy="134" r="3" fill="var(--dg-a)"/>
+  <circle cx="437" cy="99" r="3" fill="var(--dg-a)"/>
+  <circle cx="435" cy="113" r="3" fill="var(--dg-a)"/>
+  <circle cx="441" cy="130" r="3" fill="var(--dg-a)"/>
+  <circle cx="448" cy="98" r="3" fill="var(--dg-a)"/>
+  <circle cx="448" cy="111" r="3" fill="var(--dg-a)"/>
+  <circle cx="450" cy="134" r="3" fill="var(--dg-a)"/>
+  <circle cx="465" cy="97" r="3" fill="var(--dg-a)"/>
+  <circle cx="462" cy="113" r="3" fill="var(--dg-a)"/>
+  <circle cx="463" cy="134" r="3" fill="var(--dg-a)"/>
+  <circle cx="540" cy="158" r="3" fill="var(--dg-b)"/>
+  <circle cx="552" cy="158" r="3" fill="var(--dg-b)"/>
+  <circle cx="564" cy="158" r="3" fill="var(--dg-b)"/>
+  <circle cx="576" cy="158" r="3" fill="var(--dg-b)"/>
+  <circle cx="588" cy="158" r="3" fill="var(--dg-b)"/>
+  <circle cx="600" cy="158" r="3" fill="var(--dg-b)"/>
+  <circle cx="612" cy="158" r="3" fill="var(--dg-b)"/>
+  <circle cx="624" cy="158" r="3" fill="var(--dg-b)"/>
+  <circle cx="636" cy="158" r="3" fill="var(--dg-b)"/>
+  <circle cx="648" cy="158" r="3" fill="var(--dg-b)"/>
+  <circle cx="470" cy="62" r="4" fill="var(--dg-e)"/>
+  <circle cx="24" cy="222" r="5" fill="var(--dg-d)"/>
+  <text x="36" y="226" font-size="10.5" fill="var(--dg-muted)">2 ground</text>
+  <circle cx="164" cy="222" r="5" fill="var(--dg-a)"/>
+  <text x="176" y="226" font-size="10.5" fill="var(--dg-muted)">5 high vegetation</text>
+  <circle cx="304" cy="222" r="5" fill="var(--dg-c)"/>
+  <text x="316" y="226" font-size="10.5" fill="var(--dg-muted)">6 building</text>
+  <circle cx="444" cy="222" r="5" fill="var(--dg-b)"/>
+  <text x="456" y="226" font-size="10.5" fill="var(--dg-muted)">9 water</text>
+  <circle cx="584" cy="222" r="5" fill="var(--dg-e)"/>
+  <text x="596" y="226" font-size="10.5" fill="var(--dg-muted)">7 noise</text>
+  <text x="24" y="250" font-size="10.5" fill="var(--dg-muted)">codes describe what a return hit, not how high it was — height alone can never recover them</text>
+</svg>
 
 ## Complete Working Example
 
@@ -377,6 +499,37 @@ print("Verification passed.")
 For larger pipelines, wrap these assertions as a CI gate that runs on every new dataset ingestion. Pair them with a [LAS header parse](https://www.pythonlidar.com/point-cloud-data-standards-fundamentals/laslaz-file-structure/how-to-parse-las-headers-with-python/) to also verify the point data format ID matches the expected LAS version before processing begins.
 
 ---
+
+<svg viewBox="0 0 720 258" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="The classification byte in LAS 1.2 against the separate class and flag bytes in LAS 1.4" style="width:100%;max-width:720px;display:block;margin:1.6rem auto">
+  <title>Why LAS 1.2 stops at classification code 31</title>
+  <desc>In point formats zero to five the classification byte is shared: five bits hold the class, leaving room for codes zero to 31, and the top three bits are the synthetic, key-point and withheld flags. Point formats six and above give classification a full byte of its own, with the flags moved into a separate field — which is why codes above 31 need a 1.4 file.</desc>
+  <rect x="0" y="0" width="720" height="258" fill="var(--dg-bg)" rx="10"/>
+  <text x="20" y="42" font-size="11.5" font-weight="600" fill="var(--dg-text)">point formats 0–5 — one shared byte</text>
+  <rect x="20" y="56" width="76" height="46" fill="var(--dg-a-soft)" stroke="var(--dg-a)" stroke-width="1.3"/>
+  <text x="58" y="84" text-anchor="middle" font-size="11" fill="var(--dg-text)">bit 7</text>
+  <rect x="98" y="56" width="76" height="46" fill="var(--dg-a-soft)" stroke="var(--dg-a)" stroke-width="1.3"/>
+  <text x="136" y="84" text-anchor="middle" font-size="11" fill="var(--dg-text)">bit 6</text>
+  <rect x="176" y="56" width="76" height="46" fill="var(--dg-a-soft)" stroke="var(--dg-a)" stroke-width="1.3"/>
+  <text x="214" y="84" text-anchor="middle" font-size="11" fill="var(--dg-text)">bit 5</text>
+  <rect x="254" y="56" width="76" height="46" fill="var(--dg-a-soft)" stroke="var(--dg-a)" stroke-width="1.3"/>
+  <text x="292" y="84" text-anchor="middle" font-size="11" fill="var(--dg-text)">bit 4</text>
+  <rect x="332" y="56" width="76" height="46" fill="var(--dg-a-soft)" stroke="var(--dg-a)" stroke-width="1.3"/>
+  <text x="370" y="84" text-anchor="middle" font-size="11" fill="var(--dg-text)">bit 3</text>
+  <rect x="410" y="56" width="76" height="46" fill="var(--dg-e-soft)" stroke="var(--dg-e)" stroke-width="1.3"/>
+  <text x="448" y="84" text-anchor="middle" font-size="11" fill="var(--dg-text)">bit 2</text>
+  <rect x="488" y="56" width="76" height="46" fill="var(--dg-e-soft)" stroke="var(--dg-e)" stroke-width="1.3"/>
+  <text x="526" y="84" text-anchor="middle" font-size="11" fill="var(--dg-text)">bit 1</text>
+  <rect x="566" y="56" width="76" height="46" fill="var(--dg-e-soft)" stroke="var(--dg-e)" stroke-width="1.3"/>
+  <text x="604" y="84" text-anchor="middle" font-size="11" fill="var(--dg-text)">bit 0</text>
+  <text x="215" y="122" text-anchor="middle" font-size="10.5" fill="var(--dg-a)">5 bits of class — values 0 to 31 only</text>
+  <text x="566" y="122" text-anchor="middle" font-size="10.5" fill="var(--dg-e)">synthetic · key-point · withheld</text>
+  <text x="20" y="164" font-size="11.5" font-weight="600" fill="var(--dg-text)">point formats 6–10 — class gets its own byte</text>
+  <rect x="20" y="178" width="386" height="46" rx="5" fill="var(--dg-d-soft)" stroke="var(--dg-d)" stroke-width="1.3"/>
+  <text x="213" y="206" text-anchor="middle" font-size="11.5" fill="var(--dg-text)">Classification — full byte, values 0 to 255</text>
+  <rect x="414" y="178" width="284" height="46" rx="5" fill="var(--dg-e-soft)" stroke="var(--dg-e)" stroke-width="1.3"/>
+  <text x="556" y="206" text-anchor="middle" font-size="11.5" fill="var(--dg-text)">flags, in a field of their own</text>
+  <text x="20" y="248" font-size="10.5" fill="var(--dg-muted)">writing class 64 to a format-3 file is not an error — the top bits land in the flags and the class comes back as zero</text>
+</svg>
 
 ## Gotchas and Edge Cases
 

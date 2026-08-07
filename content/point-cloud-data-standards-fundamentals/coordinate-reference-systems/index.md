@@ -74,6 +74,7 @@ Without a rigorously defined Coordinate Reference System, raw XYZ values in a po
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 780 210" role="img" aria-label="Five-stage CRS management pipeline: Extract, Validate, Transform, Sync Header, Verify" style="max-width:100%;height:auto;display:block;margin:1.5rem 0;">
   <title>CRS Management Pipeline</title>
   <desc>Five sequential stages for managing Coordinate Reference Systems in a Python LiDAR pipeline. Left to right: Extract CRS from VLR records, Validate against PROJ database, Transform XYZ coordinates with pyproj, Synchronize the LAS header with new WKT2, and Verify output bounds and CRS round-trip.</desc>
+  <rect x="0" y="0" width="780" height="210" fill="var(--dg-bg)" rx="10"/>
   <defs>
     <marker id="crs-arr" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
       <polygon points="0 0, 8 3, 0 6" fill="currentColor" opacity="0.55"/>
@@ -144,6 +145,36 @@ The `global_encoding` field in the Public Header Block carries a WKT bit (bit 0)
 ### Horizontal vs vertical components
 
 A projected CRS such as `EPSG:26918` (NAD83 / UTM Zone 18N) defines horizontal positioning in metres. Elevation meaning depends on a separate vertical datum: ellipsoidal heights are relative to the GRS 80 ellipsoid; orthometric heights (what most engineering workflows need) require a geoid model such as NAVD88 (`EPSG:5703`) or EGM2008 (`EPSG:3855`). Combining both components into a compound CRS (`EPSG:26918+5703`) is the correct approach for full 3D accuracy and is the only representation that allows `pyproj` to apply the correct vertical grid shift in a single `Transformer` call.
+
+<svg viewBox="0 0 720 268" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="The three places a coordinate reference system can be recorded in a LAS file and the order PDAL reads them" style="width:100%;max-width:720px;display:block;margin:1.6rem auto">
+  <title>Three places a CRS can hide in one file</title>
+  <desc>A LAS file can carry its coordinate reference system as a GeoTIFF key VLR, as an OGC WKT VLR, or in neither. PDAL prefers the WKT record, falls back to the GeoTIFF keys, and if both are missing reports no spatial reference at all rather than guessing. In LAS 1.4 with point format six or above, the WKT record is the only legal option.</desc>
+  <rect x="0" y="0" width="720" height="268" fill="var(--dg-bg)" rx="10"/>
+  <defs><marker id="crs-arw" markerWidth="9" markerHeight="7" refX="9" refY="3.5" orient="auto"><path d="M0,0 L0,7 L9,3.5 z" fill="var(--dg-line)"/></marker></defs>
+  <rect x="20" y="46" width="240" height="180" rx="8" fill="var(--dg-surface)" stroke="var(--dg-line-soft)" stroke-width="1.2"/>
+  <text x="140" y="72" text-anchor="middle" font-size="12" font-weight="600" fill="var(--dg-text)">the file</text>
+  <rect x="36" y="88" width="208" height="40" rx="6" fill="var(--dg-d-soft)" stroke="var(--dg-d)" stroke-width="1.3"/>
+  <text x="140" y="106" text-anchor="middle" font-size="11" fill="var(--dg-text)">OGC WKT VLR</text>
+  <text x="140" y="120" text-anchor="middle" font-size="9.5" fill="var(--dg-muted)">record id 2112</text>
+  <line x1="244" y1="108" x2="300" y2="108" stroke="var(--dg-line)" stroke-width="1.4" marker-end="url(#crs-arw)"/>
+  <rect x="36" y="136" width="208" height="40" rx="6" fill="var(--dg-c-soft)" stroke="var(--dg-c)" stroke-width="1.3"/>
+  <text x="140" y="154" text-anchor="middle" font-size="11" fill="var(--dg-text)">GeoTIFF key VLR</text>
+  <text x="140" y="168" text-anchor="middle" font-size="9.5" fill="var(--dg-muted)">record ids 34735–34737</text>
+  <line x1="244" y1="156" x2="300" y2="156" stroke="var(--dg-line)" stroke-width="1.4" marker-end="url(#crs-arw)"/>
+  <rect x="36" y="184" width="208" height="40" rx="6" fill="var(--dg-e-soft)" stroke="var(--dg-e)" stroke-width="1.3"/>
+  <text x="140" y="202" text-anchor="middle" font-size="11" fill="var(--dg-text)">nothing at all</text>
+  <text x="140" y="216" text-anchor="middle" font-size="9.5" fill="var(--dg-muted)">header says EPSG:0</text>
+  <line x1="244" y1="204" x2="300" y2="204" stroke="var(--dg-line)" stroke-width="1.4" marker-end="url(#crs-arw)"/>
+  <rect x="306" y="88" width="180" height="136" rx="8" fill="var(--dg-a-soft)" stroke="var(--dg-a)" stroke-width="1.4"/>
+  <text x="396" y="140" text-anchor="middle" font-size="11.5" font-weight="600" fill="var(--dg-text)">PDAL reads,</text>
+  <text x="396" y="160" text-anchor="middle" font-size="11.5" font-weight="600" fill="var(--dg-text)">in this order</text>
+  <line x1="486" y1="156" x2="530" y2="156" stroke="var(--dg-line)" stroke-width="1.4" marker-end="url(#crs-arw)"/>
+  <rect x="536" y="128" width="164" height="56" rx="8" fill="var(--dg-b-soft)" stroke="var(--dg-b)" stroke-width="1.4"/>
+  <text x="618" y="152" text-anchor="middle" font-size="11" fill="var(--dg-text)">pipeline srs</text>
+  <text x="618" y="170" text-anchor="middle" font-size="10" fill="var(--dg-muted)">or an explicit failure</text>
+  <text x="20" y="32" font-size="10.5" fill="var(--dg-muted)">a LAS file has room for two spatial reference records and no rule that either is present</text>
+  <text x="20" y="252" font-size="10.5" fill="var(--dg-muted)">PDAL never infers a CRS from the coordinate values — an unreferenced tile stays unreferenced until you declare it</text>
+</svg>
 
 ## Core Workflow Architecture
 
@@ -392,6 +423,36 @@ def assert_crs_integrity(
 ```
 
 Run this as part of your CI suite — pass a known USGS benchmark monument coordinate as the control point. For [metadata header synchronization](https://www.pythonlidar.com/point-cloud-data-standards-fundamentals/metadata-header-sync/) workflows, extend the check to verify that the `min_x/max_x` bounding box fields in the new header tightly enclose the reprojected coordinates.
+
+<svg viewBox="-2 38 722 227" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="How the spatial reference changes at each stage of a pipeline" style="width:100%;max-width:720px;display:block;margin:1.6rem auto">
+  <title>The CRS is a value that four stages can each change</title>
+  <desc>The reference system as it moves through a pipeline. The reader reports whatever the file declared. A spatialreference option on the reader overrides it without moving any coordinates. The reprojection filter changes both the declaration and the coordinates. The writer records whatever the last stage declared — and can be told to record something else, which is how a correct pipeline still ships a wrong file.</desc>
+  <rect x="-2" y="38" width="722" height="227" fill="var(--dg-bg)" rx="10"/>
+  <defs><marker id="cst-arw" markerWidth="9" markerHeight="7" refX="9" refY="3.5" orient="auto"><path d="M0,0 L0,7 L9,3.5 z" fill="var(--dg-line)"/></marker></defs>
+  <rect x="20" y="60" width="150" height="70" rx="8" fill="var(--dg-b-soft)" stroke="var(--dg-b)" stroke-width="1.4"/>
+  <text x="95" y="86" text-anchor="middle" font-size="11.5" font-weight="600" fill="var(--dg-text)">readers.las</text>
+  <text x="95" y="106" text-anchor="middle" font-size="10" fill="var(--dg-muted)">declared by file</text>
+  <text x="95" y="122" text-anchor="middle" font-size="10" fill="var(--dg-muted)">EPSG:32617</text>
+  <rect x="196" y="60" width="150" height="70" rx="8" fill="var(--dg-c-soft)" stroke="var(--dg-c)" stroke-width="1.4"/>
+  <text x="271" y="86" text-anchor="middle" font-size="11.5" font-weight="600" fill="var(--dg-text)">spatialreference</text>
+  <text x="271" y="106" text-anchor="middle" font-size="10" fill="var(--dg-muted)">label only, no maths</text>
+  <text x="271" y="122" text-anchor="middle" font-size="10" fill="var(--dg-muted)">EPSG:26917</text>
+  <rect x="372" y="60" width="150" height="70" rx="8" fill="var(--dg-a-soft)" stroke="var(--dg-a)" stroke-width="1.4"/>
+  <text x="447" y="86" text-anchor="middle" font-size="11.5" font-weight="600" fill="var(--dg-text)">reprojection</text>
+  <text x="447" y="106" text-anchor="middle" font-size="10" fill="var(--dg-muted)">label and coordinates</text>
+  <text x="447" y="122" text-anchor="middle" font-size="10" fill="var(--dg-muted)">EPSG:6318</text>
+  <rect x="548" y="60" width="150" height="70" rx="8" fill="var(--dg-d-soft)" stroke="var(--dg-d)" stroke-width="1.4"/>
+  <text x="623" y="86" text-anchor="middle" font-size="11.5" font-weight="600" fill="var(--dg-text)">writers.las</text>
+  <text x="623" y="106" text-anchor="middle" font-size="10" fill="var(--dg-muted)">writes what it was told</text>
+  <text x="623" y="122" text-anchor="middle" font-size="10" fill="var(--dg-muted)">a_srs overrides</text>
+  <line x1="170" y1="95" x2="190" y2="95" stroke="var(--dg-line)" stroke-width="1.5" marker-end="url(#cst-arw)"/>
+  <line x1="346" y1="95" x2="366" y2="95" stroke="var(--dg-line)" stroke-width="1.5" marker-end="url(#cst-arw)"/>
+  <line x1="522" y1="95" x2="542" y2="95" stroke="var(--dg-line)" stroke-width="1.5" marker-end="url(#cst-arw)"/>
+  <rect x="20" y="158" width="678" height="34" rx="7" fill="var(--dg-surface)" stroke="var(--dg-line-soft)" stroke-width="1.2"/>
+  <text x="34" y="180" font-size="11" fill="var(--dg-text)">only the third box moves a coordinate — the other three only argue about what the coordinates already mean</text>
+  <text x="20" y="220" font-size="10.5" fill="var(--dg-muted)">an override on the reader is the right tool for a file whose CRS was recorded wrongly, and the wrong tool for a file in the wrong CRS.</text>
+  <text x="20" y="240" font-size="10.5" fill="var(--dg-muted)">Telling them apart takes one check: do the coordinates land where the survey says they should?</text>
+</svg>
 
 ## Performance Tuning
 

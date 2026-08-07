@@ -84,9 +84,10 @@ CRS mismatches are the most common silent data-corruption problem in production 
 Understanding where the CRS lives in the binary header is the prerequisite for fixing it reliably.
 
 <figure role="img" aria-label="CRS mismatch diagnosis and fix pipeline: from raw LAS file through header inspection, transformation, and validated output">
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 220" fill="none" aria-label="Flowchart showing the six stages of fixing a CRS mismatch in a LAS point cloud">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-12 58 784 136" fill="none" aria-label="Flowchart showing the six stages of fixing a CRS mismatch in a LAS point cloud">
   <title>CRS Mismatch Fix Pipeline</title>
   <desc>Six sequential stages: raw LAS file, inspect VLRs, parse CRS, transform coordinates, write output, validate. Arrows connect each stage left to right.</desc>
+  <rect x="-12" y="58" width="784" height="136" fill="var(--dg-bg)" rx="10"/>
   <defs>
     <marker id="arr" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
       <path d="M0,0 L0,6 L8,3 z" fill="currentColor"/>
@@ -281,6 +282,41 @@ def write_corrected_las(
     new_las.write(output_path)
 ```
 
+<svg viewBox="0 0 720 262" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Three magnitudes of registration error and what each one points to" style="width:100%;max-width:720px;display:block;margin:1.6rem auto">
+  <title>The size of the offset tells you which layer is wrong</title>
+  <desc>Three diagnostic rows. An offset of hundreds of kilometres means the projection itself is wrong — usually a UTM zone or an axis order. An offset of one to three metres means the projection is right and the datum realisation is not. A horizontal fit that is perfect with a thirty metre height error means ellipsoidal heights are being read as orthometric.</desc>
+  <rect x="0" y="0" width="720" height="262" fill="var(--dg-bg)" rx="10"/>
+  <defs><marker id="mis-arw" markerWidth="9" markerHeight="7" refX="9" refY="3.5" orient="auto"><path d="M0,0 L0,7 L9,3.5 z" fill="var(--dg-line)"/></marker></defs>
+  <rect x="20" y="56" width="216" height="46" rx="7" fill="var(--dg-e-soft)" stroke="var(--dg-e)" stroke-width="1.3"/>
+  <text x="128" y="84" text-anchor="middle" font-size="11" fill="var(--dg-text)">hundreds of km away</text>
+  <rect x="262" y="56" width="226" height="46" rx="7" fill="var(--dg-c-soft)" stroke="var(--dg-c)" stroke-width="1.3"/>
+  <text x="375" y="84" text-anchor="middle" font-size="10.5" fill="var(--dg-text)">wrong UTM zone or a swapped axis order</text>
+  <rect x="514" y="56" width="186" height="46" rx="7" fill="var(--dg-d-soft)" stroke="var(--dg-d)" stroke-width="1.3"/>
+  <text x="607" y="84" text-anchor="middle" font-size="10" fill="var(--dg-text)">declare the correct EPSG</text>
+  <line x1="236" y1="79" x2="256" y2="79" stroke="var(--dg-line)" stroke-width="1.4" marker-end="url(#mis-arw)"/>
+  <line x1="488" y1="79" x2="508" y2="79" stroke="var(--dg-line)" stroke-width="1.4" marker-end="url(#mis-arw)"/>
+  <rect x="20" y="118" width="216" height="46" rx="7" fill="var(--dg-e-soft)" stroke="var(--dg-e)" stroke-width="1.3"/>
+  <text x="128" y="146" text-anchor="middle" font-size="11" fill="var(--dg-text)">1 to 3 m off, consistently</text>
+  <rect x="262" y="118" width="226" height="46" rx="7" fill="var(--dg-c-soft)" stroke="var(--dg-c)" stroke-width="1.3"/>
+  <text x="375" y="146" text-anchor="middle" font-size="10.5" fill="var(--dg-text)">right projection, wrong datum realisation</text>
+  <rect x="514" y="118" width="186" height="46" rx="7" fill="var(--dg-d-soft)" stroke="var(--dg-d)" stroke-width="1.3"/>
+  <text x="607" y="146" text-anchor="middle" font-size="10" fill="var(--dg-text)">reproject with the grid</text>
+  <line x1="236" y1="141" x2="256" y2="141" stroke="var(--dg-line)" stroke-width="1.4" marker-end="url(#mis-arw)"/>
+  <line x1="488" y1="141" x2="508" y2="141" stroke="var(--dg-line)" stroke-width="1.4" marker-end="url(#mis-arw)"/>
+  <rect x="20" y="180" width="216" height="46" rx="7" fill="var(--dg-e-soft)" stroke="var(--dg-e)" stroke-width="1.3"/>
+  <text x="128" y="208" text-anchor="middle" font-size="11" fill="var(--dg-text)">horizontal fine, height off by ~30 m</text>
+  <rect x="262" y="180" width="226" height="46" rx="7" fill="var(--dg-c-soft)" stroke="var(--dg-c)" stroke-width="1.3"/>
+  <text x="375" y="208" text-anchor="middle" font-size="10.5" fill="var(--dg-text)">ellipsoidal height read as orthometric</text>
+  <rect x="514" y="180" width="186" height="46" rx="7" fill="var(--dg-d-soft)" stroke="var(--dg-d)" stroke-width="1.3"/>
+  <text x="607" y="208" text-anchor="middle" font-size="10" fill="var(--dg-text)">apply the geoid model</text>
+  <line x1="236" y1="203" x2="256" y2="203" stroke="var(--dg-line)" stroke-width="1.4" marker-end="url(#mis-arw)"/>
+  <line x1="488" y1="203" x2="508" y2="203" stroke="var(--dg-line)" stroke-width="1.4" marker-end="url(#mis-arw)"/>
+  <text x="128" y="44" text-anchor="middle" font-size="10.5" fill="var(--dg-muted)">what you measure</text>
+  <text x="375" y="44" text-anchor="middle" font-size="10.5" fill="var(--dg-muted)">what it means</text>
+  <text x="607" y="44" text-anchor="middle" font-size="10.5" fill="var(--dg-muted)">what to do</text>
+  <text x="20" y="256" font-size="10.5" fill="var(--dg-muted)">measure the offset against a known control point before changing anything — the number is the diagnosis</text>
+</svg>
+
 ## Complete Working Example
 
 Copy-paste this script, adjust the three constants at the top, and run it against any LAS/LAZ file. It requires `laspy>=2.4`, `pyproj>=3.4`, and `numpy>=1.22`.
@@ -415,6 +451,28 @@ def verify_corrected_file(output_path: str, expected_epsg: int) -> None:
 ```
 
 For infrastructure deliverables, cross-check at least one ground control point against an independent survey measurement. A correctly transformed UTM point should agree with the GCP to within your survey's stated accuracy (typically ±0.05 m horizontal, ±0.10 m vertical for engineering-grade LiDAR).
+
+<svg viewBox="0 0 720 250" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Overriding a declared CRS against reprojecting, and what happens to the coordinates" style="width:100%;max-width:720px;display:block;margin:1.6rem auto">
+  <title>Override relabels, reproject moves</title>
+  <desc>The same input easting and northing under two fixes. Overriding the declaration leaves the numbers untouched and changes only what they claim to be, which is correct when the file was labelled wrongly. Reprojecting recomputes the numbers into the target system, which is correct when the file was labelled rightly but is in the wrong system for the job.</desc>
+  <rect x="0" y="0" width="720" height="250" fill="var(--dg-bg)" rx="10"/>
+  <text x="185" y="38" text-anchor="middle" font-size="12" font-weight="600" fill="var(--dg-text)">override the declaration</text>
+  <text x="535" y="38" text-anchor="middle" font-size="12" font-weight="600" fill="var(--dg-text)">reproject the points</text>
+  <rect x="20" y="50" width="330" height="150" rx="8" fill="var(--dg-surface)" stroke="var(--dg-line-soft)" stroke-width="1.2"/>
+  <text x="185" y="80" text-anchor="middle" font-size="11" fill="var(--dg-muted)">in: 512340.11, 4783221.06</text>
+  <text x="185" y="104" text-anchor="middle" font-size="11" fill="var(--dg-muted)">claims EPSG:32617</text>
+  <text x="185" y="136" text-anchor="middle" font-size="11.5" font-weight="600" fill="var(--dg-d)">out: 512340.11, 4783221.06</text>
+  <text x="185" y="160" text-anchor="middle" font-size="11" fill="var(--dg-d)">now claims EPSG:26917</text>
+  <text x="185" y="186" text-anchor="middle" font-size="10.5" fill="var(--dg-muted)">nothing moved; the label was wrong</text>
+  <rect x="370" y="50" width="330" height="150" rx="8" fill="var(--dg-surface)" stroke="var(--dg-line-soft)" stroke-width="1.2"/>
+  <text x="535" y="80" text-anchor="middle" font-size="11" fill="var(--dg-muted)">in: 512340.11, 4783221.06</text>
+  <text x="535" y="104" text-anchor="middle" font-size="11" fill="var(--dg-muted)">claims EPSG:32617</text>
+  <text x="535" y="136" text-anchor="middle" font-size="11.5" font-weight="600" fill="var(--dg-a)">out: −81.083612, 43.207755</text>
+  <text x="535" y="160" text-anchor="middle" font-size="11" fill="var(--dg-a)">now is EPSG:4326</text>
+  <text x="535" y="186" text-anchor="middle" font-size="10.5" fill="var(--dg-muted)">every point recomputed</text>
+  <text x="20" y="226" font-size="10.5" fill="var(--dg-muted)">using the first when you needed the second leaves a file that is internally consistent and metres out of position —</text>
+  <text x="20" y="244" font-size="10.5" fill="var(--dg-muted)">the one failure mode no downstream tool can detect for you.</text>
+</svg>
 
 ## Gotchas and Edge Cases
 

@@ -92,9 +92,10 @@ For LiDAR analysts, Python GIS developers, and surveying tech teams, mastering h
 
 ---
 
-<svg viewBox="0 0 820 220" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="PDAL pipeline execution flow from reader through filters to writer" style="width:100%;max-width:820px;display:block;margin:1.5rem auto">
+<svg viewBox="-2 53 824 171" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="PDAL pipeline execution flow from reader through filters to writer" style="width:100%;max-width:820px;display:block;margin:1.5rem auto">
   <title>PDAL Pipeline Execution Flow</title>
   <desc>Directed acyclic graph showing how a PDAL pipeline pulls data from a Reader stage through one or more Filter stages and into a Writer stage, with the pull-based request model indicated by arrows flowing left to right.</desc>
+  <rect x="-2" y="53" width="824" height="171" fill="var(--dg-bg)" rx="10"/>
   <defs>
     <marker id="arr-flow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
       <polygon points="0 0, 8 3, 0 6" fill="currentColor" opacity="0.6"/>
@@ -184,6 +185,49 @@ Key filters and their roles:
 ### Writers
 
 Writers serialize the processed point buffer to disk, database, or network. The `writers.las` stage is the workhorse for LAS/LAZ output. `writers.copc` produces Cloud-Optimised Point Clouds suitable for web streaming without pre-tiling. `writers.gdal` rasterizes point clouds into GeoTIFF DEMs or intensity grids. Always declare `minor_version`, `dataformat_id`, and `extra_dims` explicitly on `writers.las` to avoid header ambiguity and dropped custom dimensions.
+
+<svg viewBox="0 0 720 268" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="The three PDAL stage categories with five common stages under each" style="width:100%;max-width:720px;display:block;margin:1.6rem auto">
+  <title>Every PDAL stage is one of three things</title>
+  <desc>Three columns. Readers pull points in from LAS, COPC, EPT, text or a GDAL raster. Filters reshape them — range selection, SMRF ground classification, reprojection, outlier removal, height above ground. Writers put them somewhere: LAS, a GDAL raster, COPC, an OGR vector layer or text. A pipeline is one reader, any number of filters, and usually one writer.</desc>
+  <rect x="0" y="0" width="720" height="268" fill="var(--dg-bg)" rx="10"/>
+  <rect x="24" y="40" width="216" height="34" rx="7" fill="var(--dg-b-soft)" stroke="var(--dg-b)" stroke-width="1.4"/>
+  <text x="132" y="62" text-anchor="middle" font-size="11.5" font-weight="600" fill="var(--dg-text)">readers · pull points in</text>
+  <rect x="24" y="84" width="216" height="28" rx="5" fill="var(--dg-surface)" stroke="var(--dg-line-soft)" stroke-width="1"/>
+  <text x="132" y="103" text-anchor="middle" font-size="11" fill="var(--dg-text)">readers.las</text>
+  <rect x="24" y="118" width="216" height="28" rx="5" fill="var(--dg-surface)" stroke="var(--dg-line-soft)" stroke-width="1"/>
+  <text x="132" y="137" text-anchor="middle" font-size="11" fill="var(--dg-text)">readers.copc</text>
+  <rect x="24" y="152" width="216" height="28" rx="5" fill="var(--dg-surface)" stroke="var(--dg-line-soft)" stroke-width="1"/>
+  <text x="132" y="171" text-anchor="middle" font-size="11" fill="var(--dg-text)">readers.ept</text>
+  <rect x="24" y="186" width="216" height="28" rx="5" fill="var(--dg-surface)" stroke="var(--dg-line-soft)" stroke-width="1"/>
+  <text x="132" y="205" text-anchor="middle" font-size="11" fill="var(--dg-text)">readers.text</text>
+  <rect x="24" y="220" width="216" height="28" rx="5" fill="var(--dg-surface)" stroke="var(--dg-line-soft)" stroke-width="1"/>
+  <text x="132" y="239" text-anchor="middle" font-size="11" fill="var(--dg-text)">readers.gdal</text>
+  <rect x="252" y="40" width="216" height="34" rx="7" fill="var(--dg-a-soft)" stroke="var(--dg-a)" stroke-width="1.4"/>
+  <text x="360" y="62" text-anchor="middle" font-size="11.5" font-weight="600" fill="var(--dg-text)">filters · reshape them</text>
+  <rect x="252" y="84" width="216" height="28" rx="5" fill="var(--dg-surface)" stroke="var(--dg-line-soft)" stroke-width="1"/>
+  <text x="360" y="103" text-anchor="middle" font-size="11" fill="var(--dg-text)">filters.range</text>
+  <rect x="252" y="118" width="216" height="28" rx="5" fill="var(--dg-surface)" stroke="var(--dg-line-soft)" stroke-width="1"/>
+  <text x="360" y="137" text-anchor="middle" font-size="11" fill="var(--dg-text)">filters.smrf</text>
+  <rect x="252" y="152" width="216" height="28" rx="5" fill="var(--dg-surface)" stroke="var(--dg-line-soft)" stroke-width="1"/>
+  <text x="360" y="171" text-anchor="middle" font-size="11" fill="var(--dg-text)">filters.reprojection</text>
+  <rect x="252" y="186" width="216" height="28" rx="5" fill="var(--dg-surface)" stroke="var(--dg-line-soft)" stroke-width="1"/>
+  <text x="360" y="205" text-anchor="middle" font-size="11" fill="var(--dg-text)">filters.outlier</text>
+  <rect x="252" y="220" width="216" height="28" rx="5" fill="var(--dg-surface)" stroke="var(--dg-line-soft)" stroke-width="1"/>
+  <text x="360" y="239" text-anchor="middle" font-size="11" fill="var(--dg-text)">filters.hag_nn</text>
+  <rect x="480" y="40" width="216" height="34" rx="7" fill="var(--dg-d-soft)" stroke="var(--dg-d)" stroke-width="1.4"/>
+  <text x="588" y="62" text-anchor="middle" font-size="11.5" font-weight="600" fill="var(--dg-text)">writers · put them somewhere</text>
+  <rect x="480" y="84" width="216" height="28" rx="5" fill="var(--dg-surface)" stroke="var(--dg-line-soft)" stroke-width="1"/>
+  <text x="588" y="103" text-anchor="middle" font-size="11" fill="var(--dg-text)">writers.las</text>
+  <rect x="480" y="118" width="216" height="28" rx="5" fill="var(--dg-surface)" stroke="var(--dg-line-soft)" stroke-width="1"/>
+  <text x="588" y="137" text-anchor="middle" font-size="11" fill="var(--dg-text)">writers.gdal</text>
+  <rect x="480" y="152" width="216" height="28" rx="5" fill="var(--dg-surface)" stroke="var(--dg-line-soft)" stroke-width="1"/>
+  <text x="588" y="171" text-anchor="middle" font-size="11" fill="var(--dg-text)">writers.copc</text>
+  <rect x="480" y="186" width="216" height="28" rx="5" fill="var(--dg-surface)" stroke="var(--dg-line-soft)" stroke-width="1"/>
+  <text x="588" y="205" text-anchor="middle" font-size="11" fill="var(--dg-text)">writers.ogr</text>
+  <rect x="480" y="220" width="216" height="28" rx="5" fill="var(--dg-surface)" stroke="var(--dg-line-soft)" stroke-width="1"/>
+  <text x="588" y="239" text-anchor="middle" font-size="11" fill="var(--dg-text)">writers.text</text>
+  <text x="24" y="26" font-size="10.5" fill="var(--dg-muted)">the type key in a pipeline stage always names one of these three families</text>
+</svg>
 
 ## Annotated Reference Pipeline
 
@@ -394,6 +438,51 @@ PDAL's HTTP/HTTPS and GDAL VSIAZ/VSIGS virtual file system support allows pipeli
 
 Network throughput must be provisioned to match the reader's consumption rate. On bandwidth-constrained nodes, prefetch tiles to local NVMe before execution.
 
+<svg viewBox="0 0 720 282" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Four common PDAL runtime errors mapped to the stage that raises them and the fix" style="width:100%;max-width:720px;display:block;margin:1.6rem auto">
+  <title>Four errors, and the stage each one is really about</title>
+  <desc>Each row pairs an error message with the stage that raises it and the change that fixes it. A scaled-value conversion error comes from the LAS writer and needs a wider scale. A missing transformation comes from reprojection and needs the PROJ grids installed. A bad_alloc comes from a buffering stage and needs a smaller chunk_size. A file creation error comes from the GDAL writer and is usually a path or driver option.</desc>
+  <rect x="0" y="0" width="720" height="282" fill="var(--dg-bg)" rx="10"/>
+  <defs><marker id="fm-arw" markerWidth="9" markerHeight="7" refX="9" refY="3.5" orient="auto"><path d="M0,0 L0,7 L9,3.5 z" fill="var(--dg-line)"/></marker></defs>
+  <text x="145" y="52" text-anchor="middle" font-size="10.5" fill="var(--dg-muted)">what you see</text>
+  <text x="380" y="52" text-anchor="middle" font-size="10.5" fill="var(--dg-muted)">where it comes from</text>
+  <text x="595" y="52" text-anchor="middle" font-size="10.5" fill="var(--dg-muted)">what to change</text>
+  <rect x="20" y="64" width="250" height="40" rx="7" fill="var(--dg-e-soft)" stroke="var(--dg-e)" stroke-width="1.3"/>
+  <text x="145" y="89" text-anchor="middle" font-size="11" fill="var(--dg-text)">Unable to convert scaled value</text>
+  <rect x="290" y="64" width="180" height="40" rx="7" fill="var(--dg-a-soft)" stroke="var(--dg-a)" stroke-width="1.3"/>
+  <text x="380" y="89" text-anchor="middle" font-size="11" fill="var(--dg-text)">writers.las</text>
+  <rect x="490" y="64" width="210" height="40" rx="7" fill="var(--dg-d-soft)" stroke="var(--dg-d)" stroke-width="1.3"/>
+  <text x="595" y="89" text-anchor="middle" font-size="11" fill="var(--dg-text)">widen scale_x/y/z in the writer</text>
+  <line x1="270" y1="84" x2="284" y2="84" stroke="var(--dg-line)" stroke-width="1.5" marker-end="url(#fm-arw)"/>
+  <line x1="470" y1="84" x2="484" y2="84" stroke="var(--dg-line)" stroke-width="1.5" marker-end="url(#fm-arw)"/>
+  <rect x="20" y="114" width="250" height="40" rx="7" fill="var(--dg-e-soft)" stroke="var(--dg-e)" stroke-width="1.3"/>
+  <text x="145" y="139" text-anchor="middle" font-size="11" fill="var(--dg-text)">No transformation found</text>
+  <rect x="290" y="114" width="180" height="40" rx="7" fill="var(--dg-a-soft)" stroke="var(--dg-a)" stroke-width="1.3"/>
+  <text x="380" y="139" text-anchor="middle" font-size="11" fill="var(--dg-text)">filters.reprojection</text>
+  <rect x="490" y="114" width="210" height="40" rx="7" fill="var(--dg-d-soft)" stroke="var(--dg-d)" stroke-width="1.3"/>
+  <text x="595" y="139" text-anchor="middle" font-size="11" fill="var(--dg-text)">install the PROJ datum grids</text>
+  <line x1="270" y1="134" x2="284" y2="134" stroke="var(--dg-line)" stroke-width="1.5" marker-end="url(#fm-arw)"/>
+  <line x1="470" y1="134" x2="484" y2="134" stroke="var(--dg-line)" stroke-width="1.5" marker-end="url(#fm-arw)"/>
+  <rect x="20" y="164" width="250" height="40" rx="7" fill="var(--dg-e-soft)" stroke="var(--dg-e)" stroke-width="1.3"/>
+  <text x="145" y="189" text-anchor="middle" font-size="11" fill="var(--dg-text)">std::bad_alloc</text>
+  <rect x="290" y="164" width="180" height="40" rx="7" fill="var(--dg-a-soft)" stroke="var(--dg-a)" stroke-width="1.3"/>
+  <text x="380" y="189" text-anchor="middle" font-size="11" fill="var(--dg-text)">any buffering stage</text>
+  <rect x="490" y="164" width="210" height="40" rx="7" fill="var(--dg-d-soft)" stroke="var(--dg-d)" stroke-width="1.3"/>
+  <text x="595" y="189" text-anchor="middle" font-size="11" fill="var(--dg-text)">lower chunk_size, tile the input</text>
+  <line x1="270" y1="184" x2="284" y2="184" stroke="var(--dg-line)" stroke-width="1.5" marker-end="url(#fm-arw)"/>
+  <line x1="470" y1="184" x2="484" y2="184" stroke="var(--dg-line)" stroke-width="1.5" marker-end="url(#fm-arw)"/>
+  <rect x="20" y="214" width="250" height="40" rx="7" fill="var(--dg-e-soft)" stroke="var(--dg-e)" stroke-width="1.3"/>
+  <text x="145" y="239" text-anchor="middle" font-size="11" fill="var(--dg-text)">Couldn’t create file</text>
+  <rect x="290" y="214" width="180" height="40" rx="7" fill="var(--dg-a-soft)" stroke="var(--dg-a)" stroke-width="1.3"/>
+  <text x="380" y="239" text-anchor="middle" font-size="11" fill="var(--dg-text)">writers.gdal</text>
+  <rect x="490" y="214" width="210" height="40" rx="7" fill="var(--dg-d-soft)" stroke="var(--dg-d)" stroke-width="1.3"/>
+  <text x="595" y="239" text-anchor="middle" font-size="11" fill="var(--dg-text)">check path, driver and nodata</text>
+  <line x1="270" y1="234" x2="284" y2="234" stroke="var(--dg-line)" stroke-width="1.5" marker-end="url(#fm-arw)"/>
+  <line x1="470" y1="234" x2="484" y2="234" stroke="var(--dg-line)" stroke-width="1.5" marker-end="url(#fm-arw)"/>
+  <text x="20" y="272" font-size="10.5" fill="var(--dg-muted)">set pipeline.loglevel to 8 and the offending stage names itself in the log before the exception</text>
+</svg>
+
+Two execution choices sit above all of this and are covered in their own topics. [Streaming mode execution](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/streaming-mode-execution/) changes what the pipeline holds in memory — points move through in fixed-size chunks, so peak memory stops tracking the file size — and it is available whenever every stage in the chain decides about a point without looking at its neighbours. [Programmable Python filters](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/programmable-python-filters/) cover the opposite case: the rule you need is not a stage at all, and `filters.python` hands your NumPy function the buffer to work on.
+
 ## Failure Modes and Debugging
 
 ### Schema violations
@@ -469,3 +558,5 @@ For final delivery or archival, LAZ (LASzip compression) reduces file size by 70
 - [Parallel Execution](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/parallel-execution/) — file-level and stage-level strategies for multi-core throughput
 - [Memory Management](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/memory-management/) — capacity tuning, stream mode, and container memory limits
 - [Pipeline Validation](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/pipeline-validation/) — validate-only runs, schema checks, and CI integration
+- [Streaming Mode Execution](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/streaming-mode-execution/) — chunked execution that bounds peak memory by chunk size rather than file size
+- [Programmable Python Filters](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/programmable-python-filters/) — filters.python, for the rule no built-in stage implements

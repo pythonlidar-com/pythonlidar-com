@@ -70,9 +70,10 @@ dateModified: "2026-07-12"
 
 A Digital Terrain Model is the deliverable most LiDAR projects are ultimately commissioned to produce: a continuous bare-earth elevation surface with vegetation, buildings, and vehicles stripped away. Once ground returns have been isolated by an algorithm such as SMRF or PMF, the remaining task is rasterization — collapsing an irregular scatter of classified ground points into a regular grid of elevation values written to a GeoTIFF. PDAL performs this final step with `writers.gdal`, a rasterizing sink that bins points into cells, interpolates a value per cell, and hands the array to GDAL for encoding. This guide is part of [Ground Filtering and DTM/DSM Generation with PDAL](https://www.pythonlidar.com/ground-filtering-dtm-dsm-generation/), and it focuses on the parameters that decide whether the resulting terrain model is survey-usable or riddled with holes and artefacts.
 
-<svg viewBox="0 0 760 250" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="DTM raster generation flow from classified ground points through filters.range to writers.gdal cell binning and GeoTIFF output" style="width:100%;max-width:760px;display:block;margin:1.5rem auto">
+<svg viewBox="-14 44 784 195" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="DTM raster generation flow from classified ground points through filters.range to writers.gdal cell binning and GeoTIFF output" style="width:100%;max-width:760px;display:block;margin:1.5rem auto">
   <title>DTM Raster Generation Data Flow</title>
   <desc>A left-to-right diagram: a classified point cloud enters filters.range which keeps only Classification 2 ground points, those points flow into writers.gdal where they are binned into a regular grid and each cell is filled by an interpolator using a search radius, and the grid is encoded as a compressed tiled GeoTIFF with a NoData value and CRS.</desc>
+  <rect x="-14" y="44" width="784" height="195" fill="var(--dg-bg)" rx="10"/>
   <defs>
     <marker id="dtm-arr" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto">
       <path d="M0,0 L0,6 L8,3 z" fill="currentColor" opacity="0.6"/>
@@ -241,6 +242,74 @@ The equivalent declarative JSON, useful for the `pdal pipeline` CLI or for stori
 }
 ```
 
+<svg viewBox="0 0 720 262" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Search radius around one raster cell centre and the parameters that set it" style="width:100%;max-width:720px;display:block;margin:1.6rem auto">
+  <title>What writers.gdal looks at when it fills one cell</title>
+  <desc>A grid of raster cells with points scattered over it. A dashed circle of the search radius is drawn around one cell centre; the points inside it are highlighted and are the only ones the reducer sees for that cell. Beside the grid, the four parameters that control the operation: resolution, radius, window_size and output_type.</desc>
+  <rect x="0" y="0" width="720" height="262" fill="var(--dg-bg)" rx="10"/>
+  <rect x="40" y="48" width="42" height="42" fill="var(--dg-surface)" stroke="var(--dg-line-soft)" stroke-width="0.9"/>
+  <rect x="82" y="48" width="42" height="42" fill="var(--dg-surface)" stroke="var(--dg-line-soft)" stroke-width="0.9"/>
+  <rect x="124" y="48" width="42" height="42" fill="var(--dg-surface)" stroke="var(--dg-line-soft)" stroke-width="0.9"/>
+  <rect x="166" y="48" width="42" height="42" fill="var(--dg-surface)" stroke="var(--dg-line-soft)" stroke-width="0.9"/>
+  <rect x="208" y="48" width="42" height="42" fill="var(--dg-surface)" stroke="var(--dg-line-soft)" stroke-width="0.9"/>
+  <rect x="250" y="48" width="42" height="42" fill="var(--dg-surface)" stroke="var(--dg-line-soft)" stroke-width="0.9"/>
+  <rect x="292" y="48" width="42" height="42" fill="var(--dg-surface)" stroke="var(--dg-line-soft)" stroke-width="0.9"/>
+  <rect x="40" y="90" width="42" height="42" fill="var(--dg-surface)" stroke="var(--dg-line-soft)" stroke-width="0.9"/>
+  <rect x="82" y="90" width="42" height="42" fill="var(--dg-surface)" stroke="var(--dg-line-soft)" stroke-width="0.9"/>
+  <rect x="124" y="90" width="42" height="42" fill="var(--dg-surface)" stroke="var(--dg-line-soft)" stroke-width="0.9"/>
+  <rect x="166" y="90" width="42" height="42" fill="var(--dg-surface)" stroke="var(--dg-line-soft)" stroke-width="0.9"/>
+  <rect x="208" y="90" width="42" height="42" fill="var(--dg-surface)" stroke="var(--dg-line-soft)" stroke-width="0.9"/>
+  <rect x="250" y="90" width="42" height="42" fill="var(--dg-surface)" stroke="var(--dg-line-soft)" stroke-width="0.9"/>
+  <rect x="292" y="90" width="42" height="42" fill="var(--dg-surface)" stroke="var(--dg-line-soft)" stroke-width="0.9"/>
+  <rect x="40" y="132" width="42" height="42" fill="var(--dg-surface)" stroke="var(--dg-line-soft)" stroke-width="0.9"/>
+  <rect x="82" y="132" width="42" height="42" fill="var(--dg-surface)" stroke="var(--dg-line-soft)" stroke-width="0.9"/>
+  <rect x="124" y="132" width="42" height="42" fill="var(--dg-surface)" stroke="var(--dg-line-soft)" stroke-width="0.9"/>
+  <rect x="166" y="132" width="42" height="42" fill="var(--dg-surface)" stroke="var(--dg-line-soft)" stroke-width="0.9"/>
+  <rect x="208" y="132" width="42" height="42" fill="var(--dg-surface)" stroke="var(--dg-line-soft)" stroke-width="0.9"/>
+  <rect x="250" y="132" width="42" height="42" fill="var(--dg-surface)" stroke="var(--dg-line-soft)" stroke-width="0.9"/>
+  <rect x="292" y="132" width="42" height="42" fill="var(--dg-surface)" stroke="var(--dg-line-soft)" stroke-width="0.9"/>
+  <rect x="40" y="174" width="42" height="42" fill="var(--dg-surface)" stroke="var(--dg-line-soft)" stroke-width="0.9"/>
+  <rect x="82" y="174" width="42" height="42" fill="var(--dg-surface)" stroke="var(--dg-line-soft)" stroke-width="0.9"/>
+  <rect x="124" y="174" width="42" height="42" fill="var(--dg-surface)" stroke="var(--dg-line-soft)" stroke-width="0.9"/>
+  <rect x="166" y="174" width="42" height="42" fill="var(--dg-surface)" stroke="var(--dg-line-soft)" stroke-width="0.9"/>
+  <rect x="208" y="174" width="42" height="42" fill="var(--dg-surface)" stroke="var(--dg-line-soft)" stroke-width="0.9"/>
+  <rect x="250" y="174" width="42" height="42" fill="var(--dg-surface)" stroke="var(--dg-line-soft)" stroke-width="0.9"/>
+  <rect x="292" y="174" width="42" height="42" fill="var(--dg-surface)" stroke="var(--dg-line-soft)" stroke-width="0.9"/>
+  <circle cx="62" cy="70" r="3.2" fill="var(--dg-line-soft)"/>
+  <circle cx="96" cy="62" r="3.2" fill="var(--dg-line-soft)"/>
+  <circle cx="128" cy="84" r="3.2" fill="var(--dg-a)"/>
+  <circle cx="160" cy="74" r="3.2" fill="var(--dg-a)"/>
+  <circle cx="196" cy="66" r="3.2" fill="var(--dg-line-soft)"/>
+  <circle cx="238" cy="90" r="3.2" fill="var(--dg-line-soft)"/>
+  <circle cx="286" cy="70" r="3.2" fill="var(--dg-line-soft)"/>
+  <circle cx="58" cy="118" r="3.2" fill="var(--dg-line-soft)"/>
+  <circle cx="104" cy="104" r="3.2" fill="var(--dg-a)"/>
+  <circle cx="132" cy="122" r="3.2" fill="var(--dg-a)"/>
+  <circle cx="168" cy="110" r="3.2" fill="var(--dg-a)"/>
+  <circle cx="206" cy="130" r="3.2" fill="var(--dg-line-soft)"/>
+  <circle cx="252" cy="116" r="3.2" fill="var(--dg-line-soft)"/>
+  <circle cx="300" cy="128" r="3.2" fill="var(--dg-line-soft)"/>
+  <circle cx="74" cy="158" r="3.2" fill="var(--dg-line-soft)"/>
+  <circle cx="112" cy="172" r="3.2" fill="var(--dg-line-soft)"/>
+  <circle cx="150" cy="150" r="3.2" fill="var(--dg-a)"/>
+  <circle cx="188" cy="168" r="3.2" fill="var(--dg-line-soft)"/>
+  <circle cx="230" cy="156" r="3.2" fill="var(--dg-line-soft)"/>
+  <circle cx="274" cy="176" r="3.2" fill="var(--dg-line-soft)"/>
+  <circle cx="312" cy="160" r="3.2" fill="var(--dg-line-soft)"/>
+  <circle cx="66" cy="200" r="3.2" fill="var(--dg-line-soft)"/>
+  <circle cx="140" cy="196" r="3.2" fill="var(--dg-line-soft)"/>
+  <circle cx="222" cy="204" r="3.2" fill="var(--dg-line-soft)"/>
+  <circle cx="296" cy="198" r="3.2" fill="var(--dg-line-soft)"/>
+  <circle cx="145" cy="111" r="58" fill="none" stroke="var(--dg-a)" stroke-width="1.8" stroke-dasharray="6 4"/>
+  <circle cx="145" cy="111" r="3.6" fill="var(--dg-c)"/>
+  <text x="145" y="30" text-anchor="middle" font-size="10.5" fill="var(--dg-a)">radius around the cell centre</text>
+  <rect x="380" y="48" width="320" height="168" rx="8" fill="var(--dg-surface)" stroke="var(--dg-line-soft)" stroke-width="1.2"/>
+  <text x="398" y="80" font-size="11.5" fill="var(--dg-text)">resolution 1.0 — cell side, in CRS units</text>
+  <text x="398" y="114" font-size="11.5" fill="var(--dg-text)">radius 1.4 — points considered per cell</text>
+  <text x="398" y="148" font-size="11.5" fill="var(--dg-text)">window_size 4 — focal fill for empty cells</text>
+  <text x="398" y="182" font-size="11.5" fill="var(--dg-text)">output_type idw — how they are reduced</text>
+  <text x="40" y="240" font-size="10.5" fill="var(--dg-muted)">a cell with no point inside its radius is written as NoData, and only then does window_size get a say</text>
+</svg>
+
 ## Code Breakdown
 
 ### Keeping ground with filters.range
@@ -330,6 +399,57 @@ if __name__ == "__main__":
 ```
 
 Three checks matter most. First, **CRS must be present** — a null CRS means the source points were untagged, and the raster is spatially meaningless. Second, **the NoData fraction** should sit below a project threshold; a sudden jump usually means the resolution outran the ground-point spacing. Third, **the elevation range** should match known site relief — a `z_max` in the thousands over a floodplain betrays unfiltered noise or a stray high point that ground classification missed.
+
+<svg viewBox="0 0 720 236" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="The same five points reduced five different ways by writers.gdal" style="width:100%;max-width:720px;display:block;margin:1.6rem auto">
+  <title>Five reducers, one set of points, five cell values</title>
+  <desc>Five panels each showing the identical five points that fall inside one cell's search radius. The line across each panel marks the value that reducer writes: inverse distance weighting gives 21.94 metres, mean 21.97, min 21.61, max 22.44, and count simply reports five points.</desc>
+  <rect x="0" y="0" width="720" height="236" fill="var(--dg-bg)" rx="10"/>
+  <rect x="30" y="54" width="124" height="120" rx="8" fill="var(--dg-surface)" stroke="var(--dg-line-soft)" stroke-width="1.2"/>
+  <text x="92" y="44" text-anchor="middle" font-size="11.5" font-weight="600" fill="var(--dg-text)">idw</text>
+  <circle cx="50" cy="148" r="3.2" fill="var(--dg-line)"/>
+  <circle cx="71" cy="96" r="3.2" fill="var(--dg-line)"/>
+  <circle cx="92" cy="122" r="3.2" fill="var(--dg-line)"/>
+  <circle cx="113" cy="84" r="3.2" fill="var(--dg-line)"/>
+  <circle cx="134" cy="136" r="3.2" fill="var(--dg-line)"/>
+  <line x1="38" y1="112" x2="146" y2="112" stroke="var(--dg-c)" stroke-width="2.2"/>
+  <rect x="168" y="54" width="124" height="120" rx="8" fill="var(--dg-surface)" stroke="var(--dg-line-soft)" stroke-width="1.2"/>
+  <text x="230" y="44" text-anchor="middle" font-size="11.5" font-weight="600" fill="var(--dg-text)">mean</text>
+  <circle cx="188" cy="148" r="3.2" fill="var(--dg-line)"/>
+  <circle cx="209" cy="96" r="3.2" fill="var(--dg-line)"/>
+  <circle cx="230" cy="122" r="3.2" fill="var(--dg-line)"/>
+  <circle cx="251" cy="84" r="3.2" fill="var(--dg-line)"/>
+  <circle cx="272" cy="136" r="3.2" fill="var(--dg-line)"/>
+  <line x1="176" y1="117" x2="284" y2="117" stroke="var(--dg-c)" stroke-width="2.2"/>
+  <rect x="306" y="54" width="124" height="120" rx="8" fill="var(--dg-surface)" stroke="var(--dg-line-soft)" stroke-width="1.2"/>
+  <text x="368" y="44" text-anchor="middle" font-size="11.5" font-weight="600" fill="var(--dg-text)">min</text>
+  <circle cx="326" cy="148" r="3.2" fill="var(--dg-line)"/>
+  <circle cx="347" cy="96" r="3.2" fill="var(--dg-line)"/>
+  <circle cx="368" cy="122" r="3.2" fill="var(--dg-line)"/>
+  <circle cx="389" cy="84" r="3.2" fill="var(--dg-line)"/>
+  <circle cx="410" cy="136" r="3.2" fill="var(--dg-line)"/>
+  <line x1="314" y1="148" x2="422" y2="148" stroke="var(--dg-c)" stroke-width="2.2"/>
+  <rect x="444" y="54" width="124" height="120" rx="8" fill="var(--dg-surface)" stroke="var(--dg-line-soft)" stroke-width="1.2"/>
+  <text x="506" y="44" text-anchor="middle" font-size="11.5" font-weight="600" fill="var(--dg-text)">max</text>
+  <circle cx="464" cy="148" r="3.2" fill="var(--dg-line)"/>
+  <circle cx="485" cy="96" r="3.2" fill="var(--dg-line)"/>
+  <circle cx="506" cy="122" r="3.2" fill="var(--dg-line)"/>
+  <circle cx="527" cy="84" r="3.2" fill="var(--dg-line)"/>
+  <circle cx="548" cy="136" r="3.2" fill="var(--dg-line)"/>
+  <line x1="452" y1="84" x2="560" y2="84" stroke="var(--dg-c)" stroke-width="2.2"/>
+  <rect x="582" y="54" width="124" height="120" rx="8" fill="var(--dg-surface)" stroke="var(--dg-line-soft)" stroke-width="1.2"/>
+  <text x="644" y="44" text-anchor="middle" font-size="11.5" font-weight="600" fill="var(--dg-text)">count</text>
+  <circle cx="602" cy="148" r="4.6" fill="none" stroke="var(--dg-c)" stroke-width="1.8"/>
+  <circle cx="623" cy="96" r="4.6" fill="none" stroke="var(--dg-c)" stroke-width="1.8"/>
+  <circle cx="644" cy="122" r="4.6" fill="none" stroke="var(--dg-c)" stroke-width="1.8"/>
+  <circle cx="665" cy="84" r="4.6" fill="none" stroke="var(--dg-c)" stroke-width="1.8"/>
+  <circle cx="686" cy="136" r="4.6" fill="none" stroke="var(--dg-c)" stroke-width="1.8"/>
+  <text x="92" y="196" text-anchor="middle" font-size="11" fill="var(--dg-c)">21.94 m</text>
+  <text x="230" y="196" text-anchor="middle" font-size="11" fill="var(--dg-c)">21.97 m</text>
+  <text x="368" y="196" text-anchor="middle" font-size="11" fill="var(--dg-c)">21.61 m</text>
+  <text x="506" y="196" text-anchor="middle" font-size="11" fill="var(--dg-c)">22.44 m</text>
+  <text x="644" y="196" text-anchor="middle" font-size="11" fill="var(--dg-c)">5 points</text>
+  <text x="30" y="222" font-size="10.5" fill="var(--dg-muted)">ask for several at once — "output_type": "idw,count" writes one band per reducer and costs a single pass</text>
+</svg>
 
 ## Performance Tuning
 

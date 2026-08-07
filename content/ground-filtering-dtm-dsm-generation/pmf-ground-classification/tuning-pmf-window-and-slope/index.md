@@ -103,6 +103,41 @@ Every PMF parameter pulls against another. Understanding the tension is faster t
 
 With `exponential: true` the window side roughly follows `2 * base^k + 1` cells, doubling each pass so `max_window_size` is reached in a handful of iterations. With `exponential: false` it grows linearly, `2 * k * cell_size + 1`, adding one step at a time. Linear growth gives you finer control over exactly which object sizes get removed — useful when a scene has objects clustered at one awkward size — at the cost of many more iterations. Exponential is the right default for speed; switch to linear only when a specific object size keeps slipping through the doubling gaps.
 
+<svg viewBox="0 0 720 300" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Slope against window size, with four terrain recipes plotted and the two failure corners named" style="width:100%;max-width:720px;display:block;margin:1.6rem auto">
+  <title>Where each terrain recipe sits in the slope–window plane</title>
+  <desc>A scatter plot with slope on the horizontal axis from 0 to 1.6 and max_window_size in cells on the vertical axis from 10 to 65. Four recipes are marked: dense UAV survey high on the window axis, flat floodplain at low slope, rolling suburban in the middle, and steep mountain at high slope with a small window. The top-left corner is labelled as over-filtering and the bottom-right as under-filtering.</desc>
+  <rect x="0" y="0" width="720" height="300" fill="var(--dg-bg)" rx="10"/>
+  <line x1="240" y1="40" x2="240" y2="240" stroke="var(--dg-line-soft)" stroke-width="1" stroke-dasharray="3 4"/>
+  <line x1="390" y1="40" x2="390" y2="240" stroke="var(--dg-line-soft)" stroke-width="1" stroke-dasharray="3 4"/>
+  <line x1="540" y1="40" x2="540" y2="240" stroke="var(--dg-line-soft)" stroke-width="1" stroke-dasharray="3 4"/>
+  <line x1="90" y1="186" x2="690" y2="186" stroke="var(--dg-line-soft)" stroke-width="1" stroke-dasharray="3 4"/>
+  <line x1="90" y1="131" x2="690" y2="131" stroke="var(--dg-line-soft)" stroke-width="1" stroke-dasharray="3 4"/>
+  <line x1="90" y1="76" x2="690" y2="76" stroke="var(--dg-line-soft)" stroke-width="1" stroke-dasharray="3 4"/>
+  <line x1="90" y1="40" x2="90" y2="240" stroke="var(--dg-line)" stroke-width="1.5"/>
+  <line x1="90" y1="240" x2="690" y2="240" stroke="var(--dg-line)" stroke-width="1.5"/>
+  <text x="90" y="258" text-anchor="middle" font-size="10.5" fill="var(--dg-muted)">0.0</text>
+  <text x="240" y="258" text-anchor="middle" font-size="10.5" fill="var(--dg-muted)">0.4</text>
+  <text x="390" y="258" text-anchor="middle" font-size="10.5" fill="var(--dg-muted)">0.8</text>
+  <text x="540" y="258" text-anchor="middle" font-size="10.5" fill="var(--dg-muted)">1.2</text>
+  <text x="690" y="258" text-anchor="middle" font-size="10.5" fill="var(--dg-muted)">1.6</text>
+  <text x="82" y="244" text-anchor="end" font-size="10.5" fill="var(--dg-muted)">10</text>
+  <text x="82" y="190" text-anchor="end" font-size="10.5" fill="var(--dg-muted)">25</text>
+  <text x="82" y="135" text-anchor="end" font-size="10.5" fill="var(--dg-muted)">40</text>
+  <text x="82" y="80" text-anchor="end" font-size="10.5" fill="var(--dg-muted)">55</text>
+  <text x="390" y="278" text-anchor="middle" font-size="11.5" fill="var(--dg-text)">slope</text>
+  <text x="26" y="140" text-anchor="middle" font-size="11.5" fill="var(--dg-text)" transform="rotate(-90 26 140)">max_window_size (cells)</text>
+  <text x="112" y="62" font-size="10.5" fill="var(--dg-e)">wide window, low slope → ridges stripped</text>
+  <text x="672" y="222" text-anchor="end" font-size="10.5" fill="var(--dg-c)">narrow window, high slope → roofs survive</text>
+  <circle cx="146" cy="156" r="7" fill="var(--dg-b-soft)" stroke="var(--dg-b)" stroke-width="2"/>
+  <text x="158" y="152" font-size="11" fill="var(--dg-text)">flat — floodplain</text>
+  <circle cx="352" cy="178" r="7" fill="var(--dg-a-soft)" stroke="var(--dg-a)" stroke-width="2"/>
+  <text x="364" y="174" font-size="11" fill="var(--dg-text)">rolling — suburban</text>
+  <circle cx="615" cy="211" r="7" fill="var(--dg-c-soft)" stroke="var(--dg-c)" stroke-width="2"/>
+  <text x="603" y="207" text-anchor="end" font-size="11" fill="var(--dg-text)">steep — mountain</text>
+  <circle cx="278" cy="58" r="7" fill="var(--dg-d-soft)" stroke="var(--dg-d)" stroke-width="2"/>
+  <text x="290" y="54" font-size="11" fill="var(--dg-text)">dense UAV survey</text>
+</svg>
+
 ## Terrain-Specific Recipes
 
 The values below assume ~1 m spacing airborne data; scale `cell_size` and the window with density.
@@ -172,6 +207,36 @@ Fine spacing lets a small cell resolve breaklines; keep the window in metres con
 ```
 
 At `cell_size: 0.35`, a `max_window_size` of 60 still only spans ~21 m — matching the objects, not the density. Point density is worth measuring properly; the [point density metrics](https://www.pythonlidar.com/point-cloud-data-standards-fundamentals/point-density-metrics/) guide shows how.
+
+<svg viewBox="0 0 720 280" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Window side in cells against opening pass for exponential and linear growth" style="width:100%;max-width:720px;display:block;margin:1.6rem auto">
+  <title>Exponential against linear window growth</title>
+  <desc>A line chart over eight morphological opening passes. With exponential growth the window side roughly doubles each pass and reaches the max_window_size clamp of 27 cells by the fifth pass. With linear growth it adds two cells per pass and only reaches 17 cells after eight passes, giving finer control over which object sizes are removed.</desc>
+  <rect x="0" y="0" width="720" height="280" fill="var(--dg-bg)" rx="10"/>
+  <line x1="80" y1="59" x2="690" y2="59" stroke="var(--dg-line-soft)" stroke-width="1.2" stroke-dasharray="6 4"/>
+  <text x="684" y="52" text-anchor="end" font-size="10.5" fill="var(--dg-muted)">max_window_size 27</text>
+  <line x1="80" y1="40" x2="80" y2="230" stroke="var(--dg-line)" stroke-width="1.5"/>
+  <line x1="80" y1="230" x2="690" y2="230" stroke="var(--dg-line)" stroke-width="1.5"/>
+  <text x="72" y="234" text-anchor="end" font-size="10.5" fill="var(--dg-muted)">0</text>
+  <text x="72" y="171" text-anchor="end" font-size="10.5" fill="var(--dg-muted)">10</text>
+  <text x="72" y="107" text-anchor="end" font-size="10.5" fill="var(--dg-muted)">20</text>
+  <text x="72" y="44" text-anchor="end" font-size="10.5" fill="var(--dg-muted)">30</text>
+  <polyline points="80,211 167,198 254,173 341,122 428,59 516,59 603,59 690,59" fill="none" stroke="var(--dg-a)" stroke-width="2.4"/>
+  <polyline points="80,211 167,198 254,186 341,173 428,160 516,148 603,135 690,122" fill="none" stroke="var(--dg-b)" stroke-width="2.4" stroke-dasharray="7 4"/>
+  <circle cx="341" cy="122" r="3.6" fill="var(--dg-a)"/>
+  <circle cx="428" cy="59" r="3.6" fill="var(--dg-a)"/>
+  <circle cx="341" cy="173" r="3.6" fill="var(--dg-b)"/>
+  <circle cx="690" cy="122" r="3.6" fill="var(--dg-b)"/>
+  <line x1="95" y1="86" x2="125" y2="86" stroke="var(--dg-a)" stroke-width="2.4"/>
+  <text x="133" y="90" font-size="11" fill="var(--dg-text)">exponential: true — 5 passes to 27</text>
+  <line x1="95" y1="106" x2="125" y2="106" stroke="var(--dg-b)" stroke-width="2.4" stroke-dasharray="7 4"/>
+  <text x="133" y="110" font-size="11" fill="var(--dg-text)">exponential: false — two cells per pass</text>
+  <text x="80" y="248" text-anchor="middle" font-size="10.5" fill="var(--dg-muted)">1</text>
+  <text x="254" y="248" text-anchor="middle" font-size="10.5" fill="var(--dg-muted)">3</text>
+  <text x="428" y="248" text-anchor="middle" font-size="10.5" fill="var(--dg-muted)">5</text>
+  <text x="603" y="248" text-anchor="middle" font-size="10.5" fill="var(--dg-muted)">7</text>
+  <text x="385" y="268" text-anchor="middle" font-size="11.5" fill="var(--dg-text)">morphological opening pass</text>
+  <text x="26" y="135" text-anchor="middle" font-size="11.5" fill="var(--dg-text)" transform="rotate(-90 26 135)">window side (cells)</text>
+</svg>
 
 ## Complete Working Example: a parameter sweep
 
@@ -248,6 +313,35 @@ Read the grid: ground fraction should rise smoothly with `slope` and fall as `ma
 | `max_distance` | 2.0 | 2.5 | 4.0 | Larger lets taller objects survive on wide windows |
 | `cell_size` | 1.0 | 1.0 | 1.0 | Larger is faster and coarser; match to point spacing |
 | `exponential` | true | true | true | false gives finer size control at higher cost |
+
+<svg viewBox="0 0 720 250" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Three terrain cross-sections showing over-filtered, balanced and under-filtered PMF results" style="width:100%;max-width:720px;display:block;margin:1.6rem auto">
+  <title>The three ways a slope value shows up in the surface</title>
+  <desc>Three panels each show the same cross-section: a ridge with a building on its flank. With slope too low the returned ground surface cuts straight across and the ridge is lost. Balanced, it follows the ridge and excludes the roof. With slope too high the roof is admitted as ground and the terrain model inherits a flat plateau.</desc>
+  <rect x="0" y="0" width="720" height="250" fill="var(--dg-bg)" rx="10"/>
+  <text x="126" y="22" text-anchor="middle" font-size="12" font-weight="600" fill="var(--dg-text)">slope too low</text>
+  <text x="360" y="22" text-anchor="middle" font-size="12" font-weight="600" fill="var(--dg-text)">balanced</text>
+  <text x="594" y="22" text-anchor="middle" font-size="12" font-weight="600" fill="var(--dg-text)">slope too high</text>
+  <rect x="20" y="30" width="213" height="160" rx="8" fill="var(--dg-surface)" stroke="var(--dg-line-soft)" stroke-width="1.2"/>
+  <path d="M34 160 L80 150 Q126 92 170 140 L219 150" fill="none" stroke="var(--dg-line)" stroke-width="2"/>
+  <path d="M34 163 L219 153" fill="none" stroke="var(--dg-e)" stroke-width="2.2" stroke-dasharray="6 4"/>
+  <text x="126" y="180" text-anchor="middle" font-size="10.5" fill="var(--dg-e)">ridge flattened out</text>
+  <rect x="253" y="30" width="213" height="160" rx="8" fill="var(--dg-surface)" stroke="var(--dg-line-soft)" stroke-width="1.2"/>
+  <path d="M267 160 L313 150 Q359 92 403 140 L452 150" fill="none" stroke="var(--dg-line)" stroke-width="2"/>
+  <path d="M267 163 L313 153 Q359 95 403 143 L452 153" fill="none" stroke="var(--dg-d)" stroke-width="2.2" stroke-dasharray="6 4"/>
+  <rect x="408" y="118" width="38" height="24" fill="var(--dg-c-soft)" stroke="var(--dg-c)" stroke-width="1.4"/>
+  <text x="360" y="180" text-anchor="middle" font-size="10.5" fill="var(--dg-d)">ridge kept, roof rejected</text>
+  <rect x="487" y="30" width="213" height="160" rx="8" fill="var(--dg-surface)" stroke="var(--dg-line-soft)" stroke-width="1.2"/>
+  <path d="M501 160 L547 150 Q593 92 637 140 L686 150" fill="none" stroke="var(--dg-line)" stroke-width="2"/>
+  <path d="M501 163 L547 153 Q590 96 642 121 L686 153" fill="none" stroke="var(--dg-c)" stroke-width="2.2" stroke-dasharray="6 4"/>
+  <rect x="642" y="118" width="38" height="24" fill="var(--dg-c-soft)" stroke="var(--dg-c)" stroke-width="1.4"/>
+  <text x="594" y="180" text-anchor="middle" font-size="10.5" fill="var(--dg-c)">roof admitted as ground</text>
+  <text x="126" y="212" text-anchor="middle" font-size="10.5" fill="var(--dg-muted)">omission: real terrain deleted</text>
+  <text x="360" y="212" text-anchor="middle" font-size="10.5" fill="var(--dg-muted)">both error types near zero</text>
+  <text x="594" y="212" text-anchor="middle" font-size="10.5" fill="var(--dg-muted)">commission: 6 m plateau in DTM</text>
+  <text x="126" y="230" text-anchor="middle" font-size="10.5" fill="var(--dg-muted)">raise slope and max_distance</text>
+  <text x="360" y="230" text-anchor="middle" font-size="10.5" fill="var(--dg-muted)">keep this recipe</text>
+  <text x="594" y="230" text-anchor="middle" font-size="10.5" fill="var(--dg-muted)">lower slope, widen window</text>
+</svg>
 
 ## Verification
 

@@ -80,6 +80,7 @@ A terrain raster that lives in a bucket is only useful to downstream web maps an
 <svg viewBox="0 0 740 250" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Two paths for writing a Cloud-Optimized GeoTIFF DTM to S3" style="width:100%;max-width:740px;display:block;margin:1.5rem auto">
   <title>Writing a COG DTM to S3: direct /vsis3/ write versus local write plus boto3 upload</title>
   <desc>writers.gdal rasterises points into a COG. Path A writes directly to a /vsis3/ path with a single PutObject on close. Path B writes to local scratch, validates, then uploads with a boto3 multipart transfer. Both land the same object in the bucket.</desc>
+  <rect x="0" y="0" width="740" height="250" fill="var(--dg-bg)" rx="10"/>
   <defs>
     <marker id="cog-arr" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto">
       <path d="M0,0 L0,6 L8,3 z" fill="currentColor" opacity="0.6"/>
@@ -184,6 +185,26 @@ gdalinfo /tmp/dtm_tile_0421.tif | grep -iE "block|overview|layout"
 ```
 
 A valid COG reports an internally tiled layout with overviews present.
+
+<svg viewBox="0 0 720 262" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="The internal layout of a cloud optimized GeoTIFF" style="width:100%;max-width:720px;display:block;margin:1.6rem auto">
+  <title>What makes a GeoTIFF cloud optimized</title>
+  <desc>A COG laid out in file order: the header and image file directories first, then the overview levels from coarsest to finest, then the full resolution tiles. Because the directories are at the front and the data is internally tiled, a client can read the header in one request and then fetch exactly the tiles covering its area of interest.</desc>
+  <rect x="0" y="0" width="720" height="262" fill="var(--dg-bg)" rx="10"/>
+  <rect x="20" y="64" width="90" height="70" rx="5" fill="var(--dg-a-soft)" stroke="var(--dg-a)" stroke-width="1.3"/>
+  <text x="65" y="150" text-anchor="middle" font-size="9.5" fill="var(--dg-muted)">header + IFDs</text>
+  <rect x="114" y="64" width="70" height="70" rx="5" fill="var(--dg-c-soft)" stroke="var(--dg-c)" stroke-width="1.3"/>
+  <text x="149" y="150" text-anchor="middle" font-size="9.5" fill="var(--dg-muted)">overview 1:16</text>
+  <rect x="188" y="64" width="90" height="70" rx="5" fill="var(--dg-c-soft)" stroke="var(--dg-c)" stroke-width="1.3"/>
+  <text x="233" y="150" text-anchor="middle" font-size="9.5" fill="var(--dg-muted)">overview 1:4</text>
+  <rect x="282" y="64" width="120" height="70" rx="5" fill="var(--dg-c-soft)" stroke="var(--dg-c)" stroke-width="1.3"/>
+  <text x="342" y="150" text-anchor="middle" font-size="9.5" fill="var(--dg-muted)">overview 1:2</text>
+  <rect x="406" y="64" width="290" height="70" rx="5" fill="var(--dg-b-soft)" stroke="var(--dg-b)" stroke-width="1.3"/>
+  <text x="551" y="150" text-anchor="middle" font-size="9.5" fill="var(--dg-muted)">full resolution tiles, 512×512</text>
+  <text x="20" y="46" font-size="10.5" fill="var(--dg-muted)">byte order in the file, front to back</text>
+  <text x="20" y="182" font-size="11" fill="var(--dg-text)">a viewer zoomed out reads only the third block; a pipeline cropping one field reads the header and four tiles</text>
+  <text x="20" y="216" font-size="10.5" fill="var(--dg-muted)">gdal_translate -of COG does all of this, including the overview build — writing a plain GeoTIFF and renaming it does not,</text>
+  <text x="20" y="236" font-size="10.5" fill="var(--dg-muted)">and rio cogeo validate is the check that tells the two apart before the object reaches the bucket.</text>
+</svg>
 
 ## Complete Working Example
 
@@ -323,6 +344,35 @@ print(head["ContentLength"], head["ETag"])
 ```bash
 AWS_REGION=us-west-2 gdalinfo /vsis3/survey-deliverables/cog/dtm_tile_0421.tif | grep -iE "block|overview|epsg"
 ```
+
+<svg viewBox="0 0 720 250" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Writing a COG straight to S3 against writing locally and uploading" style="width:100%;max-width:720px;display:block;margin:1.6rem auto">
+  <title>Why the local write usually wins</title>
+  <desc>Two write paths. Writing through the S3 virtual filesystem streams the file as it is produced but cannot revisit earlier bytes, so GDAL has to buffer the parts a COG needs to rewrite. Writing to local disk first lets GDAL seek freely, then a single multipart upload transfers a finished, validated object.</desc>
+  <rect x="0" y="0" width="720" height="250" fill="var(--dg-bg)" rx="10"/>
+  <defs><marker id="wr-arw" markerWidth="9" markerHeight="7" refX="9" refY="3.5" orient="auto"><path d="M0,0 L0,7 L9,3.5 z" fill="var(--dg-line)"/></marker></defs>
+  <text x="20" y="44" font-size="11.5" font-weight="600" fill="var(--dg-c)">direct to /vsis3/</text>
+  <rect x="180" y="28" width="140" height="32" rx="6" fill="var(--dg-c-soft)" stroke="var(--dg-c)" stroke-width="1.2"/>
+  <text x="250" y="49" text-anchor="middle" font-size="10.5" fill="var(--dg-text)">writers.gdal</text>
+  <rect x="360" y="28" width="150" height="32" rx="6" fill="var(--dg-c-soft)" stroke="var(--dg-c)" stroke-width="1.2"/>
+  <text x="435" y="49" text-anchor="middle" font-size="10.5" fill="var(--dg-text)">buffered in memory</text>
+  <rect x="550" y="28" width="150" height="32" rx="6" fill="var(--dg-c-soft)" stroke="var(--dg-c)" stroke-width="1.2"/>
+  <text x="625" y="49" text-anchor="middle" font-size="10.5" fill="var(--dg-text)">object in S3</text>
+  <line x1="320" y1="44" x2="354" y2="44" stroke="var(--dg-line)" stroke-width="1.4" marker-end="url(#wr-arw)"/>
+  <line x1="510" y1="44" x2="544" y2="44" stroke="var(--dg-line)" stroke-width="1.4" marker-end="url(#wr-arw)"/>
+  <text x="20" y="112" font-size="11.5" font-weight="600" fill="var(--dg-d)">local, then upload</text>
+  <rect x="180" y="96" width="140" height="32" rx="6" fill="var(--dg-d-soft)" stroke="var(--dg-d)" stroke-width="1.2"/>
+  <text x="250" y="117" text-anchor="middle" font-size="10.5" fill="var(--dg-text)">writers.gdal</text>
+  <rect x="360" y="96" width="150" height="32" rx="6" fill="var(--dg-d-soft)" stroke="var(--dg-d)" stroke-width="1.2"/>
+  <text x="435" y="117" text-anchor="middle" font-size="10.5" fill="var(--dg-text)">local disk, seekable</text>
+  <rect x="550" y="96" width="150" height="32" rx="6" fill="var(--dg-d-soft)" stroke="var(--dg-d)" stroke-width="1.2"/>
+  <text x="625" y="117" text-anchor="middle" font-size="10.5" fill="var(--dg-text)">multipart upload</text>
+  <line x1="320" y1="112" x2="354" y2="112" stroke="var(--dg-line)" stroke-width="1.4" marker-end="url(#wr-arw)"/>
+  <line x1="510" y1="112" x2="544" y2="112" stroke="var(--dg-line)" stroke-width="1.4" marker-end="url(#wr-arw)"/>
+  <text x="20" y="166" font-size="10.5" fill="var(--dg-muted)">the direct path holds the overview pyramid in RAM until the file is closed, which on a 0.25 m DTM is gigabytes; the local path</text>
+  <text x="20" y="186" font-size="10.5" fill="var(--dg-muted)">needs scratch space the container may not have. On Batch, attach an ephemeral volume and take the second path.</text>
+  <text x="20" y="212" font-size="10.5" fill="var(--dg-muted)">Either way, validate before the object is visible — write to a staging key and copy on success, so no consumer ever sees</text>
+  <text x="20" y="232" font-size="10.5" fill="var(--dg-muted)">a half-written raster at the final key.</text>
+</svg>
 
 ## Gotchas and Edge Cases
 

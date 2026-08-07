@@ -108,6 +108,7 @@ The diagram below shows how three tuning levers interact across a multi-worker d
 <svg viewBox="0 0 760 320" role="img" aria-label="PDAL multi-core tuning: three levers across a multi-worker deployment" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:760px;display:block;margin:1.5rem auto;">
   <title>PDAL Multi-Core Tuning Architecture</title>
   <desc>Diagram showing ProcessPoolExecutor dispatching multiple worker processes, each containing a PDAL pipeline with readers, filters using OpenMP threads, and writers. A chunk-size I/O buffer sits between the reader and the filter stages.</desc>
+  <rect x="0" y="0" width="760" height="320" fill="var(--dg-bg)" rx="10"/>
   <defs>
     <marker id="arr" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
       <path d="M0,0 L0,6 L8,3 z" fill="currentColor" opacity="0.6"/>
@@ -371,6 +372,54 @@ def run_parallel_classification(
 
 ---
 
+<svg viewBox="0 0 720 282" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Worker processes against OpenMP threads, with the total core demand in each cell" style="width:100%;max-width:720px;display:block;margin:1.6rem auto">
+  <title>Workers times threads is the number you have to live within</title>
+  <desc>A grid of worker-process counts against OMP_NUM_THREADS values. Each cell holds the product — the total threads the run asks for. Cells at or under the eight physical cores of the machine are marked usable; the rest oversubscribe, and the run slows down as the operating system time-slices between them.</desc>
+  <rect x="0" y="0" width="720" height="282" fill="var(--dg-bg)" rx="10"/>
+  <text x="112" y="86" text-anchor="end" font-size="11" fill="var(--dg-text)">1 workers</text>
+  <text x="112" y="130" text-anchor="end" font-size="11" fill="var(--dg-text)">2 workers</text>
+  <text x="112" y="174" text-anchor="end" font-size="11" fill="var(--dg-text)">4 workers</text>
+  <text x="112" y="218" text-anchor="end" font-size="11" fill="var(--dg-text)">8 workers</text>
+  <text x="190" y="52" text-anchor="middle" font-size="11" fill="var(--dg-text)">1 thread</text>
+  <text x="320" y="52" text-anchor="middle" font-size="11" fill="var(--dg-text)">2 threads</text>
+  <text x="450" y="52" text-anchor="middle" font-size="11" fill="var(--dg-text)">4 threads</text>
+  <text x="580" y="52" text-anchor="middle" font-size="11" fill="var(--dg-text)">8 threads</text>
+  <rect x="130" y="62" width="120" height="34" rx="6" fill="var(--dg-d-soft)" stroke="var(--dg-d)" stroke-width="1.3"/>
+  <text x="190" y="84" text-anchor="middle" font-size="11" fill="var(--dg-text)">1 threads</text>
+  <rect x="260" y="62" width="120" height="34" rx="6" fill="var(--dg-d-soft)" stroke="var(--dg-d)" stroke-width="1.3"/>
+  <text x="320" y="84" text-anchor="middle" font-size="11" fill="var(--dg-text)">2 threads</text>
+  <rect x="390" y="62" width="120" height="34" rx="6" fill="var(--dg-d-soft)" stroke="var(--dg-d)" stroke-width="1.3"/>
+  <text x="450" y="84" text-anchor="middle" font-size="11" fill="var(--dg-text)">4 threads</text>
+  <rect x="520" y="62" width="120" height="34" rx="6" fill="var(--dg-d-soft)" stroke="var(--dg-d)" stroke-width="1.3"/>
+  <text x="580" y="84" text-anchor="middle" font-size="11" fill="var(--dg-text)">8 threads</text>
+  <rect x="130" y="106" width="120" height="34" rx="6" fill="var(--dg-d-soft)" stroke="var(--dg-d)" stroke-width="1.3"/>
+  <text x="190" y="128" text-anchor="middle" font-size="11" fill="var(--dg-text)">2 threads</text>
+  <rect x="260" y="106" width="120" height="34" rx="6" fill="var(--dg-d-soft)" stroke="var(--dg-d)" stroke-width="1.3"/>
+  <text x="320" y="128" text-anchor="middle" font-size="11" fill="var(--dg-text)">4 threads</text>
+  <rect x="390" y="106" width="120" height="34" rx="6" fill="var(--dg-d-soft)" stroke="var(--dg-d)" stroke-width="1.3"/>
+  <text x="450" y="128" text-anchor="middle" font-size="11" fill="var(--dg-text)">8 threads</text>
+  <rect x="520" y="106" width="120" height="34" rx="6" fill="var(--dg-e-soft)" stroke="var(--dg-e)" stroke-width="1.3"/>
+  <text x="580" y="128" text-anchor="middle" font-size="11" fill="var(--dg-text)">16 threads</text>
+  <rect x="130" y="150" width="120" height="34" rx="6" fill="var(--dg-d-soft)" stroke="var(--dg-d)" stroke-width="1.3"/>
+  <text x="190" y="172" text-anchor="middle" font-size="11" fill="var(--dg-text)">4 threads</text>
+  <rect x="260" y="150" width="120" height="34" rx="6" fill="var(--dg-d-soft)" stroke="var(--dg-d)" stroke-width="1.3"/>
+  <text x="320" y="172" text-anchor="middle" font-size="11" fill="var(--dg-text)">8 threads</text>
+  <rect x="390" y="150" width="120" height="34" rx="6" fill="var(--dg-e-soft)" stroke="var(--dg-e)" stroke-width="1.3"/>
+  <text x="450" y="172" text-anchor="middle" font-size="11" fill="var(--dg-text)">16 threads</text>
+  <rect x="520" y="150" width="120" height="34" rx="6" fill="var(--dg-e-soft)" stroke="var(--dg-e)" stroke-width="1.3"/>
+  <text x="580" y="172" text-anchor="middle" font-size="11" fill="var(--dg-text)">32 threads</text>
+  <rect x="130" y="194" width="120" height="34" rx="6" fill="var(--dg-d-soft)" stroke="var(--dg-d)" stroke-width="1.3"/>
+  <text x="190" y="216" text-anchor="middle" font-size="11" fill="var(--dg-text)">8 threads</text>
+  <rect x="260" y="194" width="120" height="34" rx="6" fill="var(--dg-e-soft)" stroke="var(--dg-e)" stroke-width="1.3"/>
+  <text x="320" y="216" text-anchor="middle" font-size="11" fill="var(--dg-text)">16 threads</text>
+  <rect x="390" y="194" width="120" height="34" rx="6" fill="var(--dg-e-soft)" stroke="var(--dg-e)" stroke-width="1.3"/>
+  <text x="450" y="216" text-anchor="middle" font-size="11" fill="var(--dg-text)">32 threads</text>
+  <rect x="520" y="194" width="120" height="34" rx="6" fill="var(--dg-e-soft)" stroke="var(--dg-e)" stroke-width="1.3"/>
+  <text x="580" y="216" text-anchor="middle" font-size="11" fill="var(--dg-text)">64 threads</text>
+  <text x="20" y="250" font-size="10.5" fill="var(--dg-muted)">green cells fit an 8-core machine; red cells oversubscribe it.</text>
+  <text x="20" y="268" font-size="10.5" fill="var(--dg-muted)">Set OMP_NUM_THREADS explicitly in every worker — the default is "all cores", once per process.</text>
+</svg>
+
 ## Complete Working Example
 
 The following self-contained script brings together all five steps. Copy it to your project, adjust `TILE_DIR`, `OUTPUT_DIR`, and `MAX_WORKERS` to match your hardware, and run it against a folder of pre-tiled LAZ files.
@@ -534,6 +583,38 @@ for out_path in summary["outputs"]:
 Also confirm that the [spatial reprojection](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/spatial-reprojection/) metadata is consistent across tiles by checking the `srs.wkt` field in each output's `pipeline.metadata` — mismatched CRS across workers is a common silent corruption that the [pipeline validation](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/pipeline-validation/) stage should catch before any downstream rasterization.
 
 ---
+
+<svg viewBox="0 0 720 232" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Core utilisation over time for three worker and thread combinations" style="width:100%;max-width:720px;display:block;margin:1.6rem auto">
+  <title>What oversubscription looks like on the CPU trace</title>
+  <desc>Three utilisation traces of the same job. Eight workers each allowed eight threads spend as much time context-switching as computing, so the trace is broken into short busy bursts. One worker with eight threads keeps the cores busy but leaves gaps whenever the pipeline hits a serial stage. Eight workers pinned to one thread each keep every core busy for the whole run.</desc>
+  <rect x="0" y="0" width="720" height="232" fill="var(--dg-bg)" rx="10"/>
+  <text x="20" y="68" font-size="11" fill="var(--dg-text)">8 workers × 8 threads</text>
+  <rect x="240" y="54" width="220" height="26" rx="4" fill="var(--dg-surface)" stroke="var(--dg-line-soft)" stroke-width="1"/>
+  <rect x="243" y="57" width="30" height="20" fill="var(--dg-e-soft)" stroke="var(--dg-e)" stroke-width="1"/>
+  <rect x="277" y="57" width="8" height="20" fill="var(--dg-e-soft)" stroke="var(--dg-e)" stroke-width="1"/>
+  <rect x="289" y="57" width="26" height="20" fill="var(--dg-e-soft)" stroke="var(--dg-e)" stroke-width="1"/>
+  <rect x="319" y="57" width="10" height="20" fill="var(--dg-e-soft)" stroke="var(--dg-e)" stroke-width="1"/>
+  <rect x="333" y="57" width="24" height="20" fill="var(--dg-e-soft)" stroke="var(--dg-e)" stroke-width="1"/>
+  <rect x="363" y="57" width="12" height="20" fill="var(--dg-e-soft)" stroke="var(--dg-e)" stroke-width="1"/>
+  <rect x="379" y="57" width="30" height="20" fill="var(--dg-e-soft)" stroke="var(--dg-e)" stroke-width="1"/>
+  <rect x="415" y="57" width="8" height="20" fill="var(--dg-e-soft)" stroke="var(--dg-e)" stroke-width="1"/>
+  <rect x="429" y="57" width="26" height="20" fill="var(--dg-e-soft)" stroke="var(--dg-e)" stroke-width="1"/>
+  <text x="484" y="72" font-size="11" fill="var(--dg-muted)">81% of the wall clock busy</text>
+  <text x="20" y="124" font-size="11" fill="var(--dg-text)">1 worker × 8 threads</text>
+  <rect x="240" y="110" width="220" height="26" rx="4" fill="var(--dg-surface)" stroke="var(--dg-line-soft)" stroke-width="1"/>
+  <rect x="243" y="113" width="60" height="20" fill="var(--dg-c-soft)" stroke="var(--dg-c)" stroke-width="1"/>
+  <rect x="309" y="113" width="14" height="20" fill="var(--dg-c-soft)" stroke="var(--dg-c)" stroke-width="1"/>
+  <rect x="329" y="113" width="58" height="20" fill="var(--dg-c-soft)" stroke="var(--dg-c)" stroke-width="1"/>
+  <rect x="393" y="113" width="12" height="20" fill="var(--dg-c-soft)" stroke="var(--dg-c)" stroke-width="1"/>
+  <rect x="411" y="113" width="44" height="20" fill="var(--dg-c-soft)" stroke="var(--dg-c)" stroke-width="1"/>
+  <text x="484" y="128" font-size="11" fill="var(--dg-muted)">88% of the wall clock busy</text>
+  <text x="20" y="180" font-size="11" fill="var(--dg-text)">8 workers × 1 thread</text>
+  <rect x="240" y="166" width="220" height="26" rx="4" fill="var(--dg-surface)" stroke="var(--dg-line-soft)" stroke-width="1"/>
+  <rect x="243" y="169" width="214" height="20" fill="var(--dg-d-soft)" stroke="var(--dg-d)" stroke-width="1"/>
+  <text x="484" y="184" font-size="11" fill="var(--dg-muted)">100% of the wall clock busy</text>
+  <text x="20" y="38" font-size="10.5" fill="var(--dg-muted)">one core's trace, same job, three configurations on an 8-core machine</text>
+  <text x="20" y="216" font-size="10.5" fill="var(--dg-muted)">the fastest configuration is rarely the one that asks for the most — it is the one that never asks for more than exists</text>
+</svg>
 
 ## Gotchas and Edge Cases
 

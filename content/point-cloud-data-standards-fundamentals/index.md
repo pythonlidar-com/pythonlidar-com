@@ -89,6 +89,7 @@ Before diving into individual topics, it helps to understand how the five standa
 <svg viewBox="0 0 700 440" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Point cloud data standards architecture showing five dependent layers" style="width:100%;max-width:700px;display:block;margin:2rem auto;">
   <title>Point Cloud Data Standards Architecture</title>
   <desc>Five stacked layers of point cloud data standards, each building on the layer below. From bottom to top: LAS/LAZ File Structure, Coordinate Reference Systems, ASPRS Classification Codes, Point Density Metrics, and Metadata and Header Sync. An upward arrow on the right indicates that failures in lower layers propagate upward.</desc>
+  <rect x="0" y="0" width="700" height="440" fill="var(--dg-bg)" rx="10"/>
   <defs>
     <marker id="arrowUp" markerWidth="8" markerHeight="8" refX="4" refY="6" orient="auto">
       <path d="M1,7 L4,1 L7,7" fill="none" stroke="currentColor" stroke-width="1.2"/>
@@ -123,6 +124,27 @@ Before diving into individual topics, it helps to understand how the five standa
 </svg>
 
 The architecture is a strict dependency chain. A misconfigured scale factor in the [LAS/LAZ file structure](https://www.pythonlidar.com/point-cloud-data-standards-fundamentals/laslaz-file-structure/) silently corrupts every spatial coordinate before the CRS layer even evaluates them. An incorrect [coordinate reference system](https://www.pythonlidar.com/point-cloud-data-standards-fundamentals/coordinate-reference-systems/) embed will cause classification algorithms to operate on geometrically wrong return positions. Classification errors poison density calculations. And metadata that no longer reflects the modified payload makes the final product untraceable. Fix violations at the lowest layer they originate — not where they surface.
+
+<svg viewBox="0 0 720 288" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Four layers of the point cloud standards stack, from byte packing up to meaning" style="width:100%;max-width:720px;display:block;margin:1.6rem auto">
+  <title>Four layers, and only the bottom one is a file format</title>
+  <desc>The standards stack read from the bottom: how the bytes are packed, which is the LAS header and LAZ compression; what a point record holds, which is the point data record format; where the points are, which is the coordinate reference system carried in a variable length record; and what a point means, which is the ASPRS classification. A file can be perfectly valid at every lower layer and still be wrong at the top.</desc>
+  <rect x="0" y="0" width="720" height="288" fill="var(--dg-bg)" rx="10"/>
+  <rect x="30" y="46" width="660" height="42" rx="7" fill="var(--dg-d-soft)" stroke="var(--dg-d)" stroke-width="1.4"/>
+  <text x="46" y="65" font-size="12" font-weight="600" fill="var(--dg-text)">what a point means</text>
+  <text x="46" y="81" font-size="10.5" fill="var(--dg-muted)">ASPRS classification codes · return semantics</text>
+  <rect x="50" y="98" width="620" height="42" rx="7" fill="var(--dg-b-soft)" stroke="var(--dg-b)" stroke-width="1.4"/>
+  <text x="66" y="117" font-size="12" font-weight="600" fill="var(--dg-text)">where the points are</text>
+  <text x="66" y="133" font-size="10.5" fill="var(--dg-muted)">CRS in a WKT or GeoTIFF VLR · scale and offset</text>
+  <rect x="70" y="150" width="580" height="42" rx="7" fill="var(--dg-a-soft)" stroke="var(--dg-a)" stroke-width="1.4"/>
+  <text x="86" y="169" font-size="12" font-weight="600" fill="var(--dg-text)">what a point record holds</text>
+  <text x="86" y="185" font-size="10.5" fill="var(--dg-muted)">point data record format 0–10 · extra bytes</text>
+  <rect x="90" y="202" width="540" height="42" rx="7" fill="var(--dg-c-soft)" stroke="var(--dg-c)" stroke-width="1.4"/>
+  <text x="106" y="221" font-size="12" font-weight="600" fill="var(--dg-text)">how the bytes are packed</text>
+  <text x="106" y="237" font-size="10.5" fill="var(--dg-muted)">LAS public header · VLRs · LAZ chunk compression</text>
+  <text x="30" y="32" font-size="10.5" fill="var(--dg-muted)">each layer assumes the one below it is already correct</text>
+  <text x="30" y="256" font-size="10.5" fill="var(--dg-muted)">most production failures are top-layer failures: the bytes parse, the CRS resolves,</text>
+  <text x="30" y="274" font-size="10.5" fill="var(--dg-muted)">and the classification means something other than what you assumed.</text>
+</svg>
 
 ## LAS/LAZ File Structure: The Binary Foundation
 
@@ -465,6 +487,40 @@ for stage_meta in _j.loads(meta)["metadata"].values():
 
 Always set `pipeline.loglevel = 4` in production — silent execution makes CRS and schema errors invisible until a downstream consumer reports garbled geometry.
 
+<svg viewBox="0 0 720 292" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Six conformance checks with pass or fail and the failure each one prevents" style="width:100%;max-width:720px;display:block;margin:1.6rem auto">
+  <title>The six checks worth running on every incoming tile</title>
+  <desc>A conformance scorecard. Four checks pass on this tile: the header point count, the presence of a machine-readable CRS, the classification codes, and the return numbering. Two fail: the scale and offset do not deliver the precision claimed, and the header bounding box does not match the real extent. Each row names the downstream failure the check exists to prevent.</desc>
+  <rect x="0" y="0" width="720" height="292" fill="var(--dg-bg)" rx="10"/>
+  <rect x="20" y="50" width="420" height="30" rx="5" fill="var(--dg-surface)" stroke="var(--dg-line-soft)" stroke-width="1"/>
+  <text x="34" y="70" font-size="11" fill="var(--dg-text)">header point count matches the records</text>
+  <text x="462" y="71" font-size="15" font-weight="700" fill="var(--dg-d)">✓</text>
+  <text x="486" y="70" font-size="10.5" fill="var(--dg-muted)">truncated writes</text>
+  <rect x="20" y="88" width="420" height="30" rx="5" fill="var(--dg-surface)" stroke="var(--dg-line-soft)" stroke-width="1"/>
+  <text x="34" y="108" font-size="11" fill="var(--dg-text)">CRS present and machine-readable</text>
+  <text x="462" y="109" font-size="15" font-weight="700" fill="var(--dg-d)">✓</text>
+  <text x="486" y="108" font-size="10.5" fill="var(--dg-muted)">silent mis-registration</text>
+  <rect x="20" y="126" width="420" height="30" rx="5" fill="var(--dg-surface)" stroke="var(--dg-line-soft)" stroke-width="1"/>
+  <text x="34" y="146" font-size="11" fill="var(--dg-text)">scale and offset give the precision claimed</text>
+  <text x="462" y="147" font-size="15" font-weight="700" fill="var(--dg-e)">✗</text>
+  <text x="486" y="146" font-size="10.5" fill="var(--dg-muted)">coordinates quantised to 111 m</text>
+  <rect x="20" y="164" width="420" height="30" rx="5" fill="var(--dg-surface)" stroke="var(--dg-line-soft)" stroke-width="1"/>
+  <text x="34" y="184" font-size="11" fill="var(--dg-text)">classification codes all within the schema</text>
+  <text x="462" y="185" font-size="15" font-weight="700" fill="var(--dg-d)">✓</text>
+  <text x="486" y="184" font-size="10.5" fill="var(--dg-muted)">vendor codes leaking downstream</text>
+  <rect x="20" y="202" width="420" height="30" rx="5" fill="var(--dg-surface)" stroke="var(--dg-line-soft)" stroke-width="1"/>
+  <text x="34" y="222" font-size="11" fill="var(--dg-text)">bounding box matches the actual extent</text>
+  <text x="462" y="223" font-size="15" font-weight="700" fill="var(--dg-e)">✗</text>
+  <text x="486" y="222" font-size="10.5" fill="var(--dg-muted)">index and tile lookups missing data</text>
+  <rect x="20" y="240" width="420" height="30" rx="5" fill="var(--dg-surface)" stroke="var(--dg-line-soft)" stroke-width="1"/>
+  <text x="34" y="260" font-size="11" fill="var(--dg-text)">return numbers within NumberOfReturns</text>
+  <text x="462" y="261" font-size="15" font-weight="700" fill="var(--dg-d)">✓</text>
+  <text x="486" y="260" font-size="10.5" fill="var(--dg-muted)">broken first/last return filters</text>
+  <text x="20" y="36" font-size="10.5" fill="var(--dg-muted)">one incoming tile, checked before it enters the archive</text>
+  <text x="20" y="284" font-size="10.5" fill="var(--dg-muted)">the two failures here are both invisible to a viewer — the file opens, draws, and is wrong</text>
+</svg>
+
+One newer standard sits alongside these and is covered separately: [COPC and cloud-native formats](https://www.pythonlidar.com/point-cloud-data-standards-fundamentals/copc-and-cloud-native-formats/) describes how an octree stored inside a valid LAZ 1.4 file turns a whole-object download into a handful of range requests, without breaking any tool that has never heard of it.
+
 ## Performance and Scaling Strategies
 
 | Strategy | Mechanism | When to Apply | Typical Gain |
@@ -525,3 +581,4 @@ Pin `lazrs` alongside `laspy` — it provides the Rust-based LAZ encoder/decoder
 - [Calculating Point Density for Drone Surveys](https://www.pythonlidar.com/point-cloud-data-standards-fundamentals/point-density-metrics/calculating-point-density-for-drone-surveys/) — UAV-specific density workflows and coverage gap detection
 - [Metadata & Header Sync](https://www.pythonlidar.com/point-cloud-data-standards-fundamentals/metadata-header-sync/) — Header field reconciliation, VLR provenance embedding, and sync workflows
 - [Syncing Metadata Between LAS and Shapefiles](https://www.pythonlidar.com/point-cloud-data-standards-fundamentals/metadata-header-sync/syncing-metadata-between-las-and-shapefiles/) — Keeping external attribute tables consistent with LAS header fields
+- [COPC and Cloud-Native Formats](https://www.pythonlidar.com/point-cloud-data-standards-fundamentals/copc-and-cloud-native-formats/) — an octree inside a valid LAZ file, and what that buys over plain tiles

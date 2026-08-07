@@ -85,9 +85,10 @@ Test your setup with a small sample: `pdal info sample.laz --metadata | python -
 
 Spatial reprojection in PDAL follows a deterministic four-phase execution lifecycle. Understanding each phase prevents the most common failures — from silent Z-value errors to missing grid files discovered only after a long batch run.
 
-<svg viewBox="0 0 800 380" role="img" aria-label="PDAL spatial reprojection four-phase execution lifecycle" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:800px;display:block;margin:1.5rem auto;">
+<svg viewBox="-2 0 804 312" role="img" aria-label="PDAL spatial reprojection four-phase execution lifecycle" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:800px;display:block;margin:1.5rem auto;">
   <title>PDAL spatial reprojection four-phase execution lifecycle</title>
   <desc>Diagram showing the four phases of PDAL spatial reprojection: Phase 1 CRS Discovery via readers.las parsing VLRs, Phase 2 Transformation Path Resolution via PROJ ranking paths, Phase 3 Streaming Coordinate Recalculation through filters.reprojection, and Phase 4 Header Update and CRS Embedding via writers.las with forward=all. Datum grids feed into Phase 2 and Phase 3.</desc>
+  <rect x="-2" y="0" width="804" height="312" fill="var(--dg-bg)" rx="10"/>
   <defs>
     <marker id="rp-arrow" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto">
       <path d="M0,0 L0,6 L8,3 z" fill="currentColor" opacity="0.65"/>
@@ -296,6 +297,7 @@ When your workflow must convert between ellipsoidal heights (HAE — Height Abov
 <svg viewBox="0 0 760 260" role="img" aria-label="Horizontal versus vertical datum transformation in PDAL reprojection" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:760px;display:block;margin:1.5rem auto;">
   <title>Horizontal versus vertical datum transformation in PDAL reprojection</title>
   <desc>Side-by-side comparison of two reprojection scenarios. Left: 2D CRS (EPSG:4326) — horizontal axes only; Z passes through unchanged, which causes silent ellipsoidal height errors. Right: 3D compound CRS (EPSG:4979 with NAVD88 geoid) — PROJ applies a vgridshift step using us_noaa_vertcon.tif to convert Z from ellipsoidal to orthometric heights.</desc>
+  <rect x="0" y="0" width="760" height="260" fill="var(--dg-bg)" rx="10"/>
   <defs>
     <marker id="rp-arrow-v" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto">
       <path d="M0,0 L0,6 L8,3 z" fill="currentColor" opacity="0.65"/>
@@ -395,6 +397,31 @@ assert "Intensity" in arrays[0].dtype.names, "Intensity dimension missing from o
 {% endraw %}
 
 ---
+
+<svg viewBox="0 0 720 264" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="PROJ ranking three candidate transformations and picking the most accurate available" style="width:100%;max-width:720px;display:block;margin:1.6rem auto">
+  <title>How PROJ picks the transformation you never specified</title>
+  <desc>A source and a target CRS feed a candidate list. PROJ ranks the available operations by accuracy: a null transformation good to about two metres, a Helmert seven-parameter fit good to half a metre, and a grid-shift operation good to five centimetres. It uses the most accurate one whose grid files are actually installed, which is why the same pipeline can shift by metres on a machine missing proj-data.</desc>
+  <rect x="0" y="0" width="720" height="264" fill="var(--dg-bg)" rx="10"/>
+  <defs><marker id="pj-arw" markerWidth="9" markerHeight="7" refX="9" refY="3.5" orient="auto"><path d="M0,0 L0,7 L9,3.5 z" fill="var(--dg-line)"/></marker></defs>
+  <rect x="20" y="66" width="190" height="46" rx="8" fill="var(--dg-b-soft)" stroke="var(--dg-b)" stroke-width="1.4"/>
+  <text x="115" y="94" text-anchor="middle" font-size="11.5" fill="var(--dg-text)">in_srs EPSG:32617</text>
+  <rect x="20" y="150" width="190" height="46" rx="8" fill="var(--dg-b-soft)" stroke="var(--dg-b)" stroke-width="1.4"/>
+  <text x="115" y="178" text-anchor="middle" font-size="11.5" fill="var(--dg-text)">out_srs EPSG:6318</text>
+  <path d="M210 89 L232 89 L232 131 L246 131" fill="none" stroke="var(--dg-line)" stroke-width="1.5" marker-end="url(#pj-arw)"/>
+  <path d="M210 173 L232 173 L232 131 L246 131" fill="none" stroke="var(--dg-line)" stroke-width="1.5"/>
+  <rect x="252" y="52" width="250" height="42" rx="7" fill="var(--dg-surface)" stroke="var(--dg-line-soft)" stroke-width="1.2"/>
+  <text x="377" y="78" text-anchor="middle" font-size="11" fill="var(--dg-muted)">null transform — 2.0 m</text>
+  <rect x="252" y="110" width="250" height="42" rx="7" fill="var(--dg-surface)" stroke="var(--dg-line-soft)" stroke-width="1.2"/>
+  <text x="377" y="136" text-anchor="middle" font-size="11" fill="var(--dg-muted)">Helmert 7-parameter — 0.5 m</text>
+  <rect x="252" y="168" width="250" height="42" rx="7" fill="var(--dg-d-soft)" stroke="var(--dg-d)" stroke-width="1.6"/>
+  <text x="377" y="194" text-anchor="middle" font-size="11" fill="var(--dg-text)">NADCON5 grid shift — 0.05 m</text>
+  <line x1="502" y1="189" x2="524" y2="189" stroke="var(--dg-line)" stroke-width="1.5" marker-end="url(#pj-arw)"/>
+  <rect x="530" y="160" width="170" height="58" rx="8" fill="var(--dg-d-soft)" stroke="var(--dg-d)" stroke-width="1.4"/>
+  <text x="615" y="184" text-anchor="middle" font-size="11.5" font-weight="600" fill="var(--dg-text)">chosen</text>
+  <text x="615" y="202" text-anchor="middle" font-size="10.5" fill="var(--dg-muted)">best grid installed</text>
+  <text x="252" y="36" font-size="10.5" fill="var(--dg-muted)">candidate operations, ranked by stated accuracy</text>
+  <text x="20" y="242" font-size="10.5" fill="var(--dg-muted)">projinfo -s EPSG:32617 -t EPSG:6318 prints this list; if the grid row is missing, PROJ silently drops to the next one</text>
+</svg>
 
 ## Performance Tuning
 

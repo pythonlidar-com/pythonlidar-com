@@ -87,6 +87,7 @@ The diagram below shows how the three major header regions map onto the binary s
 <svg viewBox="0 0 720 320" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="LAS file binary layout and coordinate reconstruction formula" style="width:100%;max-width:720px;display:block;margin:1.5rem auto;">
   <title>LAS file binary layout and coordinate reconstruction</title>
   <desc>Top row: three sequential regions of a LAS file — Public Header Block (bytes 0 to 226 in LAS 1.2, 0 to 374 in LAS 1.4), Variable Length Records (CRS GeoKey or WKT2, user metadata), and Point Data Records (fixed-width records per Point Format ID). Bottom row: formula showing how raw int32 XYZ integers are converted to real-world doubles using scale and offset from the header.</desc>
+  <rect x="0" y="0" width="720" height="320" fill="var(--dg-bg)" rx="10"/>
   <defs>
     <marker id="las-arr" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto" markerUnits="strokeWidth">
       <path d="M0,0 L0,6 L8,3 z" fill="currentColor"/>
@@ -212,6 +213,48 @@ VLR record ID 34735 is the GeoKey directory (legacy CRS, used in LAS 1.2/1.3). R
         has_wkt    = any(v.record_id == 2112  for v in h.vlrs)
         print(f"CRS: GeoKey={has_geokey}  WKT2={has_wkt}")
 ```
+
+<svg viewBox="0 0 720 306" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Byte offsets of the fields worth reading in a LAS public header" style="width:100%;max-width:720px;display:block;margin:1.6rem auto">
+  <title>The eleven header fields worth reading first</title>
+  <desc>A byte map of the LAS public header. The signature and version sit at the front, the header size and the offset to point data tell you where everything else begins, the point format and record length describe one point, and the scale, offset and bounding box at the end are what turn stored integers into real coordinates.</desc>
+  <rect x="0" y="0" width="720" height="306" fill="var(--dg-bg)" rx="10"/>
+  <rect x="20" y="54" width="216" height="44" rx="6" fill="var(--dg-b-soft)" stroke="var(--dg-b)" stroke-width="1.3"/>
+  <text x="32" y="73" font-size="11" fill="var(--dg-text)">File Signature</text>
+  <text x="32" y="89" font-size="10" fill="var(--dg-muted)">byte 0 · 4 B</text>
+  <rect x="252" y="54" width="216" height="44" rx="6" fill="var(--dg-b-soft)" stroke="var(--dg-b)" stroke-width="1.3"/>
+  <text x="264" y="73" font-size="11" fill="var(--dg-text)">Version</text>
+  <text x="264" y="89" font-size="10" fill="var(--dg-muted)">byte 24 · 2 B</text>
+  <rect x="484" y="54" width="216" height="44" rx="6" fill="var(--dg-a-soft)" stroke="var(--dg-a)" stroke-width="1.3"/>
+  <text x="496" y="73" font-size="11" fill="var(--dg-text)">Header Size</text>
+  <text x="496" y="89" font-size="10" fill="var(--dg-muted)">byte 94 · 2 B</text>
+  <rect x="20" y="110" width="216" height="44" rx="6" fill="var(--dg-a-soft)" stroke="var(--dg-a)" stroke-width="1.3"/>
+  <text x="32" y="129" font-size="11" fill="var(--dg-text)">Offset to Point Data</text>
+  <text x="32" y="145" font-size="10" fill="var(--dg-muted)">byte 96 · 4 B</text>
+  <rect x="252" y="110" width="216" height="44" rx="6" fill="var(--dg-a-soft)" stroke="var(--dg-a)" stroke-width="1.3"/>
+  <text x="264" y="129" font-size="11" fill="var(--dg-text)">VLR count</text>
+  <text x="264" y="145" font-size="10" fill="var(--dg-muted)">byte 100 · 4 B</text>
+  <rect x="484" y="110" width="216" height="44" rx="6" fill="var(--dg-c-soft)" stroke="var(--dg-c)" stroke-width="1.3"/>
+  <text x="496" y="129" font-size="11" fill="var(--dg-text)">Point Format</text>
+  <text x="496" y="145" font-size="10" fill="var(--dg-muted)">byte 104 · 1 B</text>
+  <rect x="20" y="166" width="216" height="44" rx="6" fill="var(--dg-c-soft)" stroke="var(--dg-c)" stroke-width="1.3"/>
+  <text x="32" y="185" font-size="11" fill="var(--dg-text)">Record Length</text>
+  <text x="32" y="201" font-size="10" fill="var(--dg-muted)">byte 105 · 2 B</text>
+  <rect x="252" y="166" width="216" height="44" rx="6" fill="var(--dg-c-soft)" stroke="var(--dg-c)" stroke-width="1.3"/>
+  <text x="264" y="185" font-size="11" fill="var(--dg-text)">Legacy Point Count</text>
+  <text x="264" y="201" font-size="10" fill="var(--dg-muted)">byte 107 · 4 B</text>
+  <rect x="484" y="166" width="216" height="44" rx="6" fill="var(--dg-d-soft)" stroke="var(--dg-d)" stroke-width="1.3"/>
+  <text x="496" y="185" font-size="11" fill="var(--dg-text)">Scale X/Y/Z</text>
+  <text x="496" y="201" font-size="10" fill="var(--dg-muted)">byte 131 · 24 B</text>
+  <rect x="20" y="222" width="216" height="44" rx="6" fill="var(--dg-d-soft)" stroke="var(--dg-d)" stroke-width="1.3"/>
+  <text x="32" y="241" font-size="11" fill="var(--dg-text)">Offset X/Y/Z</text>
+  <text x="32" y="257" font-size="10" fill="var(--dg-muted)">byte 155 · 24 B</text>
+  <rect x="252" y="222" width="216" height="44" rx="6" fill="var(--dg-d-soft)" stroke="var(--dg-d)" stroke-width="1.3"/>
+  <text x="264" y="241" font-size="11" fill="var(--dg-text)">Max/Min X/Y/Z</text>
+  <text x="264" y="257" font-size="10" fill="var(--dg-muted)">byte 179 · 48 B</text>
+  <text x="20" y="38" font-size="10.5" fill="var(--dg-muted)">offsets from the start of the file, LAS 1.4 public header block (375 bytes)</text>
+  <text x="20" y="282" font-size="10.5" fill="var(--dg-muted)">read Header Size rather than assuming 375 — a 1.2 header is 227 bytes,</text>
+  <text x="20" y="298" font-size="10.5" fill="var(--dg-muted)">and the offset to point data is authoritative either way.</text>
+</svg>
 
 ## Complete Working Example
 
@@ -384,6 +427,29 @@ def validate_header(h: laspy.LasHeader) -> list[str]:
 
     return warnings
 ```
+
+<svg viewBox="0 0 720 246" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="How a stored integer becomes a real coordinate through scale and offset" style="width:100%;max-width:720px;display:block;margin:1.6rem auto">
+  <title>Every coordinate in a LAS file is an integer</title>
+  <desc>The arithmetic that turns a stored value into a coordinate: the record holds a signed 32-bit integer, the header supplies a scale and an offset, and the real X is the integer times the scale plus the offset. The example takes the stored value 12340110, a scale of 0.001 and an offset of 500000, and arrives at 512340.11 metres.</desc>
+  <rect x="0" y="0" width="720" height="246" fill="var(--dg-bg)" rx="10"/>
+  <defs><marker id="so-arw" markerWidth="9" markerHeight="7" refX="9" refY="3.5" orient="auto"><path d="M0,0 L0,7 L9,3.5 z" fill="var(--dg-line)"/></marker></defs>
+  <rect x="20" y="46" width="200" height="58" rx="8" fill="var(--dg-b-soft)" stroke="var(--dg-b)" stroke-width="1.4"/>
+  <text x="120" y="70" text-anchor="middle" font-size="11" fill="var(--dg-muted)">in the point record</text>
+  <text x="120" y="92" text-anchor="middle" font-size="13" font-weight="600" fill="var(--dg-text)">12340110</text>
+  <rect x="260" y="46" width="200" height="58" rx="8" fill="var(--dg-c-soft)" stroke="var(--dg-c)" stroke-width="1.4"/>
+  <text x="360" y="70" text-anchor="middle" font-size="11" fill="var(--dg-muted)">in the header</text>
+  <text x="360" y="92" text-anchor="middle" font-size="13" font-weight="600" fill="var(--dg-text)">scale 0.001 · offset 500000</text>
+  <rect x="500" y="46" width="200" height="58" rx="8" fill="var(--dg-d-soft)" stroke="var(--dg-d)" stroke-width="1.4"/>
+  <text x="600" y="70" text-anchor="middle" font-size="11" fill="var(--dg-muted)">what you work with</text>
+  <text x="600" y="92" text-anchor="middle" font-size="13" font-weight="600" fill="var(--dg-text)">512340.110 m</text>
+  <line x1="220" y1="75" x2="254" y2="75" stroke="var(--dg-line)" stroke-width="1.5" marker-end="url(#so-arw)"/>
+  <line x1="460" y1="75" x2="494" y2="75" stroke="var(--dg-line)" stroke-width="1.5" marker-end="url(#so-arw)"/>
+  <rect x="20" y="130" width="680" height="40" rx="7" fill="var(--dg-surface)" stroke="var(--dg-line-soft)" stroke-width="1.2"/>
+  <text x="360" y="156" text-anchor="middle" font-size="14" fill="var(--dg-text)">X = X_record × scale_x + offset_x</text>
+  <text x="20" y="196" font-size="10.5" fill="var(--dg-muted)">a signed 32-bit integer spans about ±2.1 billion, so a scale of 0.001 covers ±2100 km from the offset — plenty for a projected tile,</text>
+  <text x="20" y="216" font-size="10.5" fill="var(--dg-muted)">and nowhere near enough to hold a whole-country extent at millimetre precision from an offset of zero. The offset exists to move the origin</text>
+  <text x="20" y="236" font-size="10.5" fill="var(--dg-muted)">near your data, and laspy will happily let you set one that puts your tile out of range.</text>
+</svg>
 
 ## Gotchas and Edge Cases
 

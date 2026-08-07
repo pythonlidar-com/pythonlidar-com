@@ -83,6 +83,7 @@ This page is part of [Point Cloud Data Standards & Fundamentals](https://www.pyt
 <svg viewBox="0 0 760 330" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="ASPRS LAS 1.4 classification code ranges diagram" style="width:100%;max-width:760px;display:block;margin:1.5rem auto;">
   <title>ASPRS LAS 1.4 Classification Code Ranges</title>
   <desc>Diagram showing the three classification code ranges in LAS 1.4: standard codes 0–18 (used for ground, vegetation, buildings, water, noise, and infrastructure), reserved codes 19–63 (held for future ASPRS use), and user-defined codes 64–255 (for project-specific taxonomies). LAS 1.2 only supports a 5-bit field covering codes 0–31.</desc>
+  <rect x="0" y="0" width="760" height="330" fill="var(--dg-bg)" rx="10"/>
   <!-- Title -->
   <text x="380" y="22" text-anchor="middle" font-family="system-ui,sans-serif" font-size="13" font-weight="600" fill="currentColor">LAS 1.4 Classification Field — 8-bit unsigned integer (0–255)</text>
   <!-- Range bar background -->
@@ -221,6 +222,41 @@ pip install "laspy[lazrs]>=2.4.0" "numpy>=1.24.0" "pyproj>=3.5.0"
 For test data, the [OpenTopography portal](https://opentopography.org/) provides freely downloadable LAZ files of 5–50 M points across diverse terrain types — a good baseline for exercising all standard classification codes.
 
 ---
+
+<svg viewBox="0 0 720 256" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="The same four features coded three different ways by three suppliers" style="width:100%;max-width:720px;display:block;margin:1.6rem auto">
+  <title>Three deliveries, three code sets, one word for all of them</title>
+  <desc>Ground, vegetation, buildings and water as coded by the ASPRS standard and by two suppliers. Vendor A collapses all vegetation into a single code four. Vendor B uses a private range beginning at eleven that collides with nothing in the standard and matches nothing either. A pipeline that hard-codes Classification[2:2] silently produces an empty ground set on the third delivery.</desc>
+  <rect x="0" y="0" width="720" height="256" fill="var(--dg-bg)" rx="10"/>
+  <text x="20" y="70" font-size="11.5" font-weight="600" fill="var(--dg-text)">ASPRS LAS 1.4</text>
+  <rect x="190" y="54" width="122" height="34" rx="6" fill="var(--dg-d-soft)" stroke="var(--dg-d)" stroke-width="1.3"/>
+  <text x="251" y="76" text-anchor="middle" font-size="10.5" fill="var(--dg-text)">2 ground</text>
+  <rect x="318" y="54" width="122" height="34" rx="6" fill="var(--dg-d-soft)" stroke="var(--dg-d)" stroke-width="1.3"/>
+  <text x="379" y="76" text-anchor="middle" font-size="10.5" fill="var(--dg-text)">5 high vegetation</text>
+  <rect x="446" y="54" width="122" height="34" rx="6" fill="var(--dg-d-soft)" stroke="var(--dg-d)" stroke-width="1.3"/>
+  <text x="507" y="76" text-anchor="middle" font-size="10.5" fill="var(--dg-text)">6 building</text>
+  <rect x="574" y="54" width="122" height="34" rx="6" fill="var(--dg-d-soft)" stroke="var(--dg-d)" stroke-width="1.3"/>
+  <text x="635" y="76" text-anchor="middle" font-size="10.5" fill="var(--dg-text)">9 water</text>
+  <text x="20" y="132" font-size="11.5" font-weight="600" fill="var(--dg-text)">vendor A delivery</text>
+  <rect x="190" y="116" width="122" height="34" rx="6" fill="var(--dg-c-soft)" stroke="var(--dg-c)" stroke-width="1.3"/>
+  <text x="251" y="138" text-anchor="middle" font-size="10.5" fill="var(--dg-text)">2 ground</text>
+  <rect x="318" y="116" width="122" height="34" rx="6" fill="var(--dg-c-soft)" stroke="var(--dg-c)" stroke-width="1.3"/>
+  <text x="379" y="138" text-anchor="middle" font-size="10.5" fill="var(--dg-text)">4 vegetation</text>
+  <rect x="446" y="116" width="122" height="34" rx="6" fill="var(--dg-c-soft)" stroke="var(--dg-c)" stroke-width="1.3"/>
+  <text x="507" y="138" text-anchor="middle" font-size="10.5" fill="var(--dg-text)">6 building</text>
+  <rect x="574" y="116" width="122" height="34" rx="6" fill="var(--dg-c-soft)" stroke="var(--dg-c)" stroke-width="1.3"/>
+  <text x="635" y="138" text-anchor="middle" font-size="10.5" fill="var(--dg-text)">9 water</text>
+  <text x="20" y="194" font-size="11.5" font-weight="600" fill="var(--dg-text)">vendor B delivery</text>
+  <rect x="190" y="178" width="122" height="34" rx="6" fill="var(--dg-e-soft)" stroke="var(--dg-e)" stroke-width="1.3"/>
+  <text x="251" y="200" text-anchor="middle" font-size="10.5" fill="var(--dg-text)">11 ground</text>
+  <rect x="318" y="178" width="122" height="34" rx="6" fill="var(--dg-e-soft)" stroke="var(--dg-e)" stroke-width="1.3"/>
+  <text x="379" y="200" text-anchor="middle" font-size="10.5" fill="var(--dg-text)">20 canopy</text>
+  <rect x="446" y="178" width="122" height="34" rx="6" fill="var(--dg-e-soft)" stroke="var(--dg-e)" stroke-width="1.3"/>
+  <text x="507" y="200" text-anchor="middle" font-size="10.5" fill="var(--dg-text)">21 structure</text>
+  <rect x="574" y="178" width="122" height="34" rx="6" fill="var(--dg-e-soft)" stroke="var(--dg-e)" stroke-width="1.3"/>
+  <text x="635" y="200" text-anchor="middle" font-size="10.5" fill="var(--dg-text)">30 water</text>
+  <text x="20" y="36" font-size="10.5" fill="var(--dg-muted)">the same four features across three deliveries</text>
+  <text x="20" y="248" font-size="10.5" fill="var(--dg-muted)">read the delivery report, then remap to the standard on ingest — never let a private code reach a pipeline that assumes ASPRS</text>
+</svg>
 
 ## Core Workflow Architecture
 
@@ -437,6 +473,52 @@ def validate_classification_output(
 For pipelines that integrate with [coordinate reference system](https://www.pythonlidar.com/point-cloud-data-standards-fundamentals/coordinate-reference-systems/) validation, add a CRS round-trip check: extract the authority string from the header's WKT VLR and confirm it matches the expected EPSG code using `pyproj.CRS.from_wkt().to_epsg()`.
 
 ---
+
+<svg viewBox="0 0 720 258" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Share of points by classification code with two out-of-schema codes flagged" style="width:100%;max-width:720px;display:block;margin:1.6rem auto">
+  <title>A code histogram is the fastest tile audit there is</title>
+  <desc>Point share by classification code on one delivered tile. The bulk sits on unassigned, ground, and the vegetation codes as expected. Two bars are flagged: code 44 and code 201 are outside the schema this delivery claims to follow, and together they carry two percent of the points — enough to matter and small enough to miss.</desc>
+  <rect x="0" y="0" width="720" height="258" fill="var(--dg-bg)" rx="10"/>
+  <rect x="44" y="186.7" width="42" height="9.3" rx="3" fill="var(--dg-a-soft)" stroke="var(--dg-a)" stroke-width="1.2"/>
+  <text x="65" y="180.7" text-anchor="middle" font-size="9.5" fill="var(--dg-muted)">3%</text>
+  <text x="65" y="214" text-anchor="middle" font-size="10.5" fill="var(--dg-text)">0</text>
+  <rect x="99" y="59.6" width="42" height="136.4" rx="3" fill="var(--dg-a-soft)" stroke="var(--dg-a)" stroke-width="1.2"/>
+  <text x="120" y="53.6" text-anchor="middle" font-size="9.5" fill="var(--dg-muted)">44%</text>
+  <text x="120" y="214" text-anchor="middle" font-size="10.5" fill="var(--dg-text)">1</text>
+  <rect x="154" y="99.9" width="42" height="96.1" rx="3" fill="var(--dg-a-soft)" stroke="var(--dg-a)" stroke-width="1.2"/>
+  <text x="175" y="93.9" text-anchor="middle" font-size="9.5" fill="var(--dg-muted)">31%</text>
+  <text x="175" y="214" text-anchor="middle" font-size="10.5" fill="var(--dg-text)">2</text>
+  <rect x="209" y="183.6" width="42" height="12.4" rx="3" fill="var(--dg-a-soft)" stroke="var(--dg-a)" stroke-width="1.2"/>
+  <text x="230" y="177.6" text-anchor="middle" font-size="9.5" fill="var(--dg-muted)">4%</text>
+  <text x="230" y="214" text-anchor="middle" font-size="10.5" fill="var(--dg-text)">3</text>
+  <rect x="264" y="186.7" width="42" height="9.3" rx="3" fill="var(--dg-a-soft)" stroke="var(--dg-a)" stroke-width="1.2"/>
+  <text x="285" y="180.7" text-anchor="middle" font-size="9.5" fill="var(--dg-muted)">3%</text>
+  <text x="285" y="214" text-anchor="middle" font-size="10.5" fill="var(--dg-text)">4</text>
+  <rect x="319" y="168.1" width="42" height="27.9" rx="3" fill="var(--dg-a-soft)" stroke="var(--dg-a)" stroke-width="1.2"/>
+  <text x="340" y="162.1" text-anchor="middle" font-size="9.5" fill="var(--dg-muted)">9%</text>
+  <text x="340" y="214" text-anchor="middle" font-size="10.5" fill="var(--dg-text)">5</text>
+  <rect x="374" y="180.5" width="42" height="15.5" rx="3" fill="var(--dg-a-soft)" stroke="var(--dg-a)" stroke-width="1.2"/>
+  <text x="395" y="174.5" text-anchor="middle" font-size="9.5" fill="var(--dg-muted)">5%</text>
+  <text x="395" y="214" text-anchor="middle" font-size="10.5" fill="var(--dg-text)">6</text>
+  <rect x="429" y="192.0" width="42" height="4.0" rx="3" fill="var(--dg-a-soft)" stroke="var(--dg-a)" stroke-width="1.2"/>
+  <text x="450" y="186.0" text-anchor="middle" font-size="9.5" fill="var(--dg-muted)">1%</text>
+  <text x="450" y="214" text-anchor="middle" font-size="10.5" fill="var(--dg-text)">7</text>
+  <rect x="484" y="189.8" width="42" height="6.2" rx="3" fill="var(--dg-a-soft)" stroke="var(--dg-a)" stroke-width="1.2"/>
+  <text x="505" y="183.8" text-anchor="middle" font-size="9.5" fill="var(--dg-muted)">2%</text>
+  <text x="505" y="214" text-anchor="middle" font-size="10.5" fill="var(--dg-text)">9</text>
+  <rect x="539" y="192.0" width="42" height="4.0" rx="3" fill="var(--dg-a-soft)" stroke="var(--dg-a)" stroke-width="1.2"/>
+  <text x="560" y="186.0" text-anchor="middle" font-size="9.5" fill="var(--dg-muted)">1%</text>
+  <text x="560" y="214" text-anchor="middle" font-size="10.5" fill="var(--dg-text)">17</text>
+  <rect x="594" y="192.0" width="42" height="4.0" rx="3" fill="var(--dg-e-soft)" stroke="var(--dg-e)" stroke-width="1.2"/>
+  <text x="615" y="186.0" text-anchor="middle" font-size="9.5" fill="var(--dg-muted)">1%</text>
+  <text x="615" y="214" text-anchor="middle" font-size="10.5" fill="var(--dg-e)">44</text>
+  <rect x="649" y="192.0" width="42" height="4.0" rx="3" fill="var(--dg-e-soft)" stroke="var(--dg-e)" stroke-width="1.2"/>
+  <text x="670" y="186.0" text-anchor="middle" font-size="9.5" fill="var(--dg-muted)">1%</text>
+  <text x="670" y="214" text-anchor="middle" font-size="10.5" fill="var(--dg-e)">201</text>
+  <line x1="44" y1="196" x2="700" y2="196" stroke="var(--dg-line)" stroke-width="1.5"/>
+  <text x="44" y="24" font-size="10.5" fill="var(--dg-muted)">share of points by Classification value, one delivered tile</text>
+  <text x="44" y="236" font-size="10.5" fill="var(--dg-e)">codes 44 and 201 are not in the schema this delivery claims — 2% of the tile, and no viewer will mention it</text>
+  <text x="360" y="252" text-anchor="middle" font-size="11" fill="var(--dg-text)">classification code</text>
+</svg>
 
 ## Performance Tuning
 

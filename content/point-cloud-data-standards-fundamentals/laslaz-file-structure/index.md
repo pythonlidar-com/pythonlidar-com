@@ -86,20 +86,21 @@ Robust LAS/LAZ ingestion follows a five-phase execution lifecycle. Each phase ha
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 260" role="img" aria-label="Five-phase LAS/LAZ ingestion workflow: file open, header validation, VLR parsing, chunked point streaming, and bounds verification" style="max-width:100%;height:auto;display:block;margin:1.5rem 0;">
   <title>LAS/LAZ Ingestion Workflow</title>
   <desc>Five sequential phases of a production LAS/LAZ ingestion pipeline shown as numbered boxes with arrows: Phase 1 File Open and Signature Check, Phase 2 Public Header Block Validation, Phase 3 VLR and CRS Extraction, Phase 4 Chunked Point Streaming with Coordinate Reconstruction, and Phase 5 Bounds Verification and Quarantine Gate.</desc>
+  <rect x="0" y="0" width="760" height="260" fill="var(--dg-bg)" rx="10"/>
   <defs>
     <marker id="wf-arr" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
       <path d="M0,0 L0,8 L8,4 Z" fill="currentColor"/>
     </marker>
     <style>
-      .wf-num  { font: 700 13px/1 system-ui, sans-serif; fill: #fff; }
+      .wf-num  { font: 700 13px/1 system-ui, sans-serif; fill: var(--dg-bg); }
       .wf-title{ font: 600 10.5px/1.3 system-ui, sans-serif; fill: currentColor; }
       .wf-sub  { font: 400 9px/1.4 system-ui, sans-serif; fill: currentColor; opacity: 0.72; }
       .wf-box  { rx: 8; ry: 8; }
     </style>
   </defs>
   <!-- Phase 1 -->
-  <rect class="wf-box" x="8" y="30" width="126" height="90" fill="none" stroke="#3b82f6" stroke-width="1.5"/>
-  <circle cx="33" cy="52" r="12" fill="#3b82f6"/>
+  <rect class="wf-box" x="8" y="30" width="126" height="90" fill="none" stroke="var(--dg-b)" stroke-width="1.5"/>
+  <circle cx="33" cy="52" r="12" fill="var(--dg-b)"/>
   <text class="wf-num" x="33" y="57" text-anchor="middle">1</text>
   <text class="wf-title" x="71" y="52" text-anchor="middle">File Open &amp;</text>
   <text class="wf-title" x="71" y="66" text-anchor="middle">Sig Check</text>
@@ -109,8 +110,8 @@ Robust LAS/LAZ ingestion follows a five-phase execution lifecycle. Each phase ha
   <!-- Arrow 1→2 -->
   <line x1="134" y1="75" x2="148" y2="75" stroke="currentColor" stroke-width="1.5" marker-end="url(#wf-arr)"/>
   <!-- Phase 2 -->
-  <rect class="wf-box" x="150" y="30" width="126" height="90" fill="none" stroke="#8b5cf6" stroke-width="1.5"/>
-  <circle cx="175" cy="52" r="12" fill="#8b5cf6"/>
+  <rect class="wf-box" x="150" y="30" width="126" height="90" fill="none" stroke="var(--dg-a)" stroke-width="1.5"/>
+  <circle cx="175" cy="52" r="12" fill="var(--dg-a)"/>
   <text class="wf-num" x="175" y="57" text-anchor="middle">2</text>
   <text class="wf-title" x="213" y="52" text-anchor="middle">Header</text>
   <text class="wf-title" x="213" y="66" text-anchor="middle">Validation</text>
@@ -120,8 +121,8 @@ Robust LAS/LAZ ingestion follows a five-phase execution lifecycle. Each phase ha
   <!-- Arrow 2→3 -->
   <line x1="276" y1="75" x2="290" y2="75" stroke="currentColor" stroke-width="1.5" marker-end="url(#wf-arr)"/>
   <!-- Phase 3 -->
-  <rect class="wf-box" x="292" y="30" width="126" height="90" fill="none" stroke="#10b981" stroke-width="1.5"/>
-  <circle cx="317" cy="52" r="12" fill="#10b981"/>
+  <rect class="wf-box" x="292" y="30" width="126" height="90" fill="none" stroke="var(--dg-d)" stroke-width="1.5"/>
+  <circle cx="317" cy="52" r="12" fill="var(--dg-d)"/>
   <text class="wf-num" x="317" y="57" text-anchor="middle">3</text>
   <text class="wf-title" x="355" y="52" text-anchor="middle">VLR &amp; CRS</text>
   <text class="wf-title" x="355" y="66" text-anchor="middle">Extraction</text>
@@ -131,8 +132,8 @@ Robust LAS/LAZ ingestion follows a five-phase execution lifecycle. Each phase ha
   <!-- Arrow 3→4 -->
   <line x1="418" y1="75" x2="432" y2="75" stroke="currentColor" stroke-width="1.5" marker-end="url(#wf-arr)"/>
   <!-- Phase 4 -->
-  <rect class="wf-box" x="434" y="30" width="142" height="90" fill="none" stroke="#f59e0b" stroke-width="1.5"/>
-  <circle cx="459" cy="52" r="12" fill="#f59e0b"/>
+  <rect class="wf-box" x="434" y="30" width="142" height="90" fill="none" stroke="var(--dg-c)" stroke-width="1.5"/>
+  <circle cx="459" cy="52" r="12" fill="var(--dg-c)"/>
   <text class="wf-num" x="459" y="57" text-anchor="middle">4</text>
   <text class="wf-title" x="505" y="52" text-anchor="middle">Chunked Point</text>
   <text class="wf-title" x="505" y="66" text-anchor="middle">Streaming</text>
@@ -142,8 +143,8 @@ Robust LAS/LAZ ingestion follows a five-phase execution lifecycle. Each phase ha
   <!-- Arrow 4→5 -->
   <line x1="576" y1="75" x2="590" y2="75" stroke="currentColor" stroke-width="1.5" marker-end="url(#wf-arr)"/>
   <!-- Phase 5 -->
-  <rect class="wf-box" x="592" y="30" width="160" height="90" fill="none" stroke="#ef4444" stroke-width="1.5"/>
-  <circle cx="617" cy="52" r="12" fill="#ef4444"/>
+  <rect class="wf-box" x="592" y="30" width="160" height="90" fill="none" stroke="var(--dg-e)" stroke-width="1.5"/>
+  <circle cx="617" cy="52" r="12" fill="var(--dg-e)"/>
   <text class="wf-num" x="617" y="57" text-anchor="middle">5</text>
   <text class="wf-title" x="672" y="52" text-anchor="middle">Bounds Verify</text>
   <text class="wf-title" x="672" y="66" text-anchor="middle">&amp; Gate</text>
@@ -151,8 +152,8 @@ Robust LAS/LAZ ingestion follows a five-phase execution lifecycle. Each phase ha
   <text class="wf-sub"   x="672" y="97" text-anchor="middle">pass → queue</text>
   <text class="wf-sub"   x="672" y="111" text-anchor="middle">fail → quarantine</text>
   <!-- Quarantine feedback arrow -->
-  <path d="M752,120 Q752,200 400,220 Q50,240 50,120" fill="none" stroke="#ef4444" stroke-width="1" stroke-dasharray="5,4" marker-end="url(#wf-arr)" opacity="0.55"/>
-  <text class="wf-sub" x="400" y="242" text-anchor="middle" fill="#ef4444" opacity="0.75">quarantine path — log error, skip tile, do not propagate</text>
+  <path d="M752,120 Q752,200 400,220 Q50,240 50,120" fill="none" stroke="var(--dg-e)" stroke-width="1" stroke-dasharray="5,4" marker-end="url(#wf-arr)" opacity="0.55"/>
+  <text class="wf-sub" x="400" y="242" text-anchor="middle" fill="var(--dg-e)" opacity="0.75">quarantine path — log error, skip tile, do not propagate</text>
 </svg>
 
 **Phase 1 — File Open and Signature Check.** Open the file with `laspy.open()` (never `laspy.read()`), read the first 4 bytes, and confirm they equal `b'LASF'`. Read the version fields to determine PHB size: 227 bytes for 1.0–1.2, 235 for 1.3, 375 for 1.4.
@@ -172,6 +173,7 @@ The four sequential binary blocks in every LAS/LAZ file must be read in order. E
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 210" role="img" aria-label="LAS/LAZ file binary block layout: Public Header Block, Variable Length Records, Point Data Records, and Extended Variable Length Records" style="max-width:100%;height:auto;display:block;margin:1.5rem 0;">
   <title>LAS/LAZ File Binary Block Layout</title>
   <desc>Four contiguous horizontal blocks representing the binary layout of a LAS or LAZ file from left to right: Public Header Block (PHB), Variable Length Records (VLRs), Point Data Records, and Extended Variable Length Records (EVLRs, LAS 1.4 only), with byte-offset annotations along the bottom.</desc>
+  <rect x="0" y="0" width="760" height="210" fill="var(--dg-bg)" rx="10"/>
   <defs>
     <marker id="blk-arr" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto">
       <path d="M0,0 L0,7 L7,3.5 Z" fill="currentColor"/>
@@ -183,7 +185,7 @@ The four sequential binary blocks in every LAS/LAZ file must be read in order. E
     </style>
   </defs>
   <!-- PHB -->
-  <rect class="blk-box" x="8" y="24" width="148" height="148" fill="none" stroke="#3b82f6"/>
+  <rect class="blk-box" x="8" y="24" width="148" height="148" fill="none" stroke="var(--dg-b)"/>
   <text class="blk-label" x="82" y="82" text-anchor="middle">Public Header</text>
   <text class="blk-label" x="82" y="98" text-anchor="middle">Block (PHB)</text>
   <text class="blk-sub"  x="82" y="116" text-anchor="middle">227 – 375 bytes</text>
@@ -192,7 +194,7 @@ The four sequential binary blocks in every LAS/LAZ file must be read in order. E
   <!-- Arrow 1 -->
   <line x1="156" y1="98" x2="172" y2="98" stroke="currentColor" stroke-width="1.5" marker-end="url(#blk-arr)"/>
   <!-- VLRs -->
-  <rect class="blk-box" x="174" y="24" width="148" height="148" fill="none" stroke="#8b5cf6"/>
+  <rect class="blk-box" x="174" y="24" width="148" height="148" fill="none" stroke="var(--dg-a)"/>
   <text class="blk-label" x="248" y="82" text-anchor="middle">Variable Length</text>
   <text class="blk-label" x="248" y="98" text-anchor="middle">Records (VLRs)</text>
   <text class="blk-sub"  x="248" y="116" text-anchor="middle">54-byte descriptor</text>
@@ -201,7 +203,7 @@ The four sequential binary blocks in every LAS/LAZ file must be read in order. E
   <!-- Arrow 2 -->
   <line x1="322" y1="98" x2="338" y2="98" stroke="currentColor" stroke-width="1.5" marker-end="url(#blk-arr)"/>
   <!-- Point Data -->
-  <rect class="blk-box" x="340" y="24" width="226" height="148" fill="none" stroke="#10b981"/>
+  <rect class="blk-box" x="340" y="24" width="226" height="148" fill="none" stroke="var(--dg-d)"/>
   <text class="blk-label" x="453" y="82" text-anchor="middle">Point Data Records</text>
   <text class="blk-sub"  x="453" y="100" text-anchor="middle">fixed-length per format ID</text>
   <text class="blk-sub"  x="453" y="116" text-anchor="middle">formats 0–5: 32-bit int coords</text>
@@ -210,7 +212,7 @@ The four sequential binary blocks in every LAS/LAZ file must be read in order. E
   <!-- Arrow 3 -->
   <line x1="566" y1="98" x2="582" y2="98" stroke="currentColor" stroke-width="1.5" marker-end="url(#blk-arr)"/>
   <!-- EVLRs -->
-  <rect class="blk-box" x="584" y="24" width="168" height="148" fill="none" stroke="#f59e0b"/>
+  <rect class="blk-box" x="584" y="24" width="168" height="148" fill="none" stroke="var(--dg-c)"/>
   <text class="blk-label" x="668" y="82" text-anchor="middle">Extended VLRs</text>
   <text class="blk-label" x="668" y="98" text-anchor="middle">(EVLRs)</text>
   <text class="blk-sub"  x="668" y="116" text-anchor="middle">LAS 1.4 only</text>
@@ -534,6 +536,48 @@ def gate_las_file(file_path: str) -> list[str]:
 Run `gate_las_file` before committing any tile to your processing queue. Log failures to a dedicated quarantine table rather than letting them propagate.
 
 For per-file header edge cases — malformed EVLR pointers, truncated VLR chains in legacy 1.2 files, and GPS time epoch mismatches — the dedicated [How to Parse LAS Headers with Python](https://www.pythonlidar.com/point-cloud-data-standards-fundamentals/laslaz-file-structure/how-to-parse-las-headers-with-python/) guide covers each failure mode with corrective code.
+
+<svg viewBox="0 0 720 250" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="How LAZ splits a point record block into independently decodable chunks" style="width:100%;max-width:720px;display:block;margin:1.6rem auto">
+  <title>Chunking is what makes LAZ more than a zip file</title>
+  <desc>A LAZ file stores its points in fixed-size chunks, by default fifty thousand points each, and keeps a chunk table at the end recording where each one starts. A reader that needs points in one area decompresses only the chunks that contain them. A generic compressor would have to decode everything before the first point of interest.</desc>
+  <rect x="0" y="0" width="720" height="250" fill="var(--dg-bg)" rx="10"/>
+  <text x="20" y="40" font-size="10.5" fill="var(--dg-muted)">LAZ point record block, 18.4 M points</text>
+  <rect x="20" y="56" width="60" height="72" rx="5" fill="var(--dg-a-soft)" stroke="var(--dg-a)" stroke-width="1.3"/>
+  <text x="50" y="88" text-anchor="middle" font-size="10" fill="var(--dg-text)">chunk</text>
+  <text x="50" y="104" text-anchor="middle" font-size="10" fill="var(--dg-text)">1</text>
+  <rect x="88" y="56" width="60" height="72" rx="5" fill="var(--dg-a-soft)" stroke="var(--dg-a)" stroke-width="1.3"/>
+  <text x="118" y="88" text-anchor="middle" font-size="10" fill="var(--dg-text)">chunk</text>
+  <text x="118" y="104" text-anchor="middle" font-size="10" fill="var(--dg-text)">2</text>
+  <rect x="156" y="56" width="60" height="72" rx="5" fill="var(--dg-a-soft)" stroke="var(--dg-a)" stroke-width="1.3"/>
+  <text x="186" y="88" text-anchor="middle" font-size="10" fill="var(--dg-text)">chunk</text>
+  <text x="186" y="104" text-anchor="middle" font-size="10" fill="var(--dg-text)">3</text>
+  <rect x="224" y="56" width="60" height="72" rx="5" fill="var(--dg-a-soft)" stroke="var(--dg-a)" stroke-width="1.3"/>
+  <text x="254" y="88" text-anchor="middle" font-size="10" fill="var(--dg-text)">chunk</text>
+  <text x="254" y="104" text-anchor="middle" font-size="10" fill="var(--dg-text)">4</text>
+  <rect x="292" y="56" width="60" height="72" rx="5" fill="var(--dg-d-soft)" stroke="var(--dg-d)" stroke-width="1.3"/>
+  <text x="322" y="88" text-anchor="middle" font-size="10" fill="var(--dg-text)">chunk</text>
+  <text x="322" y="104" text-anchor="middle" font-size="10" fill="var(--dg-text)">5</text>
+  <rect x="360" y="56" width="60" height="72" rx="5" fill="var(--dg-d-soft)" stroke="var(--dg-d)" stroke-width="1.3"/>
+  <text x="390" y="88" text-anchor="middle" font-size="10" fill="var(--dg-text)">chunk</text>
+  <text x="390" y="104" text-anchor="middle" font-size="10" fill="var(--dg-text)">6</text>
+  <rect x="428" y="56" width="60" height="72" rx="5" fill="var(--dg-a-soft)" stroke="var(--dg-a)" stroke-width="1.3"/>
+  <text x="458" y="88" text-anchor="middle" font-size="10" fill="var(--dg-text)">chunk</text>
+  <text x="458" y="104" text-anchor="middle" font-size="10" fill="var(--dg-text)">7</text>
+  <rect x="496" y="56" width="60" height="72" rx="5" fill="var(--dg-a-soft)" stroke="var(--dg-a)" stroke-width="1.3"/>
+  <text x="526" y="88" text-anchor="middle" font-size="10" fill="var(--dg-text)">chunk</text>
+  <text x="526" y="104" text-anchor="middle" font-size="10" fill="var(--dg-text)">8</text>
+  <rect x="564" y="56" width="60" height="72" rx="5" fill="var(--dg-a-soft)" stroke="var(--dg-a)" stroke-width="1.3"/>
+  <text x="594" y="88" text-anchor="middle" font-size="10" fill="var(--dg-text)">chunk</text>
+  <text x="594" y="104" text-anchor="middle" font-size="10" fill="var(--dg-text)">9</text>
+  <rect x="632" y="56" width="60" height="72" rx="5" fill="var(--dg-a-soft)" stroke="var(--dg-a)" stroke-width="1.3"/>
+  <text x="662" y="88" text-anchor="middle" font-size="10" fill="var(--dg-text)">chunk</text>
+  <text x="662" y="104" text-anchor="middle" font-size="10" fill="var(--dg-text)">10</text>
+  <rect x="20" y="150" width="660" height="40" rx="6" fill="var(--dg-c-soft)" stroke="var(--dg-c)" stroke-width="1.3"/>
+  <text x="350" y="175" text-anchor="middle" font-size="11.5" fill="var(--dg-text)">chunk table — byte offset and point count for every chunk, written last</text>
+  <text x="360" y="146" text-anchor="middle" font-size="10.5" fill="var(--dg-d)">a spatial query touching chunks 5 and 6 decompresses only those two</text>
+  <text x="20" y="216" font-size="10.5" fill="var(--dg-muted)">this is also why a truncated LAZ loses only its tail: every chunk before the break still decodes on its own,</text>
+  <text x="20" y="236" font-size="10.5" fill="var(--dg-muted)">and it is the property COPC builds an octree index on top of.</text>
+</svg>
 
 ## Performance Tuning
 

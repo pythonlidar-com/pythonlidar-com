@@ -78,9 +78,10 @@ This guide targets LiDAR analysts, Python GIS developers, and surveying teams wh
 
 ---
 
-<svg viewBox="0 0 920 230" role="img" aria-label="PDAL filtering pipeline data-flow diagram" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:920px;height:auto;display:block;margin:1.5rem auto;">
+<svg viewBox="-14 54 894 131" role="img" aria-label="PDAL filtering pipeline data-flow diagram" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:920px;height:auto;display:block;margin:1.5rem auto;">
   <title>PDAL Filtering Pipeline Data Flow</title>
   <desc>Diagram showing point data flowing left to right from a LAS reader through a range filter, crop filter, outlier filter, and a second range filter before reaching a LAS writer. Each stage box shows the PDAL stage name and a short description of its role.</desc>
+  <rect x="-14" y="54" width="894" height="131" fill="var(--dg-bg)" rx="10"/>
   <defs>
     <marker id="pfl-arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
       <path d="M0,0 L0,6 L8,3 Z" fill="currentColor" opacity="0.55"/>
@@ -269,6 +270,22 @@ if __name__ == "__main__":
     print(f"Dimensions    : {result['dimensions']}")
 ```
 
+<svg viewBox="0 0 720 250" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="The parts of a PDAL range limits expression" style="width:100%;max-width:720px;display:block;margin:1.6rem auto">
+  <title>Reading a limits expression</title>
+  <desc>The limits string names a dimension, then a bracketed inclusive interval, and an optional leading exclamation mark that negates the whole test. Several expressions separated by commas are combined with logical and. An empty bound means unbounded on that side, so Z[10:] keeps everything at or above ten metres.</desc>
+  <rect x="0" y="0" width="720" height="250" fill="var(--dg-bg)" rx="10"/>
+  <text x="60" y="96" font-size="26" font-weight="600" fill="var(--dg-text)">Classification![7:7]</text>
+  <line x1="72" y1="110" x2="72" y2="140" stroke="var(--dg-b)" stroke-width="1.4"/>
+  <text x="60" y="158" font-size="11" fill="var(--dg-b)">dimension name — exactly as PDAL spells it</text>
+  <line x1="248" y1="110" x2="248" y2="176" stroke="var(--dg-e)" stroke-width="1.4"/>
+  <text x="252" y="194" font-size="11" fill="var(--dg-e)">the ! negates the whole test — keep what does not match</text>
+  <line x1="292" y1="76" x2="292" y2="52" stroke="var(--dg-a)" stroke-width="1.4"/>
+  <text x="300" y="48" font-size="11" fill="var(--dg-a)">inclusive interval, low : high</text>
+  <rect x="60" y="202" width="620" height="46" rx="7" fill="var(--dg-surface)" stroke="var(--dg-line-soft)" stroke-width="1.2"/>
+  <text x="74" y="222" font-size="11" fill="var(--dg-text)">"limits": "Classification[2:2],Z[10:400]" — commas mean and</text>
+  <text x="74" y="238" font-size="11" fill="var(--dg-text)">an empty bound, as in Z[10:], is unbounded on that side</text>
+</svg>
+
 ## Code Breakdown
 
 **Stage 1 — `filters.range` (attribute + height bound)**
@@ -337,6 +354,42 @@ assert srs, "No CRS in output metadata — verify input file has spatial referen
 ```
 
 For pipeline structure validation before any point data is read, `pipeline.validate()` checks JSON syntax, stage compatibility, and dimension dependency graphs without loading the point cloud. Use it in CI/CD checks against pipeline configuration files before deploying to production. The dedicated [pipeline validation](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/pipeline-validation/) guide covers the full validation lifecycle, including dry-run execution patterns and schema version gating.
+
+<svg viewBox="0 0 720 288" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Cost per stage against how much of the cloud each one removes" style="width:100%;max-width:720px;display:block;margin:1.6rem auto">
+  <title>Cheap and selective first, expensive and additive last</title>
+  <desc>Each stage is shown with the seconds it costs on an 18 million point tile and the share of points it removes. Range and crop are cheap and remove a lot, so they belong first. Outlier removal and SMRF are expensive and remove little, and every point the earlier stages dropped is a point they never have to look at. Height above ground removes nothing at all and only ever adds work.</desc>
+  <rect x="0" y="0" width="720" height="288" fill="var(--dg-bg)" rx="10"/>
+  <text x="196" y="80" text-anchor="end" font-size="11" fill="var(--dg-text)">filters.range Z</text>
+  <rect x="206" y="62" width="8" height="14" rx="3" fill="var(--dg-e-soft)" stroke="var(--dg-e)" stroke-width="1.1"/>
+  <text x="220" y="73" font-size="10" fill="var(--dg-muted)">4 s</text>
+  <rect x="206" y="80" width="248" height="14" rx="3" fill="var(--dg-d-soft)" stroke="var(--dg-d)" stroke-width="1.1"/>
+  <text x="460" y="91" font-size="10" fill="var(--dg-muted)">62% removed</text>
+  <text x="196" y="120" text-anchor="end" font-size="11" fill="var(--dg-text)">filters.crop polygon</text>
+  <rect x="206" y="102" width="24" height="14" rx="3" fill="var(--dg-e-soft)" stroke="var(--dg-e)" stroke-width="1.1"/>
+  <text x="236" y="113" font-size="10" fill="var(--dg-muted)">12 s</text>
+  <rect x="206" y="120" width="312" height="14" rx="3" fill="var(--dg-d-soft)" stroke="var(--dg-d)" stroke-width="1.1"/>
+  <text x="524" y="131" font-size="10" fill="var(--dg-muted)">78% removed</text>
+  <text x="196" y="160" text-anchor="end" font-size="11" fill="var(--dg-text)">filters.outlier statistical</text>
+  <rect x="206" y="142" width="192" height="14" rx="3" fill="var(--dg-e-soft)" stroke="var(--dg-e)" stroke-width="1.1"/>
+  <text x="404" y="153" font-size="10" fill="var(--dg-muted)">96 s</text>
+  <rect x="206" y="160" width="32" height="14" rx="3" fill="var(--dg-d-soft)" stroke="var(--dg-d)" stroke-width="1.1"/>
+  <text x="244" y="171" font-size="10" fill="var(--dg-muted)">8% removed</text>
+  <text x="196" y="200" text-anchor="end" font-size="11" fill="var(--dg-text)">filters.smrf</text>
+  <rect x="206" y="182" width="420" height="14" rx="3" fill="var(--dg-e-soft)" stroke="var(--dg-e)" stroke-width="1.1"/>
+  <text x="632" y="193" font-size="10" fill="var(--dg-muted)">210 s</text>
+  <rect x="206" y="200" width="164" height="14" rx="3" fill="var(--dg-d-soft)" stroke="var(--dg-d)" stroke-width="1.1"/>
+  <text x="376" y="211" font-size="10" fill="var(--dg-muted)">41% removed</text>
+  <text x="196" y="240" text-anchor="end" font-size="11" fill="var(--dg-text)">filters.hag_nn</text>
+  <rect x="206" y="222" width="148" height="14" rx="3" fill="var(--dg-e-soft)" stroke="var(--dg-e)" stroke-width="1.1"/>
+  <text x="360" y="233" font-size="10" fill="var(--dg-muted)">74 s</text>
+  <rect x="206" y="240" width="6" height="14" rx="3" fill="var(--dg-d-soft)" stroke="var(--dg-d)" stroke-width="1.1"/>
+  <text x="218" y="251" font-size="10" fill="var(--dg-muted)">0% removed</text>
+  <rect x="206" y="34" width="14" height="10" rx="2" fill="var(--dg-e-soft)" stroke="var(--dg-e)" stroke-width="1.1"/>
+  <text x="226" y="43" font-size="10.5" fill="var(--dg-muted)">seconds on an 18 M point tile</text>
+  <rect x="410" y="34" width="14" height="10" rx="2" fill="var(--dg-d-soft)" stroke="var(--dg-d)" stroke-width="1.1"/>
+  <text x="430" y="43" font-size="10.5" fill="var(--dg-muted)">share of points removed</text>
+  <text x="20" y="270" font-size="10.5" fill="var(--dg-muted)">order stages by the ratio of the green bar to the red one, subject to one rule: never move a stage ahead of one it depends on</text>
+</svg>
 
 ## Performance Tuning
 

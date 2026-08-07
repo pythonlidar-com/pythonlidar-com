@@ -65,9 +65,10 @@ dateModified: "2026-06-24"
 
 Production LiDAR workflows are rarely a single operation. Surveying teams and Python GIS developers routinely need to ingest compressed LAZ tiles, strip acquisition noise, normalize coordinate systems, classify ground returns, and export clean LAS files — all in one reproducible pass. PDAL stage chaining is the mechanism that connects these discrete operations into a directed execution graph, letting engineers express complex multi-step transformations as a single JSON-declared pipeline. This page is part of the broader [PDAL Pipeline Architecture & Execution](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/) guide.
 
-<svg viewBox="0 0 740 180" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="PDAL stage chaining data-flow diagram" style="width:100%;max-width:740px;display:block;margin:1.5rem auto">
+<svg viewBox="-14 33 768 140" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="PDAL stage chaining data-flow diagram" style="width:100%;max-width:740px;display:block;margin:1.5rem auto">
   <title>PDAL Stage Chaining Data Flow</title>
   <desc>A left-to-right flow diagram showing a LAZ reader feeding into an outlier filter, then a reprojection filter, then an SMRF ground classifier, and finally a LAS writer. Arrows connect each stage in sequence.</desc>
+  <rect x="-14" y="33" width="768" height="140" fill="var(--dg-bg)" rx="10"/>
   <defs>
     <marker id="arr-chain" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto">
       <path d="M0,0 L0,6 L8,3 z" fill="currentColor" opacity="0.55"/>
@@ -238,6 +239,36 @@ if __name__ == "__main__":
         logging.info("All required dimensions present: %s", sorted(required))
 ```
 
+<svg viewBox="0 0 720 262" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Three chained stages and the number of point buffers alive at each moment" style="width:100%;max-width:720px;display:block;margin:1.6rem auto">
+  <title>Two buffers exist for as long as a hand-off lasts</title>
+  <desc>Three chained stages pass a PointView between them. The bar chart beneath counts the buffers alive at each moment: one while a stage works, two during each hand-off when the producing stage still holds its buffer and the consumer has allocated its own. Peak memory is set by those hand-off moments, not by the steady state.</desc>
+  <rect x="0" y="0" width="720" height="262" fill="var(--dg-bg)" rx="10"/>
+  <defs><marker id="ho-arw" markerWidth="9" markerHeight="7" refX="9" refY="3.5" orient="auto"><path d="M0,0 L0,7 L9,3.5 z" fill="var(--dg-line)"/></marker></defs>
+  <rect x="30" y="46" width="180" height="52" rx="8" fill="var(--dg-b-soft)" stroke="var(--dg-b)" stroke-width="1.4"/>
+  <text x="120" y="70" text-anchor="middle" font-size="11.5" font-weight="600" fill="var(--dg-text)">readers.las</text>
+  <text x="120" y="88" text-anchor="middle" font-size="10.5" fill="var(--dg-muted)">allocates the first view</text>
+  <rect x="270" y="46" width="180" height="52" rx="8" fill="var(--dg-a-soft)" stroke="var(--dg-a)" stroke-width="1.4"/>
+  <text x="360" y="70" text-anchor="middle" font-size="11.5" font-weight="600" fill="var(--dg-text)">filters.outlier</text>
+  <text x="360" y="88" text-anchor="middle" font-size="10.5" fill="var(--dg-muted)">writes into its own view</text>
+  <rect x="510" y="46" width="180" height="52" rx="8" fill="var(--dg-d-soft)" stroke="var(--dg-d)" stroke-width="1.4"/>
+  <text x="600" y="70" text-anchor="middle" font-size="11.5" font-weight="600" fill="var(--dg-text)">writers.las</text>
+  <text x="600" y="88" text-anchor="middle" font-size="10.5" fill="var(--dg-muted)">consumes and releases</text>
+  <line x1="210" y1="72" x2="264" y2="72" stroke="var(--dg-line)" stroke-width="1.6" marker-end="url(#ho-arw)"/>
+  <line x1="450" y1="72" x2="504" y2="72" stroke="var(--dg-line)" stroke-width="1.6" marker-end="url(#ho-arw)"/>
+  <text x="30" y="136" font-size="11" fill="var(--dg-text)">buffers alive at each moment</text>
+  <rect x="60" y="190" width="90" height="40" rx="4" fill="var(--dg-a-soft)" stroke="var(--dg-a)" stroke-width="1.3"/>
+  <text x="105" y="246" text-anchor="middle" font-size="10.5" fill="var(--dg-muted)">read</text>
+  <rect x="180" y="150" width="90" height="80" rx="4" fill="var(--dg-c-soft)" stroke="var(--dg-c)" stroke-width="1.3"/>
+  <text x="225" y="246" text-anchor="middle" font-size="10.5" fill="var(--dg-muted)">hand-off</text>
+  <rect x="300" y="190" width="90" height="40" rx="4" fill="var(--dg-a-soft)" stroke="var(--dg-a)" stroke-width="1.3"/>
+  <text x="345" y="246" text-anchor="middle" font-size="10.5" fill="var(--dg-muted)">filter</text>
+  <rect x="420" y="150" width="90" height="80" rx="4" fill="var(--dg-c-soft)" stroke="var(--dg-c)" stroke-width="1.3"/>
+  <text x="465" y="246" text-anchor="middle" font-size="10.5" fill="var(--dg-muted)">hand-off</text>
+  <rect x="540" y="190" width="90" height="40" rx="4" fill="var(--dg-a-soft)" stroke="var(--dg-a)" stroke-width="1.3"/>
+  <text x="585" y="246" text-anchor="middle" font-size="10.5" fill="var(--dg-muted)">write</text>
+  <line x1="50" y1="230" x2="700" y2="230" stroke="var(--dg-line)" stroke-width="1.4"/>
+</svg>
+
 ## Code Breakdown
 
 ### Reader stage: anchoring the source CRS
@@ -317,6 +348,34 @@ print(f"Total: {total:,}  Ground: {ground:,} ({ground/total:.1%})  Noise: {noise
 Healthy airborne LiDAR datasets typically yield 20–60 % ground returns depending on vegetation density. A ground fraction below 5 % usually indicates that SMRF parameters need adjustment, or that the [pipeline filtering logic](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/pipeline-filtering-logic/) upstream discarded too many low-return points.
 
 For a deeper guide on structuring data cleaning sequences, see [Chaining PDAL Stages for Data Cleaning](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/pdal-stage-chaining/chaining-pdal-stages-for-data-cleaning/).
+
+<svg viewBox="0 0 720 254" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Reprojecting before cropping against cropping before reprojecting" style="width:100%;max-width:720px;display:block;margin:1.6rem auto">
+  <title>The same three stages, two orders, four times the runtime</title>
+  <desc>Reprojecting first transforms all 18.4 million points and then throws most of them away at the crop, taking 96 seconds. Cropping first reduces the cloud to 2.1 million points and only then reprojects, taking 21 seconds — the same output from the same stages in a different order.</desc>
+  <rect x="0" y="0" width="720" height="254" fill="var(--dg-bg)" rx="10"/>
+  <defs><marker id="ord-arw" markerWidth="9" markerHeight="7" refX="9" refY="3.5" orient="auto"><path d="M0,0 L0,7 L9,3.5 z" fill="var(--dg-line)"/></marker></defs>
+  <text x="24" y="42" font-size="11.5" font-weight="600" fill="var(--dg-text)">reproject, then crop</text>
+  <rect x="24" y="54" width="180" height="44" rx="7" fill="var(--dg-b-soft)" stroke="var(--dg-b)" stroke-width="1.3"/>
+  <text x="114" y="81" text-anchor="middle" font-size="11" fill="var(--dg-text)">readers.las · 18.4 M</text>
+  <rect x="234" y="54" width="180" height="44" rx="7" fill="var(--dg-e-soft)" stroke="var(--dg-e)" stroke-width="1.3"/>
+  <text x="324" y="81" text-anchor="middle" font-size="11" fill="var(--dg-text)">reprojection · 18.4 M</text>
+  <rect x="444" y="54" width="180" height="44" rx="7" fill="var(--dg-a-soft)" stroke="var(--dg-a)" stroke-width="1.3"/>
+  <text x="534" y="81" text-anchor="middle" font-size="11" fill="var(--dg-text)">crop · 2.1 M</text>
+  <line x1="204" y1="76" x2="228" y2="76" stroke="var(--dg-line)" stroke-width="1.5" marker-end="url(#ord-arw)"/>
+  <line x1="414" y1="76" x2="438" y2="76" stroke="var(--dg-line)" stroke-width="1.5" marker-end="url(#ord-arw)"/>
+  <text x="640" y="81" font-size="12" font-weight="700" fill="var(--dg-e)">96 s</text>
+  <text x="24" y="148" font-size="11.5" font-weight="600" fill="var(--dg-text)">crop, then reproject</text>
+  <rect x="24" y="160" width="180" height="44" rx="7" fill="var(--dg-b-soft)" stroke="var(--dg-b)" stroke-width="1.3"/>
+  <text x="114" y="187" text-anchor="middle" font-size="11" fill="var(--dg-text)">readers.las · 18.4 M</text>
+  <rect x="234" y="160" width="180" height="44" rx="7" fill="var(--dg-a-soft)" stroke="var(--dg-a)" stroke-width="1.3"/>
+  <text x="324" y="187" text-anchor="middle" font-size="11" fill="var(--dg-text)">crop · 2.1 M</text>
+  <rect x="444" y="160" width="180" height="44" rx="7" fill="var(--dg-d-soft)" stroke="var(--dg-d)" stroke-width="1.3"/>
+  <text x="534" y="187" text-anchor="middle" font-size="11" fill="var(--dg-text)">reprojection · 2.1 M</text>
+  <line x1="204" y1="182" x2="228" y2="182" stroke="var(--dg-line)" stroke-width="1.5" marker-end="url(#ord-arw)"/>
+  <line x1="414" y1="182" x2="438" y2="182" stroke="var(--dg-line)" stroke-width="1.5" marker-end="url(#ord-arw)"/>
+  <text x="640" y="187" font-size="12" font-weight="700" fill="var(--dg-d)">21 s</text>
+  <text x="24" y="238" font-size="10.5" fill="var(--dg-muted)">the rule of thumb: put every stage that reduces the point count as early as correctness allows</text>
+</svg>
 
 ## Performance Tuning
 

@@ -83,9 +83,10 @@ UAV LiDAR acquisitions rarely distribute points uniformly. Multi-rotor and fixed
 
 The diagram below shows the five-stage computation path from raw LAS input to a compliance decision.
 
-<svg viewBox="0 0 780 200" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Drone point density pipeline: five stages from LAS input through CRS check, grid binning, p10 statistics, and threshold gate to a pass/fail decision" style="width:100%;max-width:780px;display:block;margin:1.5rem auto;">
+<svg viewBox="-14 46 808 151" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Drone point density pipeline: five stages from LAS input through CRS check, grid binning, p10 statistics, and threshold gate to a pass/fail decision" style="width:100%;max-width:780px;display:block;margin:1.5rem auto;">
   <title>Drone Survey Point Density Pipeline</title>
   <desc>Five sequential stages for computing point density from a UAV LiDAR file: 1) LAS Input with CRS check, 2) Filter by ASPRS class, 3) Grid-bin XY at 1 m², 4) Compute p10/mean density, 5) Pass or fail threshold gate.</desc>
+  <rect x="-14" y="46" width="808" height="151" fill="var(--dg-bg)" rx="10"/>
   <defs>
     <marker id="pd-arr" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
       <polygon points="0 0,8 3,0 6" fill="currentColor" opacity="0.55"/>
@@ -250,6 +251,28 @@ def check_density_threshold(stats: dict, min_p10: float) -> None:
     )
 ```
 
+<svg viewBox="0 0 720 262" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Density banding across four overlapping drone flight lines" style="width:100%;max-width:720px;display:block;margin:1.6rem auto">
+  <title>Overlap is where the density number comes from</title>
+  <desc>Four parallel flight lines with a thirty percent side overlap. In the middle of each swath the density is the nominal eight points per square metre. In each overlap band two swaths contribute and the density roughly doubles. Averaged over the block the figure looks comfortably above the specification while the swath centres sit right at it.</desc>
+  <rect x="0" y="0" width="720" height="262" fill="var(--dg-bg)" rx="10"/>
+  <rect x="40" y="56" width="200" height="110" fill="var(--dg-a)" fill-opacity="0.18" stroke="var(--dg-a)" stroke-width="1.2"/>
+  <rect x="190" y="56" width="200" height="110" fill="var(--dg-a)" fill-opacity="0.18" stroke="var(--dg-a)" stroke-width="1.2"/>
+  <rect x="340" y="56" width="200" height="110" fill="var(--dg-a)" fill-opacity="0.18" stroke="var(--dg-a)" stroke-width="1.2"/>
+  <rect x="490" y="56" width="200" height="110" fill="var(--dg-a)" fill-opacity="0.18" stroke="var(--dg-a)" stroke-width="1.2"/>
+  <text x="140" y="46" text-anchor="middle" font-size="10.5" fill="var(--dg-muted)">flight line 1</text>
+  <text x="590" y="46" text-anchor="middle" font-size="10.5" fill="var(--dg-muted)">flight line 4</text>
+  <text x="215" y="118" text-anchor="middle" font-size="10.5" font-weight="600" fill="var(--dg-text)">16</text>
+  <text x="365" y="118" text-anchor="middle" font-size="10.5" font-weight="600" fill="var(--dg-text)">16</text>
+  <text x="515" y="118" text-anchor="middle" font-size="10.5" font-weight="600" fill="var(--dg-text)">16</text>
+  <text x="115" y="200" text-anchor="middle" font-size="10.5" fill="var(--dg-muted)">8 /m²</text>
+  <text x="265" y="200" text-anchor="middle" font-size="10.5" fill="var(--dg-muted)">8 /m²</text>
+  <text x="415" y="200" text-anchor="middle" font-size="10.5" fill="var(--dg-muted)">8 /m²</text>
+  <text x="565" y="200" text-anchor="middle" font-size="10.5" fill="var(--dg-muted)">8 /m²</text>
+  <line x1="40" y1="180" x2="690" y2="180" stroke="var(--dg-line)" stroke-width="1.3"/>
+  <text x="40" y="226" font-size="10.5" fill="var(--dg-muted)">block mean 10.4 /m², swath-centre minimum 8.0 /m² — the specification is about the second number</text>
+  <text x="40" y="248" font-size="10.5" fill="var(--dg-muted)">report the fifth percentile of per-cell density, not the mean, and the overlap stops flattering the delivery.</text>
+</svg>
+
 ## Complete Working Example
 
 Paste this into a script alongside the helper functions above. It validates, filters, bins, and reports density for any LAS/LAZ file:
@@ -365,6 +388,32 @@ except ImportError:
 ```
 
 Overlay the exported `density_map.tif` with flight-line tracks in QGIS to correlate density troughs with swath gaps or navigation errors.
+
+<svg viewBox="0 0 720 256" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Regions of a survey block where the density measurement misleads" style="width:100%;max-width:720px;display:block;margin:1.6rem auto">
+  <title>Four places a density number is not what it seems</title>
+  <desc>A plan view of a survey block. The turn areas at each end carry a burst of extra returns from the banking aircraft. The swath edges are sparse where the scan angle is widest. Water absorbs the pulse and returns nothing. A calibration overlap strip is flown twice. Measure density over the whole block and all four distort the answer.</desc>
+  <rect x="0" y="0" width="720" height="256" fill="var(--dg-bg)" rx="10"/>
+  <rect x="40" y="52" width="640" height="130" rx="6" fill="var(--dg-surface)" stroke="var(--dg-line-soft)" stroke-width="1.2"/>
+  <rect x="46" y="58" width="70" height="118" fill="var(--dg-c)" fill-opacity="0.25"/>
+  <rect x="604" y="58" width="70" height="118" fill="var(--dg-c)" fill-opacity="0.25"/>
+  <rect x="122" y="58" width="476" height="16" fill="var(--dg-e)" fill-opacity="0.22"/>
+  <rect x="122" y="160" width="476" height="16" fill="var(--dg-e)" fill-opacity="0.22"/>
+  <ellipse cx="330" cy="120" rx="60" ry="26" fill="var(--dg-b)" fill-opacity="0.3"/>
+  <rect x="470" y="80" width="60" height="74" fill="var(--dg-d)" fill-opacity="0.28"/>
+  <text x="81" y="122" text-anchor="middle" font-size="10" fill="var(--dg-text)">turn</text>
+  <text x="639" y="122" text-anchor="middle" font-size="10" fill="var(--dg-text)">turn</text>
+  <text x="330" y="124" text-anchor="middle" font-size="10" fill="var(--dg-text)">water</text>
+  <text x="500" y="122" text-anchor="middle" font-size="10" fill="var(--dg-text)">calib</text>
+  <rect x="40" y="200" width="13" height="13" rx="2" fill="var(--dg-c)" fill-opacity="0.25"/>
+  <text x="60" y="211" font-size="10.5" fill="var(--dg-muted)">turn areas — density spikes</text>
+  <rect x="240" y="200" width="13" height="13" rx="2" fill="var(--dg-e)" fill-opacity="0.22"/>
+  <text x="260" y="211" font-size="10.5" fill="var(--dg-muted)">swath edges — sparse, wide scan angle</text>
+  <rect x="40" y="228" width="13" height="13" rx="2" fill="var(--dg-b)" fill-opacity="0.3"/>
+  <text x="60" y="239" font-size="10.5" fill="var(--dg-muted)">water — no return at all</text>
+  <rect x="240" y="228" width="13" height="13" rx="2" fill="var(--dg-d)" fill-opacity="0.28"/>
+  <text x="260" y="239" font-size="10.5" fill="var(--dg-muted)">calibration strip — flown twice, double count</text>
+  <text x="40" y="38" font-size="10.5" fill="var(--dg-muted)">clip to the project boundary and mask water before measuring anything</text>
+</svg>
 
 ## Gotchas and Edge Cases
 

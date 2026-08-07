@@ -77,6 +77,7 @@ The surface a DSM describes is what an observer standing at altitude would actua
 <svg viewBox="0 0 760 300" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Diagram showing multi-return LiDAR pulses over a tree and a building, with first returns forming the DSM top surface and ground returns forming the DTM" style="width:100%;max-width:760px;display:block;margin:1.5rem auto">
   <title>First returns form the DSM top surface; ground returns form the DTM</title>
   <desc>A cross-section shows laser pulses striking a tree canopy and a rooftop. The highest hit in each column defines the DSM surface drawn across the top. Lower ground hits define the DTM near the base. The vertical gap between the two surfaces is labelled as normalized height, or canopy height model.</desc>
+  <rect x="0" y="0" width="760" height="300" fill="var(--dg-bg)" rx="10"/>
   <defs>
     <marker id="dsm-arr" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
       <path d="M0,0 L0,6 L8,3 z" fill="currentColor" opacity="0.6"/>
@@ -129,6 +130,41 @@ DSM generation is a four-stage lifecycle. Unlike bare-earth extraction it has no
 4. **Validation and derivation.** You open the GeoTIFF, confirm the elevation range and void fraction are plausible, and — if you also hold a bare-earth grid — subtract to produce a normalized surface.
 
 The pivotal decision is how you define "top." Two levers exist and they are complementary. `filters.range` on `ReturnNumber` reduces the point set *before* rasterization; `output_type=max` picks the tallest survivor *during* rasterization. On pristine data either alone suffices, because the first return in a column is usually also the highest point. On messy data — high noise points, overlapping flight lines, birds — you want both: keep first returns to drop below-surface hits, then let `max` guard against the occasional low first return. Note that first returns are not guaranteed to be the geometric maximum in a cell when multiple pulses with slightly different geometry fall in the same pixel, which is precisely why layering `max` on top is the defensive default.
+
+<svg viewBox="0 0 720 236" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Four raster cells showing which point becomes the cell value under output_type max" style="width:100%;max-width:720px;display:block;margin:1.6rem auto">
+  <title>What output_type max keeps in each cell</title>
+  <desc>Four raster cells drawn as panels. In each, dots are the points falling within the search radius of the cell centre and the ringed dot is the highest, which becomes the cell value. A roof cell resolves to 41.8 metres, a canopy cell to 38.2, bare ground to 22.4, and a cell holding a single return to 22.1 — the same reducer regardless of how many points landed there.</desc>
+  <rect x="0" y="0" width="720" height="236" fill="var(--dg-bg)" rx="10"/>
+  <text x="30" y="26" font-size="11" fill="var(--dg-muted)">output_type: max — writers.gdal keeps the highest Z within radius of each cell centre</text>
+  <rect x="30" y="40" width="150" height="150" rx="8" fill="var(--dg-surface)" stroke="var(--dg-line-soft)" stroke-width="1.2"/>
+  <circle cx="52" cy="150" r="3.4" fill="var(--dg-line)"/>
+  <circle cx="78" cy="148" r="3.4" fill="var(--dg-line)"/>
+  <circle cx="104" cy="86" r="3.4" fill="var(--dg-line)"/>
+  <circle cx="130" cy="84" r="6" fill="var(--dg-c-soft)" stroke="var(--dg-c)" stroke-width="2"/>
+  <circle cx="156" cy="88" r="3.4" fill="var(--dg-line)"/>
+  <text x="105" y="72" text-anchor="middle" font-size="10.5" fill="var(--dg-c)">41.8 m</text>
+  <text x="105" y="212" text-anchor="middle" font-size="11" fill="var(--dg-text)">roof cell</text>
+  <rect x="200" y="40" width="150" height="150" rx="8" fill="var(--dg-surface)" stroke="var(--dg-line-soft)" stroke-width="1.2"/>
+  <circle cx="222" cy="170" r="3.4" fill="var(--dg-line)"/>
+  <circle cx="248" cy="120" r="3.4" fill="var(--dg-line)"/>
+  <circle cx="274" cy="96" r="6" fill="var(--dg-c-soft)" stroke="var(--dg-c)" stroke-width="2"/>
+  <circle cx="300" cy="132" r="3.4" fill="var(--dg-line)"/>
+  <circle cx="326" cy="110" r="3.4" fill="var(--dg-line)"/>
+  <text x="275" y="84" text-anchor="middle" font-size="10.5" fill="var(--dg-c)">38.2 m</text>
+  <text x="275" y="212" text-anchor="middle" font-size="11" fill="var(--dg-text)">canopy cell</text>
+  <rect x="370" y="40" width="150" height="150" rx="8" fill="var(--dg-surface)" stroke="var(--dg-line-soft)" stroke-width="1.2"/>
+  <circle cx="392" cy="168" r="3.4" fill="var(--dg-line)"/>
+  <circle cx="418" cy="170" r="3.4" fill="var(--dg-line)"/>
+  <circle cx="444" cy="166" r="6" fill="var(--dg-c-soft)" stroke="var(--dg-c)" stroke-width="2"/>
+  <circle cx="470" cy="172" r="3.4" fill="var(--dg-line)"/>
+  <circle cx="496" cy="169" r="3.4" fill="var(--dg-line)"/>
+  <text x="445" y="154" text-anchor="middle" font-size="10.5" fill="var(--dg-c)">22.4 m</text>
+  <text x="445" y="212" text-anchor="middle" font-size="11" fill="var(--dg-text)">bare ground</text>
+  <rect x="540" y="40" width="150" height="150" rx="8" fill="var(--dg-surface)" stroke="var(--dg-line-soft)" stroke-width="1.2"/>
+  <circle cx="562" cy="172" r="6" fill="var(--dg-c-soft)" stroke="var(--dg-c)" stroke-width="2"/>
+  <text x="615" y="160" text-anchor="middle" font-size="10.5" fill="var(--dg-c)">22.1 m</text>
+  <text x="615" y="212" text-anchor="middle" font-size="11" fill="var(--dg-text)">single return</text>
+</svg>
 
 ## Full Implementation
 
@@ -301,6 +337,37 @@ with rasterio.open("canopy_dsm.tif") as src:
 **Void fraction.** More than 10–15% empty cells usually means the resolution is finer than the point spacing. Coarsen the grid or raise `window_size`. A void map — `band.mask` rendered as an image — quickly reveals whether gaps are scattered (density problem) or clustered (water bodies, occlusion shadows).
 
 **Surface-above-terrain check.** If you hold a co-registered bare-earth grid, the DSM should be greater than or equal to the DTM almost everywhere; cells where DSM sits below DTM point to misalignment or noise. This same subtraction is the basis of the normalized height model described next.
+
+<svg viewBox="0 0 720 270" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Share of empty DSM cells against cell size for two point densities" style="width:100%;max-width:720px;display:block;margin:1.6rem auto">
+  <title>How fast empty cells appear as the DSM grid gets finer</title>
+  <desc>Two curves of NoData cell percentage against resolution. At 8 points per square metre a 0.25 metre grid leaves about 34 percent of cells empty, falling to roughly 2 percent at 1 metre. At 25 points per square metre the same 0.25 metre grid leaves about 9 percent empty. Below the point spacing the void count climbs steeply for both densities.</desc>
+  <rect x="0" y="0" width="720" height="270" fill="var(--dg-bg)" rx="10"/>
+  <line x1="341" y1="40" x2="341" y2="210" stroke="var(--dg-line-soft)" stroke-width="1.2" stroke-dasharray="5 4"/>
+  <text x="349" y="52" font-size="10.5" fill="var(--dg-muted)">1.0 m — the usual airborne default</text>
+  <line x1="80" y1="40" x2="80" y2="210" stroke="var(--dg-line)" stroke-width="1.5"/>
+  <line x1="80" y1="210" x2="690" y2="210" stroke="var(--dg-line)" stroke-width="1.5"/>
+  <text x="72" y="214" text-anchor="end" font-size="10.5" fill="var(--dg-muted)">0</text>
+  <text x="72" y="172" text-anchor="end" font-size="10.5" fill="var(--dg-muted)">10</text>
+  <text x="72" y="129" text-anchor="end" font-size="10.5" fill="var(--dg-muted)">20</text>
+  <text x="72" y="87" text-anchor="end" font-size="10.5" fill="var(--dg-muted)">30</text>
+  <text x="72" y="44" text-anchor="end" font-size="10.5" fill="var(--dg-muted)">40</text>
+  <polyline points="80,66 167,159 341,200 516,207 690,209" fill="none" stroke="var(--dg-e)" stroke-width="2.4"/>
+  <polyline points="80,172 167,202 341,209 516,209 690,210" fill="none" stroke="var(--dg-b)" stroke-width="2.4" stroke-dasharray="7 4"/>
+  <circle cx="80" cy="66" r="3.6" fill="var(--dg-e)"/>
+  <circle cx="167" cy="159" r="3.6" fill="var(--dg-e)"/>
+  <circle cx="80" cy="172" r="3.6" fill="var(--dg-b)"/>
+  <line x1="200" y1="86" x2="230" y2="86" stroke="var(--dg-e)" stroke-width="2.4"/>
+  <text x="238" y="90" font-size="11" fill="var(--dg-text)">8 pts/m² airborne</text>
+  <line x1="200" y1="110" x2="230" y2="110" stroke="var(--dg-b)" stroke-width="2.4" stroke-dasharray="7 4"/>
+  <text x="238" y="114" font-size="11" fill="var(--dg-text)">25 pts/m² dense UAV</text>
+  <text x="80" y="230" text-anchor="middle" font-size="10.5" fill="var(--dg-muted)">0.25</text>
+  <text x="167" y="230" text-anchor="middle" font-size="10.5" fill="var(--dg-muted)">0.5</text>
+  <text x="341" y="230" text-anchor="middle" font-size="10.5" fill="var(--dg-muted)">1.0</text>
+  <text x="516" y="230" text-anchor="middle" font-size="10.5" fill="var(--dg-muted)">1.5</text>
+  <text x="690" y="230" text-anchor="middle" font-size="10.5" fill="var(--dg-muted)">2.0</text>
+  <text x="385" y="252" text-anchor="middle" font-size="11.5" fill="var(--dg-text)">resolution (m)</text>
+  <text x="26" y="125" text-anchor="middle" font-size="11.5" fill="var(--dg-text)" transform="rotate(-90 26 125)">NoData cells (%)</text>
+</svg>
 
 ## Performance Tuning
 

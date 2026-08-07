@@ -95,6 +95,7 @@ A single regional LiDAR campaign routinely produces thousands of LAZ tiles and t
 <svg viewBox="0 0 860 300" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Cloud tile-processing architecture from an S3 manifest through a job queue to containerised PDAL workers writing COG outputs back to S3" style="width:100%;max-width:860px;display:block;margin:1.5rem auto">
   <title>Containerised PDAL Tile Fan-Out on the Cloud</title>
   <desc>A tile manifest stored in S3 feeds a job queue driven by AWS Batch or Airflow, which fans work out to N identical containerised PDAL workers. Each worker streams one LAZ tile from S3, runs a pipeline, and writes a Cloud-Optimized GeoTIFF DTM back to S3.</desc>
+  <rect x="0" y="0" width="860" height="300" fill="var(--dg-bg)" rx="10"/>
   <defs>
     <marker id="arr-cloud" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
       <polygon points="0 0, 8 3, 0 6" fill="currentColor" opacity="0.6"/>
@@ -167,6 +168,33 @@ The glue that makes stateless, idempotent jobs practical against cloud storage i
 - `/vsicurl/` — reads any object exposed over plain HTTP/HTTPS, ideal for public datasets or pre-signed URLs where no AWS credentials are in play.
 
 Because these virtual systems support range reads, a worker never has to download an entire multi-gigabyte tile before it starts. It streams. That single fact is what keeps per-container memory and local disk small enough to pack many workers onto modest instances.
+
+<svg viewBox="0 0 720 258" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Cost per tile split into compute, egress and storage for three architectures" style="width:100%;max-width:720px;display:block;margin:1.6rem auto">
+  <title>Where the money goes, per tile</title>
+  <desc>Cost per processed tile broken into compute, data egress and storage for three architectures. An on-premises cluster has no egress but real storage cost and amortised hardware. On-demand EC2 is the most expensive compute. Spot instances behind AWS Batch cut compute by about two thirds while egress and storage stay the same, which is why interruption handling is worth building.</desc>
+  <rect x="0" y="0" width="720" height="258" fill="var(--dg-bg)" rx="10"/>
+  <rect x="200" y="60" width="161" height="34" fill="var(--dg-a-soft)" stroke="var(--dg-a)" stroke-width="1.2"/>
+  <rect x="361" y="60" width="67" height="34" fill="var(--dg-b-soft)" stroke="var(--dg-b)" stroke-width="1.2"/>
+  <text x="190" y="82" text-anchor="end" font-size="11.5" fill="var(--dg-text)">on-prem cluster</text>
+  <text x="438" y="82" font-size="10.5" fill="var(--dg-muted)">$0.88 / tile</text>
+  <rect x="200" y="116" width="306" height="34" fill="var(--dg-a-soft)" stroke="var(--dg-a)" stroke-width="1.2"/>
+  <rect x="506" y="116" width="36" height="34" fill="var(--dg-c-soft)" stroke="var(--dg-c)" stroke-width="1.2"/>
+  <rect x="542" y="116" width="57" height="34" fill="var(--dg-b-soft)" stroke="var(--dg-b)" stroke-width="1.2"/>
+  <text x="190" y="138" text-anchor="end" font-size="11.5" fill="var(--dg-text)">EC2 on-demand</text>
+  <text x="609" y="138" font-size="10.5" fill="var(--dg-muted)">$1.54 / tile</text>
+  <rect x="200" y="172" width="106" height="34" fill="var(--dg-a-soft)" stroke="var(--dg-a)" stroke-width="1.2"/>
+  <rect x="306" y="172" width="36" height="34" fill="var(--dg-c-soft)" stroke="var(--dg-c)" stroke-width="1.2"/>
+  <rect x="342" y="172" width="57" height="34" fill="var(--dg-b-soft)" stroke="var(--dg-b)" stroke-width="1.2"/>
+  <text x="190" y="194" text-anchor="end" font-size="11.5" fill="var(--dg-text)">EC2 spot + Batch</text>
+  <text x="409" y="194" font-size="10.5" fill="var(--dg-muted)">$0.77 / tile</text>
+  <rect x="200" y="34" width="14" height="12" rx="2" fill="var(--dg-a-soft)" stroke="var(--dg-a)" stroke-width="1.2"/>
+  <text x="220" y="44" font-size="10.5" fill="var(--dg-muted)">compute</text>
+  <rect x="350" y="34" width="14" height="12" rx="2" fill="var(--dg-c-soft)" stroke="var(--dg-c)" stroke-width="1.2"/>
+  <text x="370" y="44" font-size="10.5" fill="var(--dg-muted)">egress</text>
+  <rect x="500" y="34" width="14" height="12" rx="2" fill="var(--dg-b-soft)" stroke="var(--dg-b)" stroke-width="1.2"/>
+  <text x="520" y="44" font-size="10.5" fill="var(--dg-muted)">storage</text>
+  <text x="60" y="248" font-size="10.5" fill="var(--dg-muted)">egress is charged on what leaves the region — keep the reader, the writer and the worker in one region and it disappears</text>
+</svg>
 
 ## Core Components
 
@@ -367,6 +395,33 @@ A campaign is production-ready when it is reproducible, least-privileged, and se
 
 **Orchestrate with a DAG.** Wrap the lifecycle — enumerate tiles and write the manifest, submit the Batch array job, wait for completion, run a validation task that samples output COGs — in an Airflow DAG. The DAG gives you scheduled backfills, per-run lineage, and a single place to see which tiles failed. Pass the manifest key from the enumeration task to the submit task through `XCom`.
 
+<svg viewBox="0 0 720 262" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="The states one tile job moves through and the marker object that makes a retry safe" style="width:100%;max-width:720px;display:block;margin:1.6rem auto">
+  <title>A retry is only safe if the job is a state machine</title>
+  <desc>One tile job as states: pending, claimed, running, then either a success marker written to the output prefix or a failure that returns the job to pending for one more attempt. The success marker is what makes the whole thing idempotent — a worker that finds it skips the tile instead of recomputing it, so a retried array job costs nothing for the tiles that already finished.</desc>
+  <rect x="0" y="0" width="720" height="262" fill="var(--dg-bg)" rx="10"/>
+  <defs><marker id="idem-arw" markerWidth="9" markerHeight="7" refX="9" refY="3.5" orient="auto"><path d="M0,0 L0,7 L9,3.5 z" fill="var(--dg-line)"/></marker></defs>
+  <rect x="24" y="66" width="140" height="46" rx="8" fill="var(--dg-surface)" stroke="var(--dg-line)" stroke-width="1.4"/>
+  <text x="94" y="94" text-anchor="middle" font-size="11.5" fill="var(--dg-text)">pending</text>
+  <rect x="204" y="66" width="140" height="46" rx="8" fill="var(--dg-b-soft)" stroke="var(--dg-b)" stroke-width="1.4"/>
+  <text x="274" y="94" text-anchor="middle" font-size="11.5" fill="var(--dg-text)">claimed</text>
+  <rect x="384" y="66" width="140" height="46" rx="8" fill="var(--dg-a-soft)" stroke="var(--dg-a)" stroke-width="1.4"/>
+  <text x="454" y="94" text-anchor="middle" font-size="11.5" fill="var(--dg-text)">running</text>
+  <rect x="564" y="66" width="132" height="46" rx="8" fill="var(--dg-d-soft)" stroke="var(--dg-d)" stroke-width="1.4"/>
+  <text x="630" y="94" text-anchor="middle" font-size="11.5" fill="var(--dg-text)">_SUCCESS written</text>
+  <line x1="164" y1="89" x2="198" y2="89" stroke="var(--dg-line)" stroke-width="1.5" marker-end="url(#idem-arw)"/>
+  <line x1="344" y1="89" x2="378" y2="89" stroke="var(--dg-line)" stroke-width="1.5" marker-end="url(#idem-arw)"/>
+  <line x1="524" y1="89" x2="558" y2="89" stroke="var(--dg-line)" stroke-width="1.5" marker-end="url(#idem-arw)"/>
+  <path d="M454 112 L454 152 L94 152 L94 118" fill="none" stroke="var(--dg-e)" stroke-width="1.5" stroke-dasharray="5 3" marker-end="url(#idem-arw)"/>
+  <text x="274" y="146" text-anchor="middle" font-size="10.5" fill="var(--dg-e)">spot reclaim, OOM, transient S3 error → retry</text>
+  <path d="M630 112 L630 190 L94 190 L94 176" fill="none" stroke="var(--dg-d)" stroke-width="1.5" marker-end="url(#idem-arw)"/>
+  <text x="360" y="184" text-anchor="middle" font-size="10.5" fill="var(--dg-d)">a re-run finds the marker and exits in milliseconds</text>
+  <text x="24" y="216" font-size="10.5" fill="var(--dg-muted)">write the marker last, after the output object is durable — a marker written first turns a crash into permanent missing data,</text>
+  <text x="24" y="236" font-size="10.5" fill="var(--dg-muted)">and that is the one failure the whole design exists to prevent.</text>
+  <text x="24" y="50" font-size="10.5" fill="var(--dg-muted)">one tile, one job, four states</text>
+</svg>
+
+Everything above assumes you already know which tiles to process and how they fit together. [Tile indexing, buffering and merging](https://www.pythonlidar.com/batch-automation-cloud-integration/tile-indexing-and-merging/) covers that half: a queryable index built from headers, neighbour lookups for buffered processing, and reassembly that does not double-count the overlaps.
+
 ## Failure Modes and Debugging
 
 **S3 request throttling (`503 SlowDown`).** At high concurrency, many workers reading or writing under one prefix exceed S3's per-prefix request rate. GDAL surfaces this as intermittent read failures. Mitigate by partitioning keys across multiple prefixes, enabling exponential-backoff retries in the AWS SDK config (`max_attempts`, `retry_mode = adaptive`), and staggering job start times rather than launching all workers in the same second.
@@ -415,3 +470,4 @@ They solve different problems and are often combined. AWS Batch is the execution
 - [Parallel Execution](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/parallel-execution/) — file-level parallelism strategies on a single machine
 - [Memory Management](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/memory-management/) — capacity, stream mode, and container memory limits
 - [DTM Raster Generation](https://www.pythonlidar.com/ground-filtering-dtm-dsm-generation/dtm-raster-generation/) — turning classified ground returns into terrain rasters
+- [Tile Indexing, Buffering and Merging](https://www.pythonlidar.com/batch-automation-cloud-integration/tile-indexing-and-merging/) — finding neighbours, processing with a buffer, and reassembling without duplicates

@@ -106,6 +106,7 @@ The diagram below illustrates how peak RAM evolves across a typical tile-process
 <svg viewBox="0 0 760 370" role="img" aria-label="Memory lifecycle diagram for a PDAL tile-processing loop" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:760px;display:block;margin:2rem auto">
   <title>PDAL tile-processing memory lifecycle</title>
   <desc>A filled-area chart showing RAM rising during pipeline.execute(), peaking while the NumPy array is held, dropping after dtype downcasting, and returning to baseline after del pipeline and gc.collect(). Six labelled phases are shown on the x-axis.</desc>
+  <rect x="0" y="0" width="760" height="370" fill="var(--dg-bg)" rx="10"/>
   <!-- axes -->
   <line x1="80" y1="20" x2="80" y2="280" stroke="currentColor" stroke-width="1.5"/>
   <line x1="80" y1="280" x2="740" y2="280" stroke="currentColor" stroke-width="1.5"/>
@@ -120,19 +121,19 @@ The diagram below illustrates how peak RAM evolves across a typical tile-process
   <line x1="80" y1="160" x2="740" y2="160" stroke="currentColor" stroke-width="0.5" stroke-dasharray="4,4" opacity="0.4"/>
   <line x1="80" y1="100" x2="740" y2="100" stroke="currentColor" stroke-width="0.5" stroke-dasharray="4,4" opacity="0.4"/>
   <!-- Phase 1: idle baseline -->
-  <rect x="90"  y="260" width="80"  height="20" fill="#4c9be8" opacity="0.85" rx="3"/>
+  <rect x="90"  y="260" width="80"  height="20" fill="var(--dg-a)" opacity="0.85" rx="3"/>
   <!-- Phase 2: execute() ramp -->
-  <polygon points="170,260 260,68 260,280 170,280" fill="#4c9be8" opacity="0.85"/>
+  <polygon points="170,260 260,68 260,280 170,280" fill="var(--dg-a)" opacity="0.85"/>
   <!-- Phase 3: peak hold -->
-  <rect x="260" y="68" width="120" height="212" fill="#4c9be8" opacity="0.85"/>
+  <rect x="260" y="68" width="120" height="212" fill="var(--dg-a)" opacity="0.85"/>
   <!-- Phase 4: dtype downcast drop -->
-  <polygon points="380,68 460,130 460,280 380,280" fill="#60b97a" opacity="0.85"/>
+  <polygon points="380,68 460,130 460,280 380,280" fill="var(--dg-d)" opacity="0.85"/>
   <!-- Phase 5: float32 hold -->
-  <rect x="460" y="130" width="100" height="150" fill="#60b97a" opacity="0.85"/>
+  <rect x="460" y="130" width="100" height="150" fill="var(--dg-d)" opacity="0.85"/>
   <!-- Phase 6: gc.collect() return to baseline -->
-  <polygon points="560,130 640,260 640,280 560,280" fill="#60b97a" opacity="0.85"/>
+  <polygon points="560,130 640,260 640,280 560,280" fill="var(--dg-d)" opacity="0.85"/>
   <!-- Phase 7: idle baseline again -->
-  <rect x="640" y="260" width="80"  height="20" fill="#4c9be8" opacity="0.85" rx="3"/>
+  <rect x="640" y="260" width="80"  height="20" fill="var(--dg-a)" opacity="0.85" rx="3"/>
   <!-- phase x-axis labels (below chart) -->
   <text x="130"  y="306" text-anchor="middle" font-size="11" fill="currentColor">idle</text>
   <text x="215"  y="306" text-anchor="middle" font-size="11" fill="currentColor">execute()</text>
@@ -304,6 +305,27 @@ def process_tile_directory(
     return results
 ```
 
+<svg viewBox="0 0 720 262" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Resident memory over the run for a streaming and a non-streaming pipeline" style="width:100%;max-width:720px;display:block;margin:1.6rem auto">
+  <title>Resident memory across one tile, streaming and not</title>
+  <desc>Memory against elapsed time for the same pipeline. Run conventionally it climbs as the reader materialises the whole tile, plateaus above four gigabytes for the length of the run, and drops only at the end. Run in streaming mode it holds a sawtooth around 250 megabytes: one chunk in, one chunk out, for as long as the file lasts.</desc>
+  <rect x="0" y="0" width="720" height="262" fill="var(--dg-bg)" rx="10"/>
+  <line x1="80" y1="44" x2="80" y2="210" stroke="var(--dg-line)" stroke-width="1.5"/>
+  <line x1="80" y1="210" x2="690" y2="210" stroke="var(--dg-line)" stroke-width="1.5"/>
+  <polyline points="80,208 140,150 200,86 260,60 480,58 540,62 600,196 660,208" fill="none" stroke="var(--dg-e)" stroke-width="2.4"/>
+  <polyline points="80,208 110,190 140,206 170,189 200,205 230,190 260,206 290,189 320,205 350,190 380,206 410,189 440,205 470,190 500,206 530,189 560,205 590,190 620,206 650,192 680,208" fill="none" stroke="var(--dg-d)" stroke-width="2.2"/>
+  <text x="72" y="214" text-anchor="end" font-size="10.5" fill="var(--dg-muted)">0</text>
+  <text x="72" y="172" text-anchor="end" font-size="10.5" fill="var(--dg-muted)">1 GB</text>
+  <text x="72" y="130" text-anchor="end" font-size="10.5" fill="var(--dg-muted)">2 GB</text>
+  <text x="72" y="88" text-anchor="end" font-size="10.5" fill="var(--dg-muted)">3 GB</text>
+  <text x="72" y="48" text-anchor="end" font-size="10.5" fill="var(--dg-muted)">4 GB</text>
+  <line x1="300" y1="96" x2="330" y2="96" stroke="var(--dg-e)" stroke-width="2.4"/>
+  <text x="338" y="100" font-size="11" fill="var(--dg-text)">standard mode — whole tile resident</text>
+  <line x1="300" y1="120" x2="330" y2="120" stroke="var(--dg-d)" stroke-width="2.2"/>
+  <text x="338" y="124" font-size="11" fill="var(--dg-text)">streaming mode — one chunk at a time</text>
+  <text x="385" y="234" text-anchor="middle" font-size="11.5" fill="var(--dg-text)">elapsed time</text>
+  <text x="26" y="127" text-anchor="middle" font-size="11.5" fill="var(--dg-text)" transform="rotate(-90 26 127)">resident memory</text>
+</svg>
+
 ## Code Breakdown
 
 ### `build_filter_pipeline` — keep the PDAL graph lean
@@ -368,6 +390,35 @@ if missing:
 ```
 
 For [spatial reprojection](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/spatial-reprojection/) stages, perform a coordinate bounding-box sanity check: WGS84 longitudes must lie within −180 to 180, latitudes within −90 to 90. Any value outside these ranges indicates a datum or axis-order error. The [pipeline validation](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/pipeline-validation/) page covers schema and CRS round-trip checks in greater depth.
+
+<svg viewBox="0 0 720 262" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Peak memory and throughput against chunk size" style="width:100%;max-width:720px;display:block;margin:1.6rem auto">
+  <title>Where raising chunk_size stops buying throughput</title>
+  <desc>Bars show peak memory rising from 0.12 gigabytes at a ten thousand point chunk to 4.4 gigabytes at two million. The line shows throughput, which climbs steeply from 1.8 to 3.9 million points per second by half a million and then flattens. Beyond roughly half a million points per chunk the memory bill keeps growing and the speed does not.</desc>
+  <rect x="0" y="0" width="720" height="262" fill="var(--dg-bg)" rx="10"/>
+  <rect x="110" y="180" width="80" height="20" fill="var(--dg-a-soft)" stroke="var(--dg-a)" stroke-width="1.3"/>
+  <text x="150" y="172" text-anchor="middle" font-size="10.5" fill="var(--dg-muted)">0.12 GB</text>
+  <text x="150" y="220" text-anchor="middle" font-size="11" font-weight="600" fill="var(--dg-text)">10 k</text>
+  <circle cx="150" cy="138.6" r="4" fill="var(--dg-c)"/>
+  <rect x="260" y="155" width="80" height="45" fill="var(--dg-a-soft)" stroke="var(--dg-a)" stroke-width="1.3"/>
+  <text x="300" y="147" text-anchor="middle" font-size="10.5" fill="var(--dg-muted)">0.35 GB</text>
+  <text x="300" y="220" text-anchor="middle" font-size="11" font-weight="600" fill="var(--dg-text)">100 k</text>
+  <circle cx="300" cy="84.0" r="4" fill="var(--dg-c)"/>
+  <rect x="410" y="110" width="80" height="90" fill="var(--dg-a-soft)" stroke="var(--dg-a)" stroke-width="1.3"/>
+  <text x="450" y="102" text-anchor="middle" font-size="10.5" fill="var(--dg-muted)">1.2 GB</text>
+  <text x="450" y="220" text-anchor="middle" font-size="11" font-weight="600" fill="var(--dg-text)">500 k</text>
+  <circle cx="450" cy="67.0" r="4" fill="var(--dg-c)"/>
+  <rect x="560" y="50" width="80" height="150" fill="var(--dg-a-soft)" stroke="var(--dg-a)" stroke-width="1.3"/>
+  <text x="600" y="42" text-anchor="middle" font-size="10.5" fill="var(--dg-muted)">4.4 GB</text>
+  <text x="600" y="220" text-anchor="middle" font-size="11" font-weight="600" fill="var(--dg-text)">2 M</text>
+  <circle cx="600" cy="63.6" r="4" fill="var(--dg-c)"/>
+  <polyline points="150,138.6 300,84 450,67 600,63.6" fill="none" stroke="var(--dg-c)" stroke-width="2.4"/>
+  <line x1="80" y1="200" x2="690" y2="200" stroke="var(--dg-line)" stroke-width="1.5"/>
+  <rect x="88" y="36" width="14" height="14" rx="3" fill="var(--dg-a-soft)" stroke="var(--dg-a)" stroke-width="1.3"/>
+  <text x="110" y="48" font-size="10.5" fill="var(--dg-muted)">peak resident memory</text>
+  <line x1="260" y1="43" x2="290" y2="43" stroke="var(--dg-c)" stroke-width="2.4"/>
+  <text x="298" y="48" font-size="10.5" fill="var(--dg-muted)">throughput, million points per second</text>
+  <text x="385" y="244" text-anchor="middle" font-size="11.5" fill="var(--dg-text)">chunk_size (points per chunk)</text>
+</svg>
 
 ## Performance Tuning
 

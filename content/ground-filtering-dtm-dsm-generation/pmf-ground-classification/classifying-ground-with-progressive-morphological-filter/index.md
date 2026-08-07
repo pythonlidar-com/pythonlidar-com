@@ -77,6 +77,38 @@ This recipe is part of [PMF Ground Classification in PDAL](https://www.pythonlid
 
 The task sounds simple — "keep the ground points" — but a naive single-threshold height cut fails the moment terrain has any relief. A hillside 40 m tall would erase a 3 m building only by also erasing the hill. PMF sidesteps this by never comparing points to an absolute height; it compares them to a *locally opened* surface whose tolerance widens with the window. That is what lets a single set of parameters handle a scene containing both a tall grain silo and a gentle valley. The steps below build that pipeline one stage at a time, then assemble a complete runnable script.
 
+<svg viewBox="0 0 720 268" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Six-stage PDAL pipeline turning a raw LAZ tile into a ground-only LAS file" style="width:100%;max-width:720px;display:block;margin:1.6rem auto">
+  <title>Raw tile to ground-only LAS in six stages</title>
+  <desc>A pipeline laid out over two rows. Row one reads the LAZ tile, runs a statistical outlier filter, then drops the points it flagged as class 7. Row two runs filters.pmf to stamp ground as class 2, keeps only class 2 with a range filter, and writes the result. A strip beneath tracks how the point set changes at each stage.</desc>
+  <defs><marker id="pmfrec-arw" markerWidth="9" markerHeight="7" refX="9" refY="3.5" orient="auto"><path d="M0,0 L0,7 L9,3.5 z" fill="var(--dg-line)"/></marker></defs>
+  <rect x="0" y="0" width="720" height="268" fill="var(--dg-bg)" rx="10"/>
+  <rect x="20" y="40" width="200" height="56" rx="8" fill="var(--dg-b-soft)" stroke="var(--dg-b)" stroke-width="1.5"/>
+  <text x="120" y="66" text-anchor="middle" font-size="13" font-weight="600" fill="var(--dg-text)">readers.las</text>
+  <text x="120" y="84" text-anchor="middle" font-size="10.5" fill="var(--dg-muted)">tile_utm10n.laz</text>
+  <rect x="260" y="40" width="200" height="56" rx="8" fill="var(--dg-a-soft)" stroke="var(--dg-a)" stroke-width="1.5"/>
+  <text x="360" y="66" text-anchor="middle" font-size="13" font-weight="600" fill="var(--dg-text)">filters.outlier</text>
+  <text x="360" y="84" text-anchor="middle" font-size="10.5" fill="var(--dg-muted)">mean_k 12 · multiplier 2.5</text>
+  <rect x="500" y="40" width="200" height="56" rx="8" fill="var(--dg-a-soft)" stroke="var(--dg-a)" stroke-width="1.5"/>
+  <text x="600" y="66" text-anchor="middle" font-size="13" font-weight="600" fill="var(--dg-text)">filters.range</text>
+  <text x="600" y="84" text-anchor="middle" font-size="10.5" fill="var(--dg-muted)">drop Classification 7</text>
+  <line x1="220" y1="68" x2="254" y2="68" stroke="var(--dg-line)" stroke-width="1.6" marker-end="url(#pmfrec-arw)"/>
+  <line x1="460" y1="68" x2="494" y2="68" stroke="var(--dg-line)" stroke-width="1.6" marker-end="url(#pmfrec-arw)"/>
+  <path d="M600 96 L600 124 L120 124 L120 148" fill="none" stroke="var(--dg-line)" stroke-width="1.6" marker-end="url(#pmfrec-arw)"/>
+  <rect x="20" y="152" width="200" height="56" rx="8" fill="var(--dg-c-soft)" stroke="var(--dg-c)" stroke-width="1.5"/>
+  <text x="120" y="178" text-anchor="middle" font-size="13" font-weight="600" fill="var(--dg-text)">filters.pmf</text>
+  <text x="120" y="196" text-anchor="middle" font-size="10.5" fill="var(--dg-muted)">window 27 · slope 0.7</text>
+  <rect x="260" y="152" width="200" height="56" rx="8" fill="var(--dg-a-soft)" stroke="var(--dg-a)" stroke-width="1.5"/>
+  <text x="360" y="178" text-anchor="middle" font-size="13" font-weight="600" fill="var(--dg-text)">filters.range</text>
+  <text x="360" y="196" text-anchor="middle" font-size="10.5" fill="var(--dg-muted)">keep Classification 2</text>
+  <rect x="500" y="152" width="200" height="56" rx="8" fill="var(--dg-d-soft)" stroke="var(--dg-d)" stroke-width="1.5"/>
+  <text x="600" y="178" text-anchor="middle" font-size="13" font-weight="600" fill="var(--dg-text)">writers.las</text>
+  <text x="600" y="196" text-anchor="middle" font-size="10.5" fill="var(--dg-muted)">ground_only.las</text>
+  <line x1="220" y1="180" x2="254" y2="180" stroke="var(--dg-line)" stroke-width="1.6" marker-end="url(#pmfrec-arw)"/>
+  <line x1="460" y1="180" x2="494" y2="180" stroke="var(--dg-line)" stroke-width="1.6" marker-end="url(#pmfrec-arw)"/>
+  <rect x="20" y="224" width="680" height="32" rx="8" fill="var(--dg-surface)" stroke="var(--dg-line-soft)" stroke-width="1"/>
+  <text x="36" y="245" font-size="11" fill="var(--dg-muted)">point set: all returns → noise flagged 7 → noise dropped → ground stamped 2 → ground only</text>
+</svg>
+
 ## Prerequisites and Assumptions
 
 | Requirement | Detail |
@@ -162,6 +194,30 @@ Finish with a writer that forwards all dimensions so the Classification survives
   "forward": "all"
 }
 ```
+
+<svg viewBox="0 0 720 258" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Growing PMF window sizes with the height threshold each pass allows" style="width:100%;max-width:720px;display:block;margin:1.6rem auto">
+  <title>The PMF window and threshold schedule, pass by pass</title>
+  <desc>Five squares of increasing size sit on a baseline, representing the morphological window at each pass: three by three, five by five, nine by nine, seventeen by seventeen and twenty-seven by twenty-seven cells. Beneath each square is the elevation-difference threshold that pass allows, rising from 0.20 m to 2.50 m. A dashed line across the top marks the max_distance clamp that stops the threshold growing further.</desc>
+  <rect x="0" y="0" width="720" height="258" fill="var(--dg-bg)" rx="10"/>
+  <line x1="30" y1="58" x2="700" y2="58" stroke="var(--dg-e)" stroke-width="1.4" stroke-dasharray="6 4"/>
+  <text x="34" y="50" font-size="11" fill="var(--dg-e)">max_distance 2.5 m — threshold clamp</text>
+  <line x1="30" y1="196" x2="700" y2="196" stroke="var(--dg-line)" stroke-width="1.4"/>
+  <rect x="81" y="178" width="18" height="18" fill="var(--dg-a-soft)" stroke="var(--dg-a)" stroke-width="1.4"/>
+  <rect x="185" y="166" width="30" height="30" fill="var(--dg-a-soft)" stroke="var(--dg-a)" stroke-width="1.4"/>
+  <rect x="295" y="146" width="50" height="50" fill="var(--dg-a-soft)" stroke="var(--dg-a)" stroke-width="1.4"/>
+  <rect x="428" y="112" width="84" height="84" fill="var(--dg-a-soft)" stroke="var(--dg-a)" stroke-width="1.4"/>
+  <rect x="570" y="76" width="120" height="120" fill="var(--dg-a-soft)" stroke="var(--dg-a)" stroke-width="1.4"/>
+  <text x="90" y="214" text-anchor="middle" font-size="11.5" font-weight="600" fill="var(--dg-text)">3×3</text>
+  <text x="200" y="214" text-anchor="middle" font-size="11.5" font-weight="600" fill="var(--dg-text)">5×5</text>
+  <text x="320" y="214" text-anchor="middle" font-size="11.5" font-weight="600" fill="var(--dg-text)">9×9</text>
+  <text x="470" y="214" text-anchor="middle" font-size="11.5" font-weight="600" fill="var(--dg-text)">17×17</text>
+  <text x="630" y="214" text-anchor="middle" font-size="11.5" font-weight="600" fill="var(--dg-text)">27×27</text>
+  <text x="90" y="232" text-anchor="middle" font-size="10.5" fill="var(--dg-muted)">dh 0.20 m</text>
+  <text x="200" y="232" text-anchor="middle" font-size="10.5" fill="var(--dg-muted)">dh 0.35 m</text>
+  <text x="320" y="232" text-anchor="middle" font-size="10.5" fill="var(--dg-muted)">dh 0.62 m</text>
+  <text x="470" y="232" text-anchor="middle" font-size="10.5" fill="var(--dg-muted)">dh 1.30 m</text>
+  <text x="630" y="232" text-anchor="middle" font-size="10.5" fill="var(--dg-muted)">dh 2.50 m</text>
+</svg>
 
 ## Complete Working Example
 
@@ -267,6 +323,25 @@ if __name__ == "__main__":
 ```
 
 Because the final stage keeps only Classification 2, `p.execute()` returns the ground count directly, and `p.arrays[0]` holds just the bare-earth returns — convenient for an immediate Z-range sanity check.
+
+<svg viewBox="0 0 720 206" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Classification counts before and after a PMF run on a suburban tile" style="width:100%;max-width:720px;display:block;margin:1.6rem auto">
+  <title>What the classification histogram looks like after PMF</title>
+  <desc>Two horizontal bars. Before the run every point carries Classification 0, unclassified. After the run the same 18.4 million points split into roughly 38 percent ground class 2, 2 percent noise class 7, and 60 percent unclassified class 1.</desc>
+  <rect x="0" y="0" width="720" height="206" fill="var(--dg-bg)" rx="10"/>
+  <text x="140" y="26" font-size="11" fill="var(--dg-muted)">Classification counts — 18.4 M point suburban tile</text>
+  <text x="126" y="72" text-anchor="end" font-size="12" font-weight="600" fill="var(--dg-text)">before</text>
+  <rect x="140" y="44" width="560" height="46" rx="5" fill="var(--dg-surface-2)" stroke="var(--dg-line-soft)" stroke-width="1.2"/>
+  <text x="420" y="72" text-anchor="middle" font-size="11.5" fill="var(--dg-text)">Classification 0 — every point unclassified</text>
+  <text x="126" y="146" text-anchor="end" font-size="12" font-weight="600" fill="var(--dg-text)">after</text>
+  <rect x="140" y="118" width="213" height="46" rx="5" fill="var(--dg-d-soft)" stroke="var(--dg-d)" stroke-width="1.2"/>
+  <text x="246" y="146" text-anchor="middle" font-size="11.5" fill="var(--dg-text)">2 — ground, 38%</text>
+  <rect x="353" y="118" width="11" height="46" fill="var(--dg-e-soft)" stroke="var(--dg-e)" stroke-width="1.2"/>
+  <rect x="364" y="118" width="336" height="46" rx="5" fill="var(--dg-a-soft)" stroke="var(--dg-a)" stroke-width="1.2"/>
+  <text x="532" y="146" text-anchor="middle" font-size="11.5" fill="var(--dg-text)">1 — unclassified, 60%</text>
+  <path d="M358 118 L358 102 L300 102" fill="none" stroke="var(--dg-e)" stroke-width="1.2"/>
+  <text x="294" y="106" text-anchor="end" font-size="10.5" fill="var(--dg-e)">7 — noise, 2%</text>
+  <text x="140" y="188" font-size="10.5" fill="var(--dg-muted)">a ground fraction of 25–55% is typical for suburban tiles; far outside that, re-check slope and window</text>
+</svg>
 
 ## Key Parameter Table
 

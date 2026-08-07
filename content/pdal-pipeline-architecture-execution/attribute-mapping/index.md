@@ -67,9 +67,10 @@ Raw LiDAR sensor output almost never matches the dimensional schema your downstr
 
 ---
 
-<svg viewBox="0 0 760 240" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Attribute mapping data-flow: raw LAS input flows through schema inspection, filters.assign transformation, and validated output with custom dimensions" style="width:100%;max-width:760px;display:block;margin:1.5rem auto;">
+<svg viewBox="-12 -12 780 216" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Attribute mapping data-flow: raw LAS input flows through schema inspection, filters.assign transformation, and validated output with custom dimensions" style="width:100%;max-width:760px;display:block;margin:1.5rem auto;">
   <title>Attribute Mapping Pipeline Data-Flow</title>
   <desc>Four-stage left-to-right flow diagram. Stage 1: readers.las reads raw input and declares extra_dims. Stage 2: Schema inspect audits dtype names, type and range. Stage 3: filters.assign computes static and derived dimensions with type casting. Stage 4: writers.las persists extra_dims to validated output. Numbered arrows connect each stage.</desc>
+  <rect x="-12" y="-12" width="780" height="216" fill="var(--dg-bg)" rx="10"/>
   <defs>
     <marker id="am-arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
       <polygon points="0 0, 8 3, 0 6" fill="currentColor" opacity="0.6"/>
@@ -300,6 +301,48 @@ if __name__ == "__main__":
     print(json.dumps(result, indent=2, default=str))
 ```
 
+<svg viewBox="0 0 720 250" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="The dimensions a point carries through a pipeline, with type and width" style="width:100%;max-width:720px;display:block;margin:1.6rem auto">
+  <title>What one point actually weighs</title>
+  <desc>Each block is one dimension in the point layout: the three coordinates as doubles, intensity as a sixteen-bit integer, classification and return number as single bytes, GPS time as a double, and one custom float added by a filter. The widths add up to the per-point memory cost, and a custom dimension is exactly as expensive as its type.</desc>
+  <rect x="0" y="0" width="720" height="250" fill="var(--dg-bg)" rx="10"/>
+  <rect x="24" y="70" width="94" height="60" rx="5" fill="var(--dg-b-soft)" stroke="var(--dg-b)" stroke-width="1.3"/>
+  <text x="71" y="96" text-anchor="middle" font-size="10" fill="var(--dg-text)">X</text>
+  <text x="71" y="114" text-anchor="middle" font-size="9.5" fill="var(--dg-muted)">double</text>
+  <text x="71" y="148" text-anchor="middle" font-size="10" fill="var(--dg-muted)">8 B</text>
+  <rect x="125" y="70" width="94" height="60" rx="5" fill="var(--dg-b-soft)" stroke="var(--dg-b)" stroke-width="1.3"/>
+  <text x="172" y="96" text-anchor="middle" font-size="10" fill="var(--dg-text)">Y</text>
+  <text x="172" y="114" text-anchor="middle" font-size="9.5" fill="var(--dg-muted)">double</text>
+  <text x="172" y="148" text-anchor="middle" font-size="10" fill="var(--dg-muted)">8 B</text>
+  <rect x="226" y="70" width="94" height="60" rx="5" fill="var(--dg-b-soft)" stroke="var(--dg-b)" stroke-width="1.3"/>
+  <text x="273" y="96" text-anchor="middle" font-size="10" fill="var(--dg-text)">Z</text>
+  <text x="273" y="114" text-anchor="middle" font-size="9.5" fill="var(--dg-muted)">double</text>
+  <text x="273" y="148" text-anchor="middle" font-size="10" fill="var(--dg-muted)">8 B</text>
+  <rect x="327" y="70" width="58" height="60" rx="5" fill="var(--dg-a-soft)" stroke="var(--dg-a)" stroke-width="1.3"/>
+  <text x="356" y="96" text-anchor="middle" font-size="10" fill="var(--dg-text)">Intens</text>
+  <text x="356" y="114" text-anchor="middle" font-size="9.5" fill="var(--dg-muted)">uint16</text>
+  <text x="356" y="148" text-anchor="middle" font-size="10" fill="var(--dg-muted)">2 B</text>
+  <rect x="392" y="70" width="58" height="60" rx="5" fill="var(--dg-a-soft)" stroke="var(--dg-a)" stroke-width="1.3"/>
+  <text x="421" y="96" text-anchor="middle" font-size="10" fill="var(--dg-text)">Class</text>
+  <text x="421" y="114" text-anchor="middle" font-size="9.5" fill="var(--dg-muted)">uint8</text>
+  <text x="421" y="148" text-anchor="middle" font-size="10" fill="var(--dg-muted)">1 B</text>
+  <rect x="457" y="70" width="58" height="60" rx="5" fill="var(--dg-a-soft)" stroke="var(--dg-a)" stroke-width="1.3"/>
+  <text x="486" y="96" text-anchor="middle" font-size="10" fill="var(--dg-text)">Return</text>
+  <text x="486" y="114" text-anchor="middle" font-size="9.5" fill="var(--dg-muted)">uint8</text>
+  <text x="486" y="148" text-anchor="middle" font-size="10" fill="var(--dg-muted)">1 B</text>
+  <rect x="522" y="70" width="94" height="60" rx="5" fill="var(--dg-c-soft)" stroke="var(--dg-c)" stroke-width="1.3"/>
+  <text x="569" y="96" text-anchor="middle" font-size="10" fill="var(--dg-text)">GpsTime</text>
+  <text x="569" y="114" text-anchor="middle" font-size="9.5" fill="var(--dg-muted)">double</text>
+  <text x="569" y="148" text-anchor="middle" font-size="10" fill="var(--dg-muted)">8 B</text>
+  <rect x="623" y="70" width="62" height="60" rx="5" fill="var(--dg-d-soft)" stroke="var(--dg-d)" stroke-width="1.3"/>
+  <text x="654" y="96" text-anchor="middle" font-size="10" fill="var(--dg-text)">Amplitude</text>
+  <text x="654" y="114" text-anchor="middle" font-size="9.5" fill="var(--dg-muted)">float</text>
+  <text x="654" y="148" text-anchor="middle" font-size="10" fill="var(--dg-muted)">4 B</text>
+  <text x="24" y="48" font-size="10.5" fill="var(--dg-muted)">one point’s layout — PDAL keeps every dimension for every point in the view</text>
+  <line x1="24" y1="176" x2="685" y2="176" stroke="var(--dg-line)" stroke-width="1.4"/>
+  <text x="24" y="200" font-size="11" fill="var(--dg-text)">40 bytes per point · 18.4 M points · 736 MB before a single filter allocates its own view</text>
+  <text x="24" y="226" font-size="10.5" fill="var(--dg-muted)">dropping dimensions you do not need is the cheapest memory saving in a PDAL pipeline</text>
+</svg>
+
 ## Code Breakdown
 
 ### Reader with `extra_dims`
@@ -395,6 +438,29 @@ def get_crs_wkt(path: str) -> str:
 
 assert "EPSG:32610" in get_crs_wkt("/data/lidar/urban_scan_mapped.laz")
 ```
+
+<svg viewBox="0 0 720 240" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Output file size as extra dimensions are added to a LAS writer" style="width:100%;max-width:720px;display:block;margin:1.6rem auto">
+  <title>What each extra dimension costs on disk</title>
+  <desc>Output size for one 18.4 million point tile as extra dimensions are appended. The base LAS 1.4 point record is 34 bytes; every four-byte float added through extra_dims adds about 74 megabytes to the file, so eight of them nearly double it.</desc>
+  <rect x="0" y="0" width="720" height="240" fill="var(--dg-bg)" rx="10"/>
+  <rect x="190" y="56" width="245" height="26" rx="4" fill="var(--dg-a-soft)" stroke="var(--dg-a)" stroke-width="1.3"/>
+  <text x="180" y="74" text-anchor="end" font-size="11" fill="var(--dg-text)">none</text>
+  <text x="443" y="74" font-size="10.5" fill="var(--dg-muted)">626 MB</text>
+  <rect x="190" y="90" width="269" height="26" rx="4" fill="var(--dg-a-soft)" stroke="var(--dg-a)" stroke-width="1.3"/>
+  <text x="180" y="108" text-anchor="end" font-size="11" fill="var(--dg-text)">+ Amplitude</text>
+  <text x="467" y="108" font-size="10.5" fill="var(--dg-muted)">700 MB</text>
+  <rect x="190" y="124" width="294" height="26" rx="4" fill="var(--dg-a-soft)" stroke="var(--dg-a)" stroke-width="1.3"/>
+  <text x="180" y="142" text-anchor="end" font-size="11" fill="var(--dg-text)">+ Deviation</text>
+  <text x="492" y="142" font-size="10.5" fill="var(--dg-muted)">774 MB</text>
+  <rect x="190" y="158" width="343" height="26" rx="4" fill="var(--dg-a-soft)" stroke="var(--dg-a)" stroke-width="1.3"/>
+  <text x="180" y="176" text-anchor="end" font-size="11" fill="var(--dg-text)">+ 4 floats</text>
+  <text x="541" y="176" font-size="10.5" fill="var(--dg-muted)">922 MB</text>
+  <rect x="190" y="192" width="441" height="26" rx="4" fill="var(--dg-a-soft)" stroke="var(--dg-a)" stroke-width="1.3"/>
+  <text x="180" y="210" text-anchor="end" font-size="11" fill="var(--dg-text)">+ 8 floats</text>
+  <text x="639" y="210" font-size="10.5" fill="var(--dg-muted)">1218 MB</text>
+  <text x="190" y="38" font-size="10.5" fill="var(--dg-muted)">LAS 1.4 output, 18.4 M points, uncompressed</text>
+  <text x="60" y="234" font-size="10.5" fill="var(--dg-muted)">"extra_dims": "all" is convenient and expensive — name the dimensions you actually need downstream</text>
+</svg>
 
 ## Performance Tuning
 

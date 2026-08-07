@@ -25,6 +25,13 @@ eleventyExcludeFromCollections: true
           <strong>Ground &amp; Terrain Models</strong> for SMRF/PMF filtering and DTM/DSM rasters, and
           <strong>Batch &amp; Cloud Automation</strong> for containerised, S3-backed, orchestrated pipelines.
         </p>
+        <p class="hero__lede">
+          Newest here: <a href="{{ site.url }}/pdal-pipeline-architecture-execution/streaming-mode-execution/">streaming-mode execution</a>
+          for tiles larger than the machine, <a href="{{ site.url }}/pdal-pipeline-architecture-execution/programmable-python-filters/">programmable Python filters</a>
+          when no stage does what you need, <a href="{{ site.url }}/point-cloud-data-standards-fundamentals/copc-and-cloud-native-formats/">COPC and cloud-native formats</a>,
+          <a href="{{ site.url }}/ground-filtering-dtm-dsm-generation/canopy-height-models/">canopy height models</a>, and
+          <a href="{{ site.url }}/batch-automation-cloud-integration/tile-indexing-and-merging/">tile indexing, buffering and merging</a>.
+        </p>
         <div class="hero__cta">
           <a class="cta cta--primary" href="{{ site.url }}/pdal-pipeline-architecture-execution/">
             <span class="cta__icon">{% icon "layers", 20 %}</span>
@@ -49,11 +56,13 @@ eleventyExcludeFromCollections: true
         <h3>Focus areas</h3>
         <ul>
           <li>PDAL pipeline design</li>
+          <li>Streaming execution</li>
           <li>Ground filtering</li>
-          <li>Classification</li>
+          <li>Canopy height models</li>
           <li>DTM &amp; DSM generation</li>
+          <li>COPC &amp; cloud formats</li>
+          <li>Tile indexing</li>
           <li>Batch automation</li>
-          <li>Cloud integration</li>
           <li>Pipeline validation</li>
           <li>QC &amp; metadata</li>
         </ul>
@@ -117,6 +126,30 @@ eleventyExcludeFromCollections: true
         <p class="card__blurb">Pin a reproducible PDAL toolchain in a container, mount tiles, and run pipeline JSON with the official image — the foundation for AWS Batch and Airflow fan-out.</p>
         <div class="card__chips"><span class="chip">Docker</span><span class="chip">reproducible</span></div>
       </a>
+      <a class="card" href="{{ site.url }}/pdal-pipeline-architecture-execution/streaming-mode-execution/running-a-pdal-pipeline-in-streaming-mode/">
+        <span class="card__icon">{% sectionIcon "pdal-pipeline-architecture-execution", 24 %}</span>
+        <h3 class="card__title">Running a PDAL Pipeline in Streaming Mode</h3>
+        <p class="card__blurb">Bound peak memory by the chunk size instead of the file size, then prove it — the change that lets a 6 GB tile run on a 4 GB worker.</p>
+        <div class="card__chips"><span class="chip">streaming</span><span class="chip">memory</span></div>
+      </a>
+      <a class="card" href="{{ site.url }}/ground-filtering-dtm-dsm-generation/canopy-height-models/computing-height-above-ground-with-filters-hag-nn/">
+        <span class="card__icon">{% sectionIcon "ground-filtering-dtm-dsm-generation", 24 %}</span>
+        <h3 class="card__title">Computing Height Above Ground with filters.hag_nn</h3>
+        <p class="card__blurb">Per-point canopy heights from a classified cloud, the count and max_distance settings that matter, and the ground-at-zero check that catches a bad classification.</p>
+        <div class="card__chips"><span class="chip">canopy height</span><span class="chip">hag_nn</span></div>
+      </a>
+      <a class="card" href="{{ site.url }}/point-cloud-data-standards-fundamentals/copc-and-cloud-native-formats/converting-laz-tiles-to-copc-with-pdal/">
+        <span class="card__icon">{% sectionIcon "point-cloud-data-standards-fundamentals", 24 %}</span>
+        <h3 class="card__title">Converting LAZ Tiles to COPC with PDAL</h3>
+        <p class="card__blurb">Merge tiles into indexed cloud-native objects a browser can read over range requests — and the four checks to pass before deleting the source.</p>
+        <div class="card__chips"><span class="chip">COPC</span><span class="chip">cloud-native</span></div>
+      </a>
+      <a class="card" href="{{ site.url }}/batch-automation-cloud-integration/tile-indexing-and-merging/buffered-tiling-to-avoid-edge-artefacts/">
+        <span class="card__icon">{% sectionIcon "batch-automation-cloud-integration", 24 %}</span>
+        <h3 class="card__title">Buffered Tiling to Avoid Edge Artefacts</h3>
+        <p class="card__blurb">Read the tile plus its neighbours, process the buffered extent, write only the nominal one — the pattern behind every seamless tiled LiDAR product.</p>
+        <div class="card__chips"><span class="chip">tiling</span><span class="chip">seams</span></div>
+      </a>
     </div>
   </div>
 </section>
@@ -125,7 +158,7 @@ eleventyExcludeFromCollections: true
   <div class="container">
     <div class="section__head">
       <h2>What you'll find here</h2>
-      <p>Two tracks of practical, code-first material aimed at production teams working with airborne, terrestrial, and mobile LiDAR.</p>
+      <p>Four tracks of practical, code-first material aimed at production teams working with airborne, terrestrial, and mobile LiDAR.</p>
     </div>
 
     <div class="cards">

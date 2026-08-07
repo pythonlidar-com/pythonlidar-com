@@ -82,6 +82,7 @@ Getting this right matters beyond aesthetics. A mismatched [coordinate reference
 <svg viewBox="0 0 760 280" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="PDAL UTM to WGS84 reprojection data flow with PROJ datum lookup" style="width:100%;max-width:760px;display:block;margin:1.5rem auto;">
   <title>UTM to WGS84 reprojection pipeline stage flow with PROJ datum grid lookup</title>
   <desc>Four boxes connected by arrows: readers.las reading EPSG:32618 UTM input, then filters.reprojection which calls out to the PROJ datum grid for the inverse UTM projection, then writers.las writing EPSG:4326 WGS84 output with an updated WKT2 VLR in the header. A separate annotation shows that Z values are passed through unchanged unless a compound CRS is used.</desc>
+  <rect x="0" y="0" width="760" height="280" fill="var(--dg-bg)" rx="10"/>
   <defs>
     <marker id="utm-arr" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto">
       <path d="M0,0 L0,6 L8,3 z" fill="currentColor"/>
@@ -284,6 +285,28 @@ def reproject_utm_to_wgs84_laspy(
     print(f"Transformed {len(las.x):,} points to EPSG:4326.")
 ```
 
+<svg viewBox="0 0 720 252" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="A survey tile straddling the boundary between UTM zones 17 and 18" style="width:100%;max-width:720px;display:block;margin:1.6rem auto">
+  <title>A tile that straddles a UTM zone boundary</title>
+  <desc>Three UTM zone strips side by side, each with its central meridian marked. A survey tile sits across the 78 degree west boundary between zone 17 and zone 18, so half of it has easting values from one zone and half from the other. Written into a single LAS file the two halves are separated by hundreds of kilometres of false easting.</desc>
+  <rect x="0" y="0" width="720" height="252" fill="var(--dg-bg)" rx="10"/>
+  <rect x="60" y="54" width="180" height="140" fill="var(--dg-a-soft)" stroke="var(--dg-a)" stroke-width="1.2"/>
+  <rect x="240" y="54" width="180" height="140" fill="var(--dg-b-soft)" stroke="var(--dg-b)" stroke-width="1.2"/>
+  <rect x="420" y="54" width="180" height="140" fill="var(--dg-a-soft)" stroke="var(--dg-a)" stroke-width="1.2"/>
+  <line x1="150" y1="54" x2="150" y2="194" stroke="var(--dg-line)" stroke-width="1.2" stroke-dasharray="5 4"/>
+  <line x1="330" y1="54" x2="330" y2="194" stroke="var(--dg-line)" stroke-width="1.2" stroke-dasharray="5 4"/>
+  <line x1="510" y1="54" x2="510" y2="194" stroke="var(--dg-line)" stroke-width="1.2" stroke-dasharray="5 4"/>
+  <text x="150" y="44" text-anchor="middle" font-size="11" fill="var(--dg-text)">zone 16 · 87°W</text>
+  <text x="330" y="44" text-anchor="middle" font-size="11" fill="var(--dg-text)">zone 17 · 81°W</text>
+  <text x="510" y="44" text-anchor="middle" font-size="11" fill="var(--dg-text)">zone 18 · 75°W</text>
+  <polygon points="362,92 414,92 414,156 362,156" fill="var(--dg-c-soft)" stroke="var(--dg-c)" stroke-width="2"/>
+  <polygon points="426,92 478,92 478,156 426,156" fill="var(--dg-c-soft)" stroke="var(--dg-c)" stroke-width="2"/>
+  <line x1="420" y1="54" x2="420" y2="194" stroke="var(--dg-c)" stroke-width="2.4"/>
+  <text x="388" y="128" text-anchor="middle" font-size="10.5" font-weight="600" fill="var(--dg-text)">west</text>
+  <text x="452" y="128" text-anchor="middle" font-size="10.5" font-weight="600" fill="var(--dg-text)">east</text>
+  <text x="420" y="216" text-anchor="middle" font-size="10.5" fill="var(--dg-c)">one survey tile, split by the 78°W zone boundary</text>
+  <text x="60" y="240" font-size="10.5" fill="var(--dg-muted)">reproject the whole campaign to one zone, or to a state plane or national grid that covers it, before merging tiles</text>
+</svg>
+
 ## Complete Working Example
 
 The following script can be copied, saved as `reproject_utm_wgs84.py`, and run against any LAS/LAZ file in UTM. It wires together the PDAL pipeline approach, verification, and coordinate range assertion in a single executable module.
@@ -455,6 +478,40 @@ pts = p.arrays[0]
 assert pts["X"].min() > -180 and pts["X"].max() < 180, "X outside WGS84 longitude range"
 assert pts["Y"].min() >  -90 and pts["Y"].max() <  90, "Y outside WGS84 latitude range"
 ```
+
+<svg viewBox="0 0 720 236" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="The same scale value applied to metres and to degrees, and the grid each one snaps coordinates to" style="width:100%;max-width:720px;display:block;margin:1.6rem auto">
+  <title>A scale of 0.001 means millimetres, or 111 metres</title>
+  <desc>Two rulers. With eastings in metres, a scale of 0.001 stores coordinates to the millimetre. With the same scale applied after reprojecting to degrees, one unit is a thousandth of a degree — about 111 metres — so every point in the tile snaps onto a grid coarser than the tile itself.</desc>
+  <rect x="0" y="0" width="720" height="236" fill="var(--dg-bg)" rx="10"/>
+  <rect x="20" y="46" width="330" height="112" rx="8" fill="var(--dg-surface)" stroke="var(--dg-line-soft)" stroke-width="1.2"/>
+  <text x="185" y="74" text-anchor="middle" font-size="11.5" font-weight="600" fill="var(--dg-text)">EPSG:32617 — metres</text>
+  <text x="185" y="94" text-anchor="middle" font-size="10.5" fill="var(--dg-muted)">scale 0.001, offset 500000</text>
+  <line x1="56" y1="120" x2="322" y2="120" stroke="var(--dg-line)" stroke-width="1.4"/>
+  <line x1="56" y1="112" x2="56" y2="128" stroke="var(--dg-b)" stroke-width="1.6"/>
+  <line x1="94" y1="112" x2="94" y2="128" stroke="var(--dg-b)" stroke-width="1.6"/>
+  <line x1="132" y1="112" x2="132" y2="128" stroke="var(--dg-b)" stroke-width="1.6"/>
+  <line x1="170" y1="112" x2="170" y2="128" stroke="var(--dg-b)" stroke-width="1.6"/>
+  <line x1="208" y1="112" x2="208" y2="128" stroke="var(--dg-b)" stroke-width="1.6"/>
+  <line x1="246" y1="112" x2="246" y2="128" stroke="var(--dg-b)" stroke-width="1.6"/>
+  <line x1="284" y1="112" x2="284" y2="128" stroke="var(--dg-b)" stroke-width="1.6"/>
+  <line x1="322" y1="112" x2="322" y2="128" stroke="var(--dg-b)" stroke-width="1.6"/>
+  <text x="185" y="148" text-anchor="middle" font-size="10.5" fill="var(--dg-b)">1 mm between storable values</text>
+  <rect x="370" y="46" width="330" height="112" rx="8" fill="var(--dg-surface)" stroke="var(--dg-line-soft)" stroke-width="1.2"/>
+  <text x="535" y="74" text-anchor="middle" font-size="11.5" font-weight="600" fill="var(--dg-text)">EPSG:4326 — degrees</text>
+  <text x="535" y="94" text-anchor="middle" font-size="10.5" fill="var(--dg-muted)">scale 0.001, offset 0</text>
+  <line x1="406" y1="120" x2="672" y2="120" stroke="var(--dg-line)" stroke-width="1.4"/>
+  <line x1="406" y1="112" x2="406" y2="128" stroke="var(--dg-e)" stroke-width="1.6"/>
+  <line x1="444" y1="112" x2="444" y2="128" stroke="var(--dg-e)" stroke-width="1.6"/>
+  <line x1="482" y1="112" x2="482" y2="128" stroke="var(--dg-e)" stroke-width="1.6"/>
+  <line x1="520" y1="112" x2="520" y2="128" stroke="var(--dg-e)" stroke-width="1.6"/>
+  <line x1="558" y1="112" x2="558" y2="128" stroke="var(--dg-e)" stroke-width="1.6"/>
+  <line x1="596" y1="112" x2="596" y2="128" stroke="var(--dg-e)" stroke-width="1.6"/>
+  <line x1="634" y1="112" x2="634" y2="128" stroke="var(--dg-e)" stroke-width="1.6"/>
+  <line x1="672" y1="112" x2="672" y2="128" stroke="var(--dg-e)" stroke-width="1.6"/>
+  <text x="535" y="148" text-anchor="middle" font-size="10.5" fill="var(--dg-e)">111 m between storable values</text>
+  <text x="20" y="186" font-size="10.5" fill="var(--dg-muted)">the fix is to set the writer explicitly: "scale_x": 1e-7, "scale_y": 1e-7 when the output CRS is geographic,</text>
+  <text x="20" y="206" font-size="10.5" fill="var(--dg-muted)">which restores roughly 1 cm resolution — and to leave scale_z in metres, because the vertical axis did not change units.</text>
+</svg>
 
 ## Gotchas and Edge Cases
 

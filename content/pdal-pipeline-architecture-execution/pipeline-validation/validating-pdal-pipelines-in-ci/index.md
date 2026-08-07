@@ -80,6 +80,7 @@ A pipeline JSON file is code, but it rarely gets treated like code. It sits in a
 <svg viewBox="0 0 760 250" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="CI workflow gating a pull request on static PDAL validation and a sample-tile execution test" style="width:100%;max-width:760px;display:block;margin:1.5rem auto;">
   <title>CI gate: static validate plus fixture-tile execution test before merge</title>
   <desc>A pull request feeds into a pinned PDAL container. Inside the container two gates run in sequence: gate one is pdal pipeline --validate over every JSON file; gate two is a pytest that executes each pipeline against a tiny committed fixture tile and asserts point count and dimensions. If either gate fails the merge is blocked; if both pass the pull request merges to the main branch.</desc>
+  <rect x="0" y="0" width="760" height="250" fill="var(--dg-bg)" rx="10"/>
   <defs>
     <marker id="ci-arr" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto">
       <path d="M0,0 L0,6 L8,3 z" fill="currentColor"/>
@@ -250,6 +251,32 @@ jobs:
 
 Pinning to `pdal/pdal:2.6` rather than `latest` is the difference between a reproducible gate and one that drifts silently as the base image updates. See [Running PDAL Pipelines in Docker](https://www.pythonlidar.com/batch-automation-cloud-integration/pdal-docker-containers/running-pdal-pipelines-in-docker/) for how to build a matching production image from the same tag, and [PDAL Docker Containers](https://www.pythonlidar.com/batch-automation-cloud-integration/pdal-docker-containers/) for image selection.
 
+<svg viewBox="0 0 720 292" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="A small fixture tile and the assertions a CI run makes about its output" style="width:100%;max-width:720px;display:block;margin:1.6rem auto">
+  <title>What a fixture tile has to be small enough to do</title>
+  <desc>A 40,000 point fixture tile, about 900 kilobytes, committed alongside the pipeline. Six assertions run against the output: the point counts in and out, the ground fraction within a tolerance, the output CRS, the absence of unclassified points, and the elevation range. Together they take nine seconds and catch every regression that changes what the pipeline produces.</desc>
+  <rect x="0" y="0" width="720" height="292" fill="var(--dg-bg)" rx="10"/>
+  <rect x="20" y="52" width="230" height="150" rx="8" fill="var(--dg-b-soft)" stroke="var(--dg-b)" stroke-width="1.4"/>
+  <text x="135" y="82" text-anchor="middle" font-size="12" font-weight="600" fill="var(--dg-text)">fixture.laz</text>
+  <text x="135" y="106" text-anchor="middle" font-size="10.5" fill="var(--dg-muted)">40,000 points · 900 KB</text>
+  <text x="135" y="128" text-anchor="middle" font-size="10.5" fill="var(--dg-muted)">one building, one tree stand,</text>
+  <text x="135" y="146" text-anchor="middle" font-size="10.5" fill="var(--dg-muted)">one slope, one noise point</text>
+  <text x="135" y="176" text-anchor="middle" font-size="10.5" fill="var(--dg-muted)">committed to the repo,</text>
+  <text x="135" y="192" text-anchor="middle" font-size="10.5" fill="var(--dg-muted)">never regenerated</text>
+  <rect x="300" y="46" width="390" height="28" rx="5" fill="var(--dg-surface)" stroke="var(--dg-line-soft)" stroke-width="1"/>
+  <text x="314" y="65" font-size="11" fill="var(--dg-text)">point count in == 40,000</text>
+  <rect x="300" y="80" width="390" height="28" rx="5" fill="var(--dg-surface)" stroke="var(--dg-line-soft)" stroke-width="1"/>
+  <text x="314" y="99" font-size="11" fill="var(--dg-text)">point count out == 38,412</text>
+  <rect x="300" y="114" width="390" height="28" rx="5" fill="var(--dg-surface)" stroke="var(--dg-line-soft)" stroke-width="1"/>
+  <text x="314" y="133" font-size="11" fill="var(--dg-text)">ground fraction 0.31 ± 0.02</text>
+  <rect x="300" y="148" width="390" height="28" rx="5" fill="var(--dg-surface)" stroke="var(--dg-line-soft)" stroke-width="1"/>
+  <text x="314" y="167" font-size="11" fill="var(--dg-text)">CRS out == EPSG:6318</text>
+  <rect x="300" y="182" width="390" height="28" rx="5" fill="var(--dg-surface)" stroke="var(--dg-line-soft)" stroke-width="1"/>
+  <text x="314" y="201" font-size="11" fill="var(--dg-text)">no Classification 0 remains</text>
+  <rect x="300" y="216" width="390" height="28" rx="5" fill="var(--dg-surface)" stroke="var(--dg-line-soft)" stroke-width="1"/>
+  <text x="314" y="235" font-size="11" fill="var(--dg-text)">Z range within 12.4 – 91.7 m</text>
+  <text x="20" y="274" font-size="10.5" fill="var(--dg-muted)">the fixture is only useful while it stays small — the moment a CI run takes minutes, people stop waiting for it</text>
+</svg>
+
 ## Complete Working Example
 
 The following `ci/validate_pipelines.sh` combines both gates into one script you can run locally before pushing, mirroring exactly what CI does. It fails fast on the static check and only proceeds to execution when the graph is sound.
@@ -335,6 +362,41 @@ pdal pipeline --validate /tmp/broken.json && echo "UNEXPECTED PASS" || echo "OK:
 ```
 
 For the execution gate, confirm an over-aggressive filter is caught by temporarily setting a range predicate that matches no points and checking that pytest fails on the zero-count assertion. Both negative tests belong in your test suite so the gates stay honest as PDAL versions change.
+
+<svg viewBox="0 0 720 248" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="PDAL, GDAL and PROJ versions across three environments" style="width:100%;max-width:720px;display:block;margin:1.6rem auto">
+  <title>The drift a pinned image exists to prevent</title>
+  <desc>PDAL, GDAL and PROJ versions in three places. The laptop and the CI runner agree. The production image is two PDAL minor versions and a whole PROJ major version behind, which is enough for a reprojection to resolve a different transformation and shift results by metres while every test still passes.</desc>
+  <rect x="0" y="0" width="720" height="248" fill="var(--dg-bg)" rx="10"/>
+  <text x="340" y="52" text-anchor="middle" font-size="11" fill="var(--dg-muted)">PDAL</text>
+  <text x="470" y="52" text-anchor="middle" font-size="11" fill="var(--dg-muted)">GDAL</text>
+  <text x="600" y="52" text-anchor="middle" font-size="11" fill="var(--dg-muted)">PROJ</text>
+  <rect x="20" y="62" width="240" height="38" rx="6" fill="var(--dg-surface)" stroke="var(--dg-line-soft)" stroke-width="1"/>
+  <text x="34" y="86" font-size="11.5" fill="var(--dg-text)">developer laptop</text>
+  <rect x="285" y="62" width="110" height="38" rx="6" fill="var(--dg-d-soft)" stroke="var(--dg-d)" stroke-width="1.2"/>
+  <text x="340" y="86" text-anchor="middle" font-size="11.5" fill="var(--dg-text)">2.6.3</text>
+  <rect x="415" y="62" width="110" height="38" rx="6" fill="var(--dg-d-soft)" stroke="var(--dg-d)" stroke-width="1.2"/>
+  <text x="470" y="86" text-anchor="middle" font-size="11.5" fill="var(--dg-text)">3.8.4</text>
+  <rect x="545" y="62" width="110" height="38" rx="6" fill="var(--dg-d-soft)" stroke="var(--dg-d)" stroke-width="1.2"/>
+  <text x="600" y="86" text-anchor="middle" font-size="11.5" fill="var(--dg-text)">9.3.1</text>
+  <rect x="20" y="110" width="240" height="38" rx="6" fill="var(--dg-surface)" stroke="var(--dg-line-soft)" stroke-width="1"/>
+  <text x="34" y="134" font-size="11.5" fill="var(--dg-text)">CI runner</text>
+  <rect x="285" y="110" width="110" height="38" rx="6" fill="var(--dg-d-soft)" stroke="var(--dg-d)" stroke-width="1.2"/>
+  <text x="340" y="134" text-anchor="middle" font-size="11.5" fill="var(--dg-text)">2.6.3</text>
+  <rect x="415" y="110" width="110" height="38" rx="6" fill="var(--dg-d-soft)" stroke="var(--dg-d)" stroke-width="1.2"/>
+  <text x="470" y="134" text-anchor="middle" font-size="11.5" fill="var(--dg-text)">3.8.4</text>
+  <rect x="545" y="110" width="110" height="38" rx="6" fill="var(--dg-d-soft)" stroke="var(--dg-d)" stroke-width="1.2"/>
+  <text x="600" y="134" text-anchor="middle" font-size="11.5" fill="var(--dg-text)">9.3.1</text>
+  <rect x="20" y="158" width="240" height="38" rx="6" fill="var(--dg-surface)" stroke="var(--dg-line-soft)" stroke-width="1"/>
+  <text x="34" y="182" font-size="11.5" fill="var(--dg-text)">production image</text>
+  <rect x="285" y="158" width="110" height="38" rx="6" fill="var(--dg-e-soft)" stroke="var(--dg-e)" stroke-width="1.2"/>
+  <text x="340" y="182" text-anchor="middle" font-size="11.5" fill="var(--dg-text)">2.4.3</text>
+  <rect x="415" y="158" width="110" height="38" rx="6" fill="var(--dg-e-soft)" stroke="var(--dg-e)" stroke-width="1.2"/>
+  <text x="470" y="182" text-anchor="middle" font-size="11.5" fill="var(--dg-text)">3.6.2</text>
+  <rect x="545" y="158" width="110" height="38" rx="6" fill="var(--dg-e-soft)" stroke="var(--dg-e)" stroke-width="1.2"/>
+  <text x="600" y="182" text-anchor="middle" font-size="11.5" fill="var(--dg-text)">8.2.1</text>
+  <text x="20" y="34" font-size="10.5" fill="var(--dg-muted)">the same pipeline JSON, three native stacks</text>
+  <text x="20" y="230" font-size="10.5" fill="var(--dg-muted)">print pdal --version and pyproj.datadir into the CI log, and fail the build when it does not match the pinned image</text>
+</svg>
 
 ## Gotchas and Edge Cases
 

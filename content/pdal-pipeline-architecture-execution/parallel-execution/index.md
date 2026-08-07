@@ -116,6 +116,7 @@ Parallel point cloud processing follows a fan-out / fan-in model: a coordinator 
 <svg viewBox="0 0 780 340" role="img" aria-label="Fan-out fan-in parallel PDAL workflow diagram" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:780px;display:block;margin:1.5rem auto">
   <title>Fan-out / fan-in parallel PDAL workflow</title>
   <desc>A coordinator node fans out to four independent PDAL worker processes, each processing a separate LiDAR tile, and then fans back into a single aggregation step that merges outputs.</desc>
+  <rect x="0" y="0" width="780" height="340" fill="var(--dg-bg)" rx="10"/>
   <defs>
     <marker id="arrowhead" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
       <polygon points="0 0, 8 3, 0 6" fill="currentColor" opacity="0.6"/>
@@ -294,6 +295,40 @@ if __name__ == "__main__":
     )
 ```
 
+<svg viewBox="0 0 720 258" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="OpenMP threads inside one stage beside one process per tile" style="width:100%;max-width:720px;display:block;margin:1.6rem auto">
+  <title>Two kinds of parallelism, and they multiply</title>
+  <desc>On the left one pipeline process where a single stage fans its work across four OpenMP threads. On the right four independent processes, each owning one tile and its own pipeline. Both are real parallelism, and running them together multiplies: four processes at four threads each asks for sixteen cores.</desc>
+  <rect x="0" y="0" width="720" height="258" fill="var(--dg-bg)" rx="10"/>
+  <text x="185" y="40" text-anchor="middle" font-size="12" font-weight="600" fill="var(--dg-text)">inside a stage — OMP_NUM_THREADS</text>
+  <text x="535" y="40" text-anchor="middle" font-size="12" font-weight="600" fill="var(--dg-text)">across tiles — one process each</text>
+  <rect x="20" y="52" width="330" height="150" rx="8" fill="var(--dg-surface)" stroke="var(--dg-line-soft)" stroke-width="1.2"/>
+  <rect x="40" y="66" width="290" height="34" rx="6" fill="var(--dg-a-soft)" stroke="var(--dg-a)" stroke-width="1.3"/>
+  <text x="185" y="88" text-anchor="middle" font-size="11" fill="var(--dg-text)">one pdal process · one pipeline</text>
+  <rect x="44" y="120" width="62" height="66" rx="5" fill="var(--dg-b-soft)" stroke="var(--dg-b)" stroke-width="1.2"/>
+  <text x="75" y="158" text-anchor="middle" font-size="10.5" fill="var(--dg-text)">thread 1</text>
+  <rect x="116" y="120" width="62" height="66" rx="5" fill="var(--dg-b-soft)" stroke="var(--dg-b)" stroke-width="1.2"/>
+  <text x="147" y="158" text-anchor="middle" font-size="10.5" fill="var(--dg-text)">thread 2</text>
+  <rect x="188" y="120" width="62" height="66" rx="5" fill="var(--dg-b-soft)" stroke="var(--dg-b)" stroke-width="1.2"/>
+  <text x="219" y="158" text-anchor="middle" font-size="10.5" fill="var(--dg-text)">thread 3</text>
+  <rect x="260" y="120" width="62" height="66" rx="5" fill="var(--dg-b-soft)" stroke="var(--dg-b)" stroke-width="1.2"/>
+  <text x="291" y="158" text-anchor="middle" font-size="10.5" fill="var(--dg-text)">thread 4</text>
+  <rect x="370" y="52" width="330" height="150" rx="8" fill="var(--dg-surface)" stroke="var(--dg-line-soft)" stroke-width="1.2"/>
+  <rect x="394" y="70" width="62" height="116" rx="5" fill="var(--dg-d-soft)" stroke="var(--dg-d)" stroke-width="1.2"/>
+  <text x="425" y="120" text-anchor="middle" font-size="10.5" fill="var(--dg-text)">tile 1</text>
+  <text x="425" y="140" text-anchor="middle" font-size="10" fill="var(--dg-muted)">proc</text>
+  <rect x="466" y="70" width="62" height="116" rx="5" fill="var(--dg-d-soft)" stroke="var(--dg-d)" stroke-width="1.2"/>
+  <text x="497" y="120" text-anchor="middle" font-size="10.5" fill="var(--dg-text)">tile 2</text>
+  <text x="497" y="140" text-anchor="middle" font-size="10" fill="var(--dg-muted)">proc</text>
+  <rect x="538" y="70" width="62" height="116" rx="5" fill="var(--dg-d-soft)" stroke="var(--dg-d)" stroke-width="1.2"/>
+  <text x="569" y="120" text-anchor="middle" font-size="10.5" fill="var(--dg-text)">tile 3</text>
+  <text x="569" y="140" text-anchor="middle" font-size="10" fill="var(--dg-muted)">proc</text>
+  <rect x="610" y="70" width="62" height="116" rx="5" fill="var(--dg-d-soft)" stroke="var(--dg-d)" stroke-width="1.2"/>
+  <text x="641" y="120" text-anchor="middle" font-size="10.5" fill="var(--dg-text)">tile 4</text>
+  <text x="641" y="140" text-anchor="middle" font-size="10" fill="var(--dg-muted)">proc</text>
+  <text x="20" y="228" font-size="10.5" fill="var(--dg-muted)">four processes each allowed four threads is a request for sixteen cores — on an eight-core box they fight each other</text>
+  <text x="20" y="248" font-size="10.5" fill="var(--dg-muted)">and the run gets slower, not faster. Pick one axis to scale and pin the other.</text>
+</svg>
+
 ## Code Breakdown
 
 **`build_manifest`** sorts tiles largest-first so the longest-running jobs start immediately, minimising the straggler effect where a single large tile delays the entire batch after all smaller tiles finish.
@@ -375,6 +410,29 @@ assert passed == len(tiles), "One or more output tiles failed validation"
 ```
 
 A bounding-box check can catch silent coordinate corruption: compare the union of all output bounding boxes against the known survey extent. Use `pipeline.metadata["metadata"]["readers.las"][0]["bounds"]` for each tile — it returns an object with `minx`, `miny`, `maxx`, `maxy` keys. See [pipeline validation](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/pipeline-validation/) for systematic schema and metadata verification patterns.
+
+<svg viewBox="0 0 720 258" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Measured speedup against worker count, with the ideal line for comparison" style="width:100%;max-width:720px;display:block;margin:1.6rem auto">
+  <title>Where tile-level parallelism stops paying</title>
+  <desc>Speedup against the number of worker processes on an eight-core machine. The ideal line rises one for one. The measured curve tracks it to about six workers, reaches roughly 5.6 times at eight, and then falls back as the workers contend for disk bandwidth and the page cache.</desc>
+  <rect x="0" y="0" width="720" height="258" fill="var(--dg-bg)" rx="10"/>
+  <line x1="80" y1="40" x2="80" y2="200" stroke="var(--dg-line)" stroke-width="1.5"/>
+  <line x1="80" y1="200" x2="690" y2="200" stroke="var(--dg-line)" stroke-width="1.5"/>
+  <polyline points="80,180 156,160 232,140 309,120 385,100 461,80 538,60 614,40" fill="none" stroke="var(--dg-line-soft)" stroke-width="2" stroke-dasharray="6 4"/>
+  <polyline points="80,180 156,161 232,145 309,132 385,124 461,118 538,116 614,124 690,136" fill="none" stroke="var(--dg-a)" stroke-width="2.6"/>
+  <circle cx="538" cy="116" r="4.5" fill="var(--dg-a)"/>
+  <text x="546" y="108" font-size="10.5" fill="var(--dg-a)">5.6× at 8 workers, then disk-bound</text>
+  <text x="72" y="204" text-anchor="end" font-size="10.5" fill="var(--dg-muted)">1×</text>
+  <text x="72" y="124" text-anchor="end" font-size="10.5" fill="var(--dg-muted)">5×</text>
+  <text x="72" y="44" text-anchor="end" font-size="10.5" fill="var(--dg-muted)">9×</text>
+  <text x="80" y="220" text-anchor="middle" font-size="10.5" fill="var(--dg-muted)">1</text>
+  <text x="309" y="220" text-anchor="middle" font-size="10.5" fill="var(--dg-muted)">4</text>
+  <text x="538" y="220" text-anchor="middle" font-size="10.5" fill="var(--dg-muted)">8</text>
+  <text x="690" y="220" text-anchor="middle" font-size="10.5" fill="var(--dg-muted)">10</text>
+  <text x="385" y="242" text-anchor="middle" font-size="11.5" fill="var(--dg-text)">worker processes</text>
+  <text x="26" y="120" text-anchor="middle" font-size="11.5" fill="var(--dg-text)" transform="rotate(-90 26 120)">speedup</text>
+  <line x1="200" y1="62" x2="230" y2="62" stroke="var(--dg-line-soft)" stroke-width="2" stroke-dasharray="6 4"/>
+  <text x="238" y="66" font-size="10.5" fill="var(--dg-muted)">ideal — one core, one worker</text>
+</svg>
 
 ## Performance Tuning
 

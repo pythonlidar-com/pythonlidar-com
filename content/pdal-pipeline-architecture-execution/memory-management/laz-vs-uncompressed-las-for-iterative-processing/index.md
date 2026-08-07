@@ -80,6 +80,7 @@ Compression is almost always the right default for stored point clouds — a LAZ
 <svg viewBox="0 0 760 300" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Cost comparison of LAZ versus uncompressed LAS across repeated read iterations" style="width:100%;max-width:760px;display:block;margin:1.5rem auto;">
   <title>Where LAZ and uncompressed LAS pay their cost across an iterative development loop</title>
   <desc>Two horizontal tracks compare the same tile stored as LAZ and as uncompressed LAS. The LAZ track shows a small one-time disk-write cost followed by a repeated decompression cost paid on every read iteration. The LAS track shows a larger one-time disk footprint but a near-zero repeated read cost. A summary note states LAZ wins on storage and transfer while LAS wins on repeated reads.</desc>
+  <rect x="0" y="0" width="760" height="300" fill="var(--dg-bg)" rx="10"/>
   <defs>
     <marker id="lz-arr" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto">
       <path d="M0,0 L0,6 L8,3 z" fill="currentColor"/>
@@ -199,6 +200,29 @@ def measure(path: str) -> dict:
 ### Step 4 — Decide by the phase of work
 
 The numbers point to a rule of thumb rather than a universal winner. If you are re-running a pipeline against the same tile many times in one sitting, the uncompressed copy pays for itself within a handful of iterations. If the file mostly sits in storage or crosses a network, keep it compressed and eat the occasional decode.
+
+<svg viewBox="0 0 720 258" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Cumulative processing time over ten development iterations for LAZ and for uncompressed LAS" style="width:100%;max-width:720px;display:block;margin:1.6rem auto">
+  <title>Where the compression bill actually lands</title>
+  <desc>Cumulative wall-clock over ten iterations of a develop-and-rerun loop. Reading LAZ pays a decompression cost on every single run, so the line climbs steadily. Converting once to uncompressed LAS costs one large step up front and then a much shallower slope, overtaking the compressed workflow at the fourth iteration.</desc>
+  <rect x="0" y="0" width="720" height="258" fill="var(--dg-bg)" rx="10"/>
+  <line x1="80" y1="40" x2="80" y2="200" stroke="var(--dg-line)" stroke-width="1.5"/>
+  <line x1="80" y1="200" x2="690" y2="200" stroke="var(--dg-line)" stroke-width="1.5"/>
+  <polyline points="80,200 141,184 202,168 263,152 324,136 385,120 446,104 507,88 568,72 629,56 690,42" fill="none" stroke="var(--dg-e)" stroke-width="2.6"/>
+  <polyline points="80,152 141,146 202,140 263,134 324,128 385,122 446,116 507,110 568,104 629,98 690,92" fill="none" stroke="var(--dg-d)" stroke-width="2.6" stroke-dasharray="7 4"/>
+  <circle cx="263" cy="152" r="5" fill="none" stroke="var(--dg-a)" stroke-width="2"/>
+  <text x="271" y="168" font-size="10.5" fill="var(--dg-a)">break-even at run 4</text>
+  <line x1="140" y1="66" x2="170" y2="66" stroke="var(--dg-e)" stroke-width="2.6"/>
+  <text x="178" y="70" font-size="11" fill="var(--dg-text)">read LAZ every run — 16 s of decode each time</text>
+  <line x1="140" y1="90" x2="170" y2="90" stroke="var(--dg-d)" stroke-width="2.6" stroke-dasharray="7 4"/>
+  <text x="178" y="94" font-size="11" fill="var(--dg-text)">convert once to LAS — 48 s up front, 6 s each run</text>
+  <text x="72" y="204" text-anchor="end" font-size="10.5" fill="var(--dg-muted)">0</text>
+  <text x="72" y="124" text-anchor="end" font-size="10.5" fill="var(--dg-muted)">80 s</text>
+  <text x="72" y="44" text-anchor="end" font-size="10.5" fill="var(--dg-muted)">160 s</text>
+  <text x="80" y="220" text-anchor="middle" font-size="10.5" fill="var(--dg-muted)">0</text>
+  <text x="385" y="220" text-anchor="middle" font-size="10.5" fill="var(--dg-muted)">5</text>
+  <text x="690" y="220" text-anchor="middle" font-size="10.5" fill="var(--dg-muted)">10</text>
+  <text x="385" y="242" text-anchor="middle" font-size="11.5" fill="var(--dg-text)">iterations of the edit-and-rerun loop</text>
+</svg>
 
 ## Complete Working Example
 
@@ -337,6 +361,31 @@ def assert_identical(las_path: str, laz_path: str) -> None:
 ```
 
 Because LASzip is lossless, this assertion passes exactly — every stored integer round-trips. If it ever fails, suspect a differing `forward` setting or a point format downgrade, not compression itself.
+
+<svg viewBox="0 0 720 276" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Four workflows placed by how often a tile is re-read and how scarce disk is" style="width:100%;max-width:720px;display:block;margin:1.6rem auto">
+  <title>Which format each workflow wants</title>
+  <desc>A quadrant with re-read frequency on one axis and disk headroom on the other. Archival storage and one-pass regional production sit where LAZ wins. Iterative development on a workstation and a hot cache feeding many experiments sit where uncompressed LAS wins, because the decode cost is paid over and over while the disk cost is paid once.</desc>
+  <rect x="0" y="0" width="720" height="276" fill="var(--dg-bg)" rx="10"/>
+  <line x1="90" y1="50" x2="90" y2="220" stroke="var(--dg-line)" stroke-width="1.5"/>
+  <line x1="90" y1="220" x2="670" y2="220" stroke="var(--dg-line)" stroke-width="1.5"/>
+  <line x1="380" y1="50" x2="380" y2="220" stroke="var(--dg-line-soft)" stroke-width="1.2" stroke-dasharray="5 4"/>
+  <line x1="90" y1="135" x2="670" y2="135" stroke="var(--dg-line-soft)" stroke-width="1.2" stroke-dasharray="5 4"/>
+  <rect x="110" y="62" width="240" height="56" rx="8" fill="var(--dg-a-soft)" stroke="var(--dg-a)" stroke-width="1.3"/>
+  <text x="230" y="86" text-anchor="middle" font-size="11.5" fill="var(--dg-text)">long-term archive</text>
+  <text x="230" y="104" text-anchor="middle" font-size="10.5" fill="var(--dg-muted)">LAZ — read rarely, stored forever</text>
+  <rect x="410" y="62" width="240" height="56" rx="8" fill="var(--dg-d-soft)" stroke="var(--dg-d)" stroke-width="1.3"/>
+  <text x="530" y="86" text-anchor="middle" font-size="11.5" fill="var(--dg-text)">scratch working set</text>
+  <text x="530" y="104" text-anchor="middle" font-size="10.5" fill="var(--dg-muted)">LAS — re-read all day, deleted after</text>
+  <rect x="110" y="150" width="240" height="56" rx="8" fill="var(--dg-a-soft)" stroke="var(--dg-a)" stroke-width="1.3"/>
+  <text x="230" y="174" text-anchor="middle" font-size="11.5" fill="var(--dg-text)">one-pass production</text>
+  <text x="230" y="192" text-anchor="middle" font-size="10.5" fill="var(--dg-muted)">LAZ — each tile read exactly once</text>
+  <rect x="410" y="150" width="240" height="56" rx="8" fill="var(--dg-c-soft)" stroke="var(--dg-c)" stroke-width="1.3"/>
+  <text x="530" y="174" text-anchor="middle" font-size="11.5" fill="var(--dg-text)">parameter sweep</text>
+  <text x="530" y="192" text-anchor="middle" font-size="10.5" fill="var(--dg-muted)">LAS on a subset, LAZ for the rest</text>
+  <text x="380" y="242" text-anchor="middle" font-size="11.5" fill="var(--dg-text)">how often the same tile is read again</text>
+  <text x="30" y="135" text-anchor="middle" font-size="11.5" fill="var(--dg-text)" transform="rotate(-90 30 135)">disk headroom</text>
+  <text x="90" y="36" font-size="10.5" fill="var(--dg-muted)">the decision is not about the format, it is about how many times you will pay the decode</text>
+</svg>
 
 ## Gotchas and Edge Cases
 

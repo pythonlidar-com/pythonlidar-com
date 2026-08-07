@@ -90,7 +90,7 @@ module.exports = {
       const seg = parts[contentIdx + 1] || data.page.fileSlug || "Untitled";
       return titleize(seg);
     },
-    seoTitle: (data) => {
+    headTitle: (data) => {
       const rawFile = readRaw(data.page.inputPath);
       const fmTitle = frontmatterTitle(rawFile);
       const raw = stripCodeFences(rawFile);

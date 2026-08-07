@@ -77,6 +77,7 @@ SMRF earns its "simple" name honestly: compared with iterative surface-fitting c
 <svg viewBox="0 0 760 320" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="SMRF ground classification algorithm stages from raster minimum surface to labelled ground points" style="width:100%;max-width:760px;display:block;margin:1.5rem auto">
   <title>SMRF Algorithm Stages</title>
   <desc>A vertical flow of five stages: rasterize points to a minimum-elevation grid, apply progressive morphological opening with increasing window sizes, compute a per-cell slope threshold, apply the scalar-scaled elevation threshold, and label accepted points as ASPRS Classification code 2 ground. A side panel lists the four governing parameters cell, window, slope, and scalar with threshold.</desc>
+  <rect x="0" y="0" width="760" height="320" fill="var(--dg-bg)" rx="10"/>
   <defs>
     <marker id="smrf-arr" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto">
       <path d="M0,0 L0,6 L8,3 z" fill="currentColor" opacity="0.6"/>
@@ -136,6 +137,59 @@ SMRF is a raster-based morphological classifier. Rather than fitting a continuou
 5. **Label the survivors.** Every accepted point receives ASPRS Classification code 2 (Ground). Everything else is left as code 1 (Unassigned) unless a prior stage already assigned it a class such as 7 (Noise). Because the codes follow the [ASPRS standard](https://www.pythonlidar.com/point-cloud-data-standards-fundamentals/asprs-classification-codes/understanding-asprs-classification-codes/), downstream DTM and DSM tooling can select ground with a single range expression.
 
 The order of these stages is why SMRF wants a clean input. If a spurious point sits several metres below true ground, it becomes the cell minimum in stage one, drags the reconstructed surface down with it, and pushes every honest return in that cell above `threshold` — a local hole of missing ground. Running outlier removal beforehand, as the [Pipeline Filtering Logic](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/pipeline-filtering-logic/) guide describes, prevents this class of failure entirely.
+
+<svg viewBox="0 0 720 282" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Cell minima before and after the progressive morphological opening" style="width:100%;max-width:720px;display:block;margin:1.6rem auto">
+  <title>What the progressive opening does to the minimum surface</title>
+  <desc>Two rows of twenty columns, one column per raster cell. In the upper row the cell minima follow the terrain except where a roof or a canopy covers the whole cell, and those columns float several metres higher. In the lower row the same columns after the progressive opening: the roof and canopy columns have been knocked down to the terrain trend, and the surface rises smoothly from left to right.</desc>
+  <rect x="0" y="0" width="720" height="282" fill="var(--dg-bg)" rx="10"/>
+  <text x="24" y="28" font-size="11.5" font-weight="600" fill="var(--dg-text)">minimum-elevation surface — lowest Z in each cell</text>
+  <rect x="24" y="104" width="30" height="30" fill="var(--dg-b-soft)" stroke="var(--dg-b)" stroke-width="1.2"/>
+  <rect x="58" y="103" width="30" height="31" fill="var(--dg-b-soft)" stroke="var(--dg-b)" stroke-width="1.2"/>
+  <rect x="92" y="102" width="30" height="32" fill="var(--dg-b-soft)" stroke="var(--dg-b)" stroke-width="1.2"/>
+  <rect x="126" y="101" width="30" height="33" fill="var(--dg-b-soft)" stroke="var(--dg-b)" stroke-width="1.2"/>
+  <rect x="160" y="100" width="30" height="34" fill="var(--dg-b-soft)" stroke="var(--dg-b)" stroke-width="1.2"/>
+  <rect x="194" y="99" width="30" height="35" fill="var(--dg-b-soft)" stroke="var(--dg-b)" stroke-width="1.2"/>
+  <rect x="228" y="98" width="30" height="36" fill="var(--dg-b-soft)" stroke="var(--dg-b)" stroke-width="1.2"/>
+  <rect x="262" y="56" width="30" height="78" fill="var(--dg-e-soft)" stroke="var(--dg-e)" stroke-width="1.2"/>
+  <rect x="296" y="56" width="30" height="78" fill="var(--dg-e-soft)" stroke="var(--dg-e)" stroke-width="1.2"/>
+  <rect x="330" y="56" width="30" height="78" fill="var(--dg-e-soft)" stroke="var(--dg-e)" stroke-width="1.2"/>
+  <rect x="364" y="56" width="30" height="78" fill="var(--dg-e-soft)" stroke="var(--dg-e)" stroke-width="1.2"/>
+  <rect x="398" y="94" width="30" height="40" fill="var(--dg-b-soft)" stroke="var(--dg-b)" stroke-width="1.2"/>
+  <rect x="432" y="93" width="30" height="41" fill="var(--dg-b-soft)" stroke="var(--dg-b)" stroke-width="1.2"/>
+  <rect x="466" y="92" width="30" height="42" fill="var(--dg-b-soft)" stroke="var(--dg-b)" stroke-width="1.2"/>
+  <rect x="500" y="70" width="30" height="64" fill="var(--dg-e-soft)" stroke="var(--dg-e)" stroke-width="1.2"/>
+  <rect x="534" y="70" width="30" height="64" fill="var(--dg-e-soft)" stroke="var(--dg-e)" stroke-width="1.2"/>
+  <rect x="568" y="70" width="30" height="64" fill="var(--dg-e-soft)" stroke="var(--dg-e)" stroke-width="1.2"/>
+  <rect x="602" y="88" width="30" height="46" fill="var(--dg-b-soft)" stroke="var(--dg-b)" stroke-width="1.2"/>
+  <rect x="636" y="87" width="30" height="47" fill="var(--dg-b-soft)" stroke="var(--dg-b)" stroke-width="1.2"/>
+  <rect x="670" y="86" width="30" height="48" fill="var(--dg-b-soft)" stroke="var(--dg-b)" stroke-width="1.2"/>
+  <rect x="24" y="226" width="30" height="30" fill="var(--dg-d-soft)" stroke="var(--dg-d)" stroke-width="1.2"/>
+  <rect x="58" y="225" width="30" height="31" fill="var(--dg-d-soft)" stroke="var(--dg-d)" stroke-width="1.2"/>
+  <rect x="92" y="224" width="30" height="32" fill="var(--dg-d-soft)" stroke="var(--dg-d)" stroke-width="1.2"/>
+  <rect x="126" y="223" width="30" height="33" fill="var(--dg-d-soft)" stroke="var(--dg-d)" stroke-width="1.2"/>
+  <rect x="160" y="222" width="30" height="34" fill="var(--dg-d-soft)" stroke="var(--dg-d)" stroke-width="1.2"/>
+  <rect x="194" y="221" width="30" height="35" fill="var(--dg-d-soft)" stroke="var(--dg-d)" stroke-width="1.2"/>
+  <rect x="228" y="220" width="30" height="36" fill="var(--dg-d-soft)" stroke="var(--dg-d)" stroke-width="1.2"/>
+  <rect x="262" y="219" width="30" height="37" fill="var(--dg-d-soft)" stroke="var(--dg-d)" stroke-width="1.2"/>
+  <rect x="296" y="218" width="30" height="38" fill="var(--dg-d-soft)" stroke="var(--dg-d)" stroke-width="1.2"/>
+  <rect x="330" y="217" width="30" height="39" fill="var(--dg-d-soft)" stroke="var(--dg-d)" stroke-width="1.2"/>
+  <rect x="364" y="216" width="30" height="40" fill="var(--dg-d-soft)" stroke="var(--dg-d)" stroke-width="1.2"/>
+  <rect x="398" y="216" width="30" height="40" fill="var(--dg-d-soft)" stroke="var(--dg-d)" stroke-width="1.2"/>
+  <rect x="432" y="215" width="30" height="41" fill="var(--dg-d-soft)" stroke="var(--dg-d)" stroke-width="1.2"/>
+  <rect x="466" y="214" width="30" height="42" fill="var(--dg-d-soft)" stroke="var(--dg-d)" stroke-width="1.2"/>
+  <rect x="500" y="213" width="30" height="43" fill="var(--dg-d-soft)" stroke="var(--dg-d)" stroke-width="1.2"/>
+  <rect x="534" y="212" width="30" height="44" fill="var(--dg-d-soft)" stroke="var(--dg-d)" stroke-width="1.2"/>
+  <rect x="568" y="211" width="30" height="45" fill="var(--dg-d-soft)" stroke="var(--dg-d)" stroke-width="1.2"/>
+  <rect x="602" y="210" width="30" height="46" fill="var(--dg-d-soft)" stroke="var(--dg-d)" stroke-width="1.2"/>
+  <rect x="636" y="209" width="30" height="47" fill="var(--dg-d-soft)" stroke="var(--dg-d)" stroke-width="1.2"/>
+  <rect x="670" y="208" width="30" height="48" fill="var(--dg-d-soft)" stroke="var(--dg-d)" stroke-width="1.2"/>
+  <text x="328" y="48" text-anchor="middle" font-size="10.5" fill="var(--dg-e)">roof covers whole cells</text>
+  <text x="548" y="62" text-anchor="middle" font-size="10.5" fill="var(--dg-e)">canopy cells</text>
+  <line x1="24" y1="134" x2="700" y2="134" stroke="var(--dg-line)" stroke-width="1.4"/>
+  <text x="24" y="160" font-size="11.5" font-weight="600" fill="var(--dg-text)">after progressive opening — window grows 1 cell to 18 m</text>
+  <text x="400" y="188" text-anchor="middle" font-size="10.5" fill="var(--dg-d)">objects removed; the surface now follows terrain</text>
+  <line x1="24" y1="256" x2="700" y2="256" stroke="var(--dg-line)" stroke-width="1.4"/>
+</svg>
 
 ## Full Implementation
 
@@ -287,6 +341,41 @@ if __name__ == "__main__":
 | `returns` | string | `"last, only"` | `last`, `first`, `only`, `intermediate` | Which return types SMRF considers; last/only favours ground under canopy. |
 
 The `returns` parameter is the lever that makes SMRF work under vegetation: restricting it to last and only returns discards mid-canopy hits that would otherwise inflate the minimum surface. That tuning is the subject of a dedicated recipe, [Tuning SMRF for Forested Terrain](https://www.pythonlidar.com/ground-filtering-dtm-dsm-generation/smrf-ground-classification/tuning-smrf-for-forested-terrain/).
+
+<svg viewBox="0 0 720 250" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="How raising each SMRF parameter moves omission, commission and runtime" style="width:100%;max-width:720px;display:block;margin:1.6rem auto">
+  <title>Which way each SMRF parameter pushes the two error types</title>
+  <desc>A matrix of five parameter changes against three outcomes. Raising cell or window increases omission — real ground lost — while reducing commission, the objects wrongly kept. Raising slope, scalar or threshold does the opposite. Window is the only knob that also costs noticeable runtime.</desc>
+  <rect x="0" y="0" width="720" height="250" fill="var(--dg-bg)" rx="10"/>
+  <text x="360" y="46" text-anchor="middle" font-size="10.5" fill="var(--dg-muted)">omission — ground lost</text>
+  <text x="500" y="46" text-anchor="middle" font-size="10.5" fill="var(--dg-muted)">commission — objects kept</text>
+  <text x="630" y="46" text-anchor="middle" font-size="10.5" fill="var(--dg-muted)">runtime</text>
+  <rect x="20" y="60" width="250" height="30" rx="5" fill="var(--dg-surface)" stroke="var(--dg-line-soft)" stroke-width="1"/>
+  <text x="32" y="80" font-size="11.5" fill="var(--dg-text)">raise cell</text>
+  <text x="360" y="82" text-anchor="middle" font-size="16" font-weight="700" fill="var(--dg-e)">↑</text>
+  <text x="500" y="82" text-anchor="middle" font-size="16" font-weight="700" fill="var(--dg-d)">↓</text>
+  <text x="630" y="82" text-anchor="middle" font-size="16" font-weight="700" fill="var(--dg-d)">↓</text>
+  <rect x="20" y="92" width="250" height="30" rx="5" fill="var(--dg-surface)" stroke="var(--dg-line-soft)" stroke-width="1"/>
+  <text x="32" y="112" font-size="11.5" fill="var(--dg-text)">raise window</text>
+  <text x="360" y="114" text-anchor="middle" font-size="16" font-weight="700" fill="var(--dg-e)">↑</text>
+  <text x="500" y="114" text-anchor="middle" font-size="16" font-weight="700" fill="var(--dg-d)">↓</text>
+  <text x="630" y="114" text-anchor="middle" font-size="16" font-weight="700" fill="var(--dg-e)">↑</text>
+  <rect x="20" y="124" width="250" height="30" rx="5" fill="var(--dg-surface)" stroke="var(--dg-line-soft)" stroke-width="1"/>
+  <text x="32" y="144" font-size="11.5" fill="var(--dg-text)">raise slope</text>
+  <text x="360" y="146" text-anchor="middle" font-size="16" font-weight="700" fill="var(--dg-d)">↓</text>
+  <text x="500" y="146" text-anchor="middle" font-size="16" font-weight="700" fill="var(--dg-e)">↑</text>
+  <text x="630" y="146" text-anchor="middle" font-size="16" font-weight="700" fill="var(--dg-muted)">→</text>
+  <rect x="20" y="156" width="250" height="30" rx="5" fill="var(--dg-surface)" stroke="var(--dg-line-soft)" stroke-width="1"/>
+  <text x="32" y="176" font-size="11.5" fill="var(--dg-text)">raise scalar</text>
+  <text x="360" y="178" text-anchor="middle" font-size="16" font-weight="700" fill="var(--dg-d)">↓</text>
+  <text x="500" y="178" text-anchor="middle" font-size="16" font-weight="700" fill="var(--dg-e)">↑</text>
+  <text x="630" y="178" text-anchor="middle" font-size="16" font-weight="700" fill="var(--dg-muted)">→</text>
+  <rect x="20" y="188" width="250" height="30" rx="5" fill="var(--dg-surface)" stroke="var(--dg-line-soft)" stroke-width="1"/>
+  <text x="32" y="208" font-size="11.5" fill="var(--dg-text)">raise threshold</text>
+  <text x="360" y="210" text-anchor="middle" font-size="16" font-weight="700" fill="var(--dg-d)">↓</text>
+  <text x="500" y="210" text-anchor="middle" font-size="16" font-weight="700" fill="var(--dg-e)">↑</text>
+  <text x="630" y="210" text-anchor="middle" font-size="16" font-weight="700" fill="var(--dg-muted)">→</text>
+  <text x="20" y="238" font-size="10.5" fill="var(--dg-muted)">↑ increases  ·  ↓ decreases  ·  → little change  —  the two error types always move in opposite directions</text>
+</svg>
 
 ## Validation and Integrity Checks
 

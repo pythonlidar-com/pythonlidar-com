@@ -76,6 +76,7 @@ The reason first returns deserve their own page is that they are the physically 
 <svg viewBox="0 0 720 260" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="A single LiDAR pulse producing four returns through a tree canopy, with only the first return kept for the DSM" style="width:100%;max-width:720px;display:block;margin:1.5rem auto">
   <title>Selecting the first return from a multi-return pulse</title>
   <desc>A vertical pulse enters a tree canopy and produces four returns at descending heights: return 1 at the canopy top, returns 2 and 3 in the mid-canopy, and return 4 at the ground. A callout marks return 1 as the point kept by the ReturnNumber filter and fed into the DSM.</desc>
+  <rect x="0" y="0" width="720" height="260" fill="var(--dg-bg)" rx="10"/>
   <defs>
     <marker id="fr-arr" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
       <path d="M0,0 L0,6 L8,3 z" fill="currentColor" opacity="0.6"/>
@@ -178,6 +179,42 @@ Wired together, the reader, range filter, and GDAL writer form a three-stage pip
 ### Step 4 — Verify the raster
 
 Never ship a surface raster you have not opened. `rasterio` reads the CRS, cell size, elevation range, and void mask in a few lines — enough to catch every common failure.
+
+<svg viewBox="0 0 720 266" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="One multi-return pulse beside the share of each return number in a tile" style="width:100%;max-width:720px;display:block;margin:1.6rem auto">
+  <title>Which return of each pulse builds the DSM</title>
+  <desc>On the left a single laser pulse descends through canopy, leaving return one at the canopy top, returns two and three on branches, and the last return at the ground. On the right the share of each return number across the whole tile: return one is 63 percent, return two 28 percent, return three 7 percent and return four 2 percent. Only return one is kept for the top surface.</desc>
+  <rect x="0" y="0" width="720" height="266" fill="var(--dg-bg)" rx="10"/>
+  <defs><marker id="dsmrn-arw" markerWidth="9" markerHeight="7" refX="9" refY="3.5" orient="auto"><path d="M0,0 L0,7 L9,3.5 z" fill="var(--dg-line)"/></marker></defs>
+  <text x="180" y="38" text-anchor="middle" font-size="12" font-weight="600" fill="var(--dg-text)">one pulse, four returns</text>
+  <text x="540" y="38" text-anchor="middle" font-size="12" font-weight="600" fill="var(--dg-text)">share of returns in the tile</text>
+  <rect x="20" y="48" width="320" height="160" rx="8" fill="var(--dg-surface)" stroke="var(--dg-line-soft)" stroke-width="1.2"/>
+  <line x1="50" y1="58" x2="300" y2="188" stroke="var(--dg-line-soft)" stroke-width="1.4" stroke-dasharray="4 4"/>
+  <line x1="34" y1="192" x2="326" y2="192" stroke="var(--dg-line)" stroke-width="1.6"/>
+  <circle cx="112" cy="90" r="5" fill="var(--dg-d-soft)" stroke="var(--dg-d)" stroke-width="2"/>
+  <text x="122" y="84" font-size="10.5" fill="var(--dg-d)">RN 1 — canopy top</text>
+  <circle cx="175" cy="123" r="4" fill="var(--dg-line)"/>
+  <text x="185" y="118" font-size="10.5" fill="var(--dg-muted)">RN 2</text>
+  <circle cx="230" cy="151" r="4" fill="var(--dg-line)"/>
+  <text x="240" y="146" font-size="10.5" fill="var(--dg-muted)">RN 3</text>
+  <circle cx="300" cy="188" r="4" fill="var(--dg-line)"/>
+  <text x="292" y="180" text-anchor="end" font-size="10.5" fill="var(--dg-muted)">RN 4 — ground</text>
+  <rect x="380" y="48" width="320" height="160" rx="8" fill="var(--dg-surface)" stroke="var(--dg-line-soft)" stroke-width="1.2"/>
+  <rect x="410" y="78" width="54" height="118" fill="var(--dg-d-soft)" stroke="var(--dg-d)" stroke-width="1.3"/>
+  <text x="437" y="58" text-anchor="middle" font-size="10.5" font-weight="600" fill="var(--dg-text)">RN 1</text>
+  <text x="437" y="72" text-anchor="middle" font-size="10.5" fill="var(--dg-muted)">63%</text>
+  <rect x="486" y="134" width="54" height="62" fill="var(--dg-surface-2)" stroke="var(--dg-line-soft)" stroke-width="1.3"/>
+  <text x="513" y="114" text-anchor="middle" font-size="10.5" font-weight="600" fill="var(--dg-text)">RN 2</text>
+  <text x="513" y="128" text-anchor="middle" font-size="10.5" fill="var(--dg-muted)">28%</text>
+  <rect x="562" y="170" width="54" height="26" fill="var(--dg-surface-2)" stroke="var(--dg-line-soft)" stroke-width="1.3"/>
+  <text x="589" y="150" text-anchor="middle" font-size="10.5" font-weight="600" fill="var(--dg-text)">RN 3</text>
+  <text x="589" y="164" text-anchor="middle" font-size="10.5" fill="var(--dg-muted)">7%</text>
+  <rect x="638" y="186" width="54" height="10" fill="var(--dg-surface-2)" stroke="var(--dg-line-soft)" stroke-width="1.3"/>
+  <text x="665" y="166" text-anchor="middle" font-size="10.5" font-weight="600" fill="var(--dg-text)">RN 4</text>
+  <text x="665" y="180" text-anchor="middle" font-size="10.5" fill="var(--dg-muted)">2%</text>
+  <line x1="344" y1="128" x2="376" y2="128" stroke="var(--dg-line)" stroke-width="1.6" marker-end="url(#dsmrn-arw)"/>
+  <rect x="20" y="222" width="680" height="32" rx="8" fill="var(--dg-surface)" stroke="var(--dg-line-soft)" stroke-width="1"/>
+  <text x="36" y="243" font-size="11" fill="var(--dg-muted)">filters.range limits ReturnNumber[1:1] — one point per pulse, and the only one that saw the top</text>
+</svg>
 
 ## Complete Working Example
 
@@ -330,6 +367,30 @@ print(f"first returns: {first:,} / {raw:,}  ({first/raw:.0%})")
 **Eyeball the elevation range.** `z_max` should equal the tallest feature in the scene. A DSM over a forested UTM tile might read 612 m of bare valley floor up to 648 m of canopy crown; a max that matches the ground minimum means first returns never reached anything tall.
 
 **Render a quick hillshade.** Loading the DSM into a hillshade — see [Hillshade, Slope and Aspect](https://www.pythonlidar.com/ground-filtering-dtm-dsm-generation/hillshade-slope-aspect/) — instantly reveals whether buildings and tree crowns cast crisp shadows (good) or the surface is mushy and full of holes (resolution too fine).
+
+<svg viewBox="0 0 720 232" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="A high noise return spiking the DSM, and the same profile after outlier removal" style="width:100%;max-width:720px;display:block;margin:1.6rem auto">
+  <title>One bird return is worth a 60 metre spike</title>
+  <desc>Two profiles of the same canopy. On the left a single high return sits well above the trees and the maximum reducer pulls the DSM surface up to it, leaving a one-cell spike. On the right the same tile after filters.outlier and a Z range limit: the surface follows the canopy and the spike is gone.</desc>
+  <rect x="0" y="0" width="720" height="232" fill="var(--dg-bg)" rx="10"/>
+  <text x="185" y="34" text-anchor="middle" font-size="12" font-weight="600" fill="var(--dg-text)">raw first returns</text>
+  <text x="535" y="34" text-anchor="middle" font-size="12" font-weight="600" fill="var(--dg-text)">after filters.outlier + Z limits</text>
+  <rect x="20" y="44" width="330" height="140" rx="8" fill="var(--dg-surface)" stroke="var(--dg-line-soft)" stroke-width="1.2"/>
+  <line x1="34" y1="172" x2="336" y2="172" stroke="var(--dg-line)" stroke-width="1.5"/>
+  <ellipse cx="120" cy="140" rx="46" ry="20" fill="var(--dg-d-soft)" stroke="var(--dg-d)" stroke-width="1.3"/>
+  <ellipse cx="250" cy="134" rx="52" ry="24" fill="var(--dg-d-soft)" stroke="var(--dg-d)" stroke-width="1.3"/>
+  <circle cx="192" cy="66" r="4.5" fill="var(--dg-e)"/>
+  <text x="202" y="62" font-size="10.5" fill="var(--dg-e)">bird return, 61 m</text>
+  <path d="M34 168 L74 152 L120 120 L166 148 L190 70 L196 70 L206 146 L250 110 L302 148 L336 164" fill="none" stroke="var(--dg-a)" stroke-width="2.2"/>
+  <rect x="370" y="44" width="330" height="140" rx="8" fill="var(--dg-surface)" stroke="var(--dg-line-soft)" stroke-width="1.2"/>
+  <line x1="384" y1="172" x2="686" y2="172" stroke="var(--dg-line)" stroke-width="1.5"/>
+  <ellipse cx="470" cy="140" rx="46" ry="20" fill="var(--dg-d-soft)" stroke="var(--dg-d)" stroke-width="1.3"/>
+  <ellipse cx="600" cy="134" rx="52" ry="24" fill="var(--dg-d-soft)" stroke="var(--dg-d)" stroke-width="1.3"/>
+  <path d="M384 168 L424 152 L470 120 L516 148 L556 150 L600 110 L652 148 L686 164" fill="none" stroke="var(--dg-a)" stroke-width="2.2"/>
+  <text x="185" y="204" text-anchor="middle" font-size="10.5" fill="var(--dg-e)">one cell 40 m above its neighbours</text>
+  <text x="535" y="204" text-anchor="middle" font-size="10.5" fill="var(--dg-d)">surface follows the canopy</text>
+  <text x="185" y="222" text-anchor="middle" font-size="10.5" fill="var(--dg-muted)">hillshade and CHM both inherit it</text>
+  <text x="535" y="222" text-anchor="middle" font-size="10.5" fill="var(--dg-muted)">clean input, clean derivatives</text>
+</svg>
 
 ## Gotchas and Edge Cases
 

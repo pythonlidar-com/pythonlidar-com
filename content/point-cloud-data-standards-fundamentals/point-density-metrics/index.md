@@ -88,6 +88,7 @@ Point density metrics quantify the spatial distribution of laser returns across 
 <svg viewBox="0 0 780 220" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Six-stage point density workflow: validate CRS, filter classifications, grid-bin XY, normalize to pts/m², derive QA statistics, export and sync metadata" style="width:100%;max-width:780px;display:block;margin:1.5rem auto;">
   <title>Point Density Metrics Workflow — Six Stages</title>
   <desc>Six sequential stages for computing point density metrics from a LAS/LAZ file: (1) Validate CRS and header, (2) Filter classification codes, (3) Grid-bin XY coordinates with chunk-based I/O, (4) Normalize counts to pts per square metre, (5) Derive QA statistics including mean, p5, and p95, (6) Export GeoTIFF and sync LAS VLR metadata.</desc>
+  <rect x="0" y="0" width="780" height="220" fill="var(--dg-bg)" rx="10"/>
   <defs>
     <marker id="pdm-arr" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
       <polygon points="0 0, 8 3, 0 6" fill="currentColor" opacity="0.55"/>
@@ -427,6 +428,99 @@ if __name__ == "__main__":
     print(json.dumps(result, indent=2))
 ```
 
+<svg viewBox="0 0 720 258" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Pulse density, point density and per-cell counts measured on the same patch" style="width:100%;max-width:720px;display:block;margin:1.6rem auto">
+  <title>Three numbers that all get called density</title>
+  <desc>The same patch of a multi-return tile measured three ways. Pulse density counts emitted pulses per square metre and is what the flight plan promised. Point density counts every return, so a canopy scene inflates it. Per-cell counts show how unevenly either is distributed, which is what actually decides the grid resolution you can support.</desc>
+  <rect x="0" y="0" width="720" height="258" fill="var(--dg-bg)" rx="10"/>
+  <rect x="24" y="52" width="216" height="130" rx="8" fill="var(--dg-surface)" stroke="var(--dg-line-soft)" stroke-width="1.2"/>
+  <text x="132" y="42" text-anchor="middle" font-size="11.5" font-weight="600" fill="var(--dg-text)">pulse density</text>
+  <circle cx="46" cy="78" r="3" fill="var(--dg-b)"/>
+  <circle cx="98" cy="78" r="3" fill="var(--dg-b)"/>
+  <circle cx="150" cy="78" r="3" fill="var(--dg-b)"/>
+  <circle cx="202" cy="78" r="3" fill="var(--dg-b)"/>
+  <circle cx="46" cy="108" r="3" fill="var(--dg-b)"/>
+  <circle cx="98" cy="108" r="3" fill="var(--dg-b)"/>
+  <circle cx="150" cy="108" r="3" fill="var(--dg-b)"/>
+  <circle cx="202" cy="108" r="3" fill="var(--dg-b)"/>
+  <circle cx="46" cy="138" r="3" fill="var(--dg-b)"/>
+  <circle cx="98" cy="138" r="3" fill="var(--dg-b)"/>
+  <circle cx="150" cy="138" r="3" fill="var(--dg-b)"/>
+  <circle cx="202" cy="138" r="3" fill="var(--dg-b)"/>
+  <circle cx="46" cy="168" r="3" fill="var(--dg-b)"/>
+  <circle cx="98" cy="168" r="3" fill="var(--dg-b)"/>
+  <circle cx="150" cy="168" r="3" fill="var(--dg-b)"/>
+  <circle cx="202" cy="168" r="3" fill="var(--dg-b)"/>
+  <text x="132" y="200" text-anchor="middle" font-size="12" font-weight="600" fill="var(--dg-c)">8.1 /m²</text>
+  <text x="132" y="220" text-anchor="middle" font-size="10.5" fill="var(--dg-muted)">first returns only</text>
+  <rect x="256" y="52" width="216" height="130" rx="8" fill="var(--dg-surface)" stroke="var(--dg-line-soft)" stroke-width="1.2"/>
+  <text x="364" y="42" text-anchor="middle" font-size="11.5" font-weight="600" fill="var(--dg-text)">point density</text>
+  <circle cx="278" cy="78" r="3" fill="var(--dg-b)"/>
+  <circle cx="285" cy="86" r="2.4" fill="var(--dg-a)"/>
+  <circle cx="330" cy="78" r="3" fill="var(--dg-b)"/>
+  <circle cx="337" cy="86" r="2.4" fill="var(--dg-a)"/>
+  <circle cx="344" cy="91" r="2.4" fill="var(--dg-a)"/>
+  <circle cx="382" cy="78" r="3" fill="var(--dg-b)"/>
+  <circle cx="389" cy="86" r="2.4" fill="var(--dg-a)"/>
+  <circle cx="434" cy="78" r="3" fill="var(--dg-b)"/>
+  <circle cx="441" cy="86" r="2.4" fill="var(--dg-a)"/>
+  <circle cx="278" cy="108" r="3" fill="var(--dg-b)"/>
+  <circle cx="330" cy="108" r="3" fill="var(--dg-b)"/>
+  <circle cx="382" cy="108" r="3" fill="var(--dg-b)"/>
+  <circle cx="389" cy="116" r="2.4" fill="var(--dg-a)"/>
+  <circle cx="396" cy="121" r="2.4" fill="var(--dg-a)"/>
+  <circle cx="434" cy="108" r="3" fill="var(--dg-b)"/>
+  <circle cx="278" cy="138" r="3" fill="var(--dg-b)"/>
+  <circle cx="285" cy="146" r="2.4" fill="var(--dg-a)"/>
+  <circle cx="330" cy="138" r="3" fill="var(--dg-b)"/>
+  <circle cx="337" cy="146" r="2.4" fill="var(--dg-a)"/>
+  <circle cx="344" cy="151" r="2.4" fill="var(--dg-a)"/>
+  <circle cx="382" cy="138" r="3" fill="var(--dg-b)"/>
+  <circle cx="389" cy="146" r="2.4" fill="var(--dg-a)"/>
+  <circle cx="434" cy="138" r="3" fill="var(--dg-b)"/>
+  <circle cx="441" cy="146" r="2.4" fill="var(--dg-a)"/>
+  <circle cx="448" cy="151" r="2.4" fill="var(--dg-a)"/>
+  <circle cx="278" cy="168" r="3" fill="var(--dg-b)"/>
+  <circle cx="330" cy="168" r="3" fill="var(--dg-b)"/>
+  <circle cx="337" cy="176" r="2.4" fill="var(--dg-a)"/>
+  <circle cx="382" cy="168" r="3" fill="var(--dg-b)"/>
+  <circle cx="389" cy="176" r="2.4" fill="var(--dg-a)"/>
+  <circle cx="396" cy="181" r="2.4" fill="var(--dg-a)"/>
+  <circle cx="434" cy="168" r="3" fill="var(--dg-b)"/>
+  <circle cx="441" cy="176" r="2.4" fill="var(--dg-a)"/>
+  <circle cx="448" cy="181" r="2.4" fill="var(--dg-a)"/>
+  <text x="364" y="200" text-anchor="middle" font-size="12" font-weight="600" fill="var(--dg-c)">19.4 /m²</text>
+  <text x="364" y="220" text-anchor="middle" font-size="10.5" fill="var(--dg-muted)">every return</text>
+  <rect x="488" y="52" width="216" height="130" rx="8" fill="var(--dg-surface)" stroke="var(--dg-line-soft)" stroke-width="1.2"/>
+  <text x="596" y="42" text-anchor="middle" font-size="11.5" font-weight="600" fill="var(--dg-text)">per-cell count</text>
+  <rect x="494" y="62" width="34" height="30" fill="var(--dg-c)" fill-opacity="0.1" stroke="var(--dg-line-soft)" stroke-width="0.7"/>
+  <rect x="528" y="62" width="34" height="30" fill="var(--dg-c)" fill-opacity="0.58" stroke="var(--dg-line-soft)" stroke-width="0.7"/>
+  <rect x="562" y="62" width="34" height="30" fill="var(--dg-c)" fill-opacity="0.26" stroke="var(--dg-line-soft)" stroke-width="0.7"/>
+  <rect x="596" y="62" width="34" height="30" fill="var(--dg-c)" fill-opacity="0.58" stroke="var(--dg-line-soft)" stroke-width="0.7"/>
+  <rect x="630" y="62" width="34" height="30" fill="var(--dg-c)" fill-opacity="0.58" stroke="var(--dg-line-soft)" stroke-width="0.7"/>
+  <rect x="664" y="62" width="34" height="30" fill="var(--dg-c)" fill-opacity="0.26" stroke="var(--dg-line-soft)" stroke-width="0.7"/>
+  <rect x="494" y="92" width="34" height="30" fill="var(--dg-c)" fill-opacity="0.26" stroke="var(--dg-line-soft)" stroke-width="0.7"/>
+  <rect x="528" y="92" width="34" height="30" fill="var(--dg-c)" fill-opacity="0.26" stroke="var(--dg-line-soft)" stroke-width="0.7"/>
+  <rect x="562" y="92" width="34" height="30" fill="var(--dg-c)" fill-opacity="0.1" stroke="var(--dg-line-soft)" stroke-width="0.7"/>
+  <rect x="596" y="92" width="34" height="30" fill="var(--dg-c)" fill-opacity="0.1" stroke="var(--dg-line-soft)" stroke-width="0.7"/>
+  <rect x="630" y="92" width="34" height="30" fill="var(--dg-c)" fill-opacity="0.26" stroke="var(--dg-line-soft)" stroke-width="0.7"/>
+  <rect x="664" y="92" width="34" height="30" fill="var(--dg-c)" fill-opacity="0.74" stroke="var(--dg-line-soft)" stroke-width="0.7"/>
+  <rect x="494" y="122" width="34" height="30" fill="var(--dg-c)" fill-opacity="0.74" stroke="var(--dg-line-soft)" stroke-width="0.7"/>
+  <rect x="528" y="122" width="34" height="30" fill="var(--dg-c)" fill-opacity="0.1" stroke="var(--dg-line-soft)" stroke-width="0.7"/>
+  <rect x="562" y="122" width="34" height="30" fill="var(--dg-c)" fill-opacity="0.58" stroke="var(--dg-line-soft)" stroke-width="0.7"/>
+  <rect x="596" y="122" width="34" height="30" fill="var(--dg-c)" fill-opacity="0.1" stroke="var(--dg-line-soft)" stroke-width="0.7"/>
+  <rect x="630" y="122" width="34" height="30" fill="var(--dg-c)" fill-opacity="0.42" stroke="var(--dg-line-soft)" stroke-width="0.7"/>
+  <rect x="664" y="122" width="34" height="30" fill="var(--dg-c)" fill-opacity="0.26" stroke="var(--dg-line-soft)" stroke-width="0.7"/>
+  <rect x="494" y="152" width="34" height="30" fill="var(--dg-c)" fill-opacity="0.26" stroke="var(--dg-line-soft)" stroke-width="0.7"/>
+  <rect x="528" y="152" width="34" height="30" fill="var(--dg-c)" fill-opacity="0.58" stroke="var(--dg-line-soft)" stroke-width="0.7"/>
+  <rect x="562" y="152" width="34" height="30" fill="var(--dg-c)" fill-opacity="0.1" stroke="var(--dg-line-soft)" stroke-width="0.7"/>
+  <rect x="596" y="152" width="34" height="30" fill="var(--dg-c)" fill-opacity="0.42" stroke="var(--dg-line-soft)" stroke-width="0.7"/>
+  <rect x="630" y="152" width="34" height="30" fill="var(--dg-c)" fill-opacity="0.26" stroke="var(--dg-line-soft)" stroke-width="0.7"/>
+  <rect x="664" y="152" width="34" height="30" fill="var(--dg-c)" fill-opacity="0.58" stroke="var(--dg-line-soft)" stroke-width="0.7"/>
+  <text x="596" y="200" text-anchor="middle" font-size="12" font-weight="600" fill="var(--dg-c)">0–34</text>
+  <text x="596" y="220" text-anchor="middle" font-size="10.5" fill="var(--dg-muted)">the distribution</text>
+  <text x="24" y="248" font-size="10.5" fill="var(--dg-muted)">a contract written in points per square metre and delivered over forest is met by the canopy, not by the ground</text>
+</svg>
+
 ## Code Breakdown
 
 **`validate_las_crs`** — reads the file header once without loading any point data, using `laspy.open()` in context-manager mode. `header.parse_crs()` inspects WKT2 and GeoTIFF-key VLRs in that order. Rejecting geographic CRS here prevents the most common silent-failure mode: density values that look plausible but are in degrees² rather than m².
@@ -498,6 +592,30 @@ def validate_density_output(
 **Point count reconciliation** — compare the total count of binned points (sum of the raw `uint32` grid) against `laspy.open().header.point_count` minus excluded-class totals. A discrepancy of more than 0.1% indicates a bug in the classification mask logic or a corrupted file.
 
 **CRS round-trip test** — after writing the GeoTIFF, re-open it with `rasterio` and assert that `src.crs.to_epsg()` matches the EPSG code extracted from the LAS file's VLR. CRS mismatch between the source point cloud and the density raster will silently misalign any overlay analysis. See [fixing CRS mismatches in point clouds](https://www.pythonlidar.com/point-cloud-data-standards-fundamentals/coordinate-reference-systems/fixing-crs-mismatches-in-point-clouds/) for remediation steps.
+
+<svg viewBox="0 0 720 250" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="The finest DTM cell size each point density can support without voids" style="width:100%;max-width:720px;display:block;margin:1.6rem auto">
+  <title>Density sets the finest grid you can honestly build</title>
+  <desc>Supportable cell size against point density. At two points per square metre the finest defensible DTM is about two metres; at eight it is one metre; at thirty-two it is half a metre. The rule of thumb is roughly the square root of two over the square root of the density — build finer than that and the extra cells are interpolation, not measurement.</desc>
+  <rect x="0" y="0" width="720" height="250" fill="var(--dg-bg)" rx="10"/>
+  <rect x="90" y="56" width="86" height="140" rx="4" fill="var(--dg-a-soft)" stroke="var(--dg-a)" stroke-width="1.3"/>
+  <text x="133" y="50" text-anchor="middle" font-size="11" font-weight="600" fill="var(--dg-c)">2.0 m</text>
+  <text x="133" y="214" text-anchor="middle" font-size="11" fill="var(--dg-text)">2 pts/m²</text>
+  <rect x="222" y="98" width="86" height="98" rx="4" fill="var(--dg-a-soft)" stroke="var(--dg-a)" stroke-width="1.3"/>
+  <text x="265" y="92" text-anchor="middle" font-size="11" font-weight="600" fill="var(--dg-c)">1.4 m</text>
+  <text x="265" y="214" text-anchor="middle" font-size="11" fill="var(--dg-text)">4</text>
+  <rect x="354" y="126" width="86" height="70" rx="4" fill="var(--dg-a-soft)" stroke="var(--dg-a)" stroke-width="1.3"/>
+  <text x="397" y="120" text-anchor="middle" font-size="11" font-weight="600" fill="var(--dg-c)">1.0 m</text>
+  <text x="397" y="214" text-anchor="middle" font-size="11" fill="var(--dg-text)">8</text>
+  <rect x="486" y="147" width="86" height="49" rx="4" fill="var(--dg-a-soft)" stroke="var(--dg-a)" stroke-width="1.3"/>
+  <text x="529" y="141" text-anchor="middle" font-size="11" font-weight="600" fill="var(--dg-c)">0.7 m</text>
+  <text x="529" y="214" text-anchor="middle" font-size="11" fill="var(--dg-text)">16</text>
+  <rect x="618" y="161" width="86" height="35" rx="4" fill="var(--dg-a-soft)" stroke="var(--dg-a)" stroke-width="1.3"/>
+  <text x="661" y="155" text-anchor="middle" font-size="11" font-weight="600" fill="var(--dg-c)">0.5 m</text>
+  <text x="661" y="214" text-anchor="middle" font-size="11" fill="var(--dg-text)">32</text>
+  <line x1="80" y1="196" x2="700" y2="196" stroke="var(--dg-line)" stroke-width="1.5"/>
+  <text x="80" y="40" font-size="10.5" fill="var(--dg-muted)">finest DTM cell size supportable without systematic voids</text>
+  <text x="80" y="240" font-size="10.5" fill="var(--dg-muted)">ground density, not total point density — under canopy the two differ tenfold, and only the first builds terrain</text>
+</svg>
 
 ## Performance Tuning
 

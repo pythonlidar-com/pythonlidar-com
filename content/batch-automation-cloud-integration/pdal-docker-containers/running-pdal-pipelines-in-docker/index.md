@@ -77,9 +77,10 @@ This guide is part of [PDAL Docker Containers for Reproducible Pipelines](https:
 
 The idea is simple, but three details trip up almost everyone the first time: a container has its own filesystem, so the paths in your pipeline JSON are not host paths; a container writes files as its own user, so results can land owned by root; and hardened hosts refuse the mount entirely until it is relabelled. Getting these right once turns "run PDAL in Docker" into a reliable one-liner you can drop into scripts and schedulers. Because the container carries a fixed PDAL, GDAL, and PROJ build, the run is also reproducible — the same `pdal pipeline` invocation produces the same DTM whether it runs on your laptop or a cloud worker, which is exactly what the broader [batch and cloud automation](https://www.pythonlidar.com/batch-automation-cloud-integration/) work depends on.
 
-<svg viewBox="0 0 720 250" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Sequence of running a PDAL pipeline in a Docker container with a bind mount" style="width:100%;max-width:720px;display:block;margin:1.5rem auto">
+<svg viewBox="8 -8 704 225" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Sequence of running a PDAL pipeline in a Docker container with a bind mount" style="width:100%;max-width:720px;display:block;margin:1.5rem auto">
   <title>Host to container pipeline execution sequence</title>
   <desc>Left column is the host with a data directory holding input.laz and pipeline.json. A docker run arrow crosses into the container in the right column, where pdal pipeline reads the input and writes dtm.tif. A return arrow shows the output file appearing back in the host data directory through the shared bind mount.</desc>
+  <rect x="8" y="-8" width="704" height="225" fill="var(--dg-bg)" rx="10"/>
   <defs>
     <marker id="rp-arr" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto">
       <path d="M0,0 L0,6 L8,3 z" fill="currentColor" opacity="0.6"/>
@@ -186,6 +187,27 @@ docker run --rm --entrypoint gdalinfo \
 ```
 
 Expect a raster with a valid CRS, a sensible extent, and ownership matching your host user.
+
+<svg viewBox="0 0 720 248" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="File ownership on the host after a container writes as root and as a mapped user" style="width:100%;max-width:720px;display:block;margin:1.6rem auto">
+  <title>Who owns the file the container just wrote</title>
+  <desc>The same output written two ways. Run without --user and the container process is uid 0, so the GeoTIFF on the host bind mount is owned by root and your account cannot delete it. Run with --user set to your own uid and gid and the file arrives owned by you, editable by the next step in the workflow.</desc>
+  <rect x="0" y="0" width="720" height="248" fill="var(--dg-bg)" rx="10"/>
+  <text x="185" y="42" text-anchor="middle" font-size="12" font-weight="600" fill="var(--dg-e)">docker run …</text>
+  <text x="535" y="42" text-anchor="middle" font-size="12" font-weight="600" fill="var(--dg-d)">docker run --user $(id -u):$(id -g) …</text>
+  <rect x="20" y="54" width="330" height="118" rx="8" fill="var(--dg-e-soft)" stroke="var(--dg-e)" stroke-width="1.3"/>
+  <text x="185" y="82" text-anchor="middle" font-size="11" fill="var(--dg-text)">in the container: uid 0, root</text>
+  <text x="185" y="112" text-anchor="middle" font-size="11" fill="var(--dg-text)">on the host: -rw-r--r-- root root</text>
+  <text x="185" y="142" text-anchor="middle" font-size="11" fill="var(--dg-text)">dtm_0431.tif</text>
+  <text x="185" y="162" text-anchor="middle" font-size="10" fill="var(--dg-muted)">you cannot delete it without sudo</text>
+  <rect x="370" y="54" width="330" height="118" rx="8" fill="var(--dg-d-soft)" stroke="var(--dg-d)" stroke-width="1.3"/>
+  <text x="535" y="82" text-anchor="middle" font-size="11" fill="var(--dg-text)">in the container: uid 1000</text>
+  <text x="535" y="112" text-anchor="middle" font-size="11" fill="var(--dg-text)">on the host: -rw-r--r-- you you</text>
+  <text x="535" y="142" text-anchor="middle" font-size="11" fill="var(--dg-text)">dtm_0431.tif</text>
+  <text x="535" y="162" text-anchor="middle" font-size="10" fill="var(--dg-muted)">the next step just opens it</text>
+  <text x="20" y="200" font-size="10.5" fill="var(--dg-muted)">the mapped user has no entry in the container /etc/passwd, which some tools complain about — bake a matching user into the</text>
+  <text x="20" y="220" font-size="10.5" fill="var(--dg-muted)">image with a fixed uid instead, and the ownership works without the flag.</text>
+  <text x="20" y="240" font-size="10.5" fill="var(--dg-muted)">On CI runners the uid is rarely 1000, so read it rather than hard-coding it.</text>
+</svg>
 
 ## Complete Working Example
 
@@ -303,6 +325,32 @@ docker run --rm --entrypoint pdal -v "$PWD/data":/data \
 ```
 
 Finally, on the host, `ls -l data/dtm.tif` should show your username in the owner column — proof the `--user` flag worked and no `sudo chown` cleanup is needed.
+
+<svg viewBox="0 0 720 240" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Host paths and the container paths a pipeline JSON must use instead" style="width:100%;max-width:720px;display:block;margin:1.6rem auto">
+  <title>The pipeline JSON lives inside the container</title>
+  <desc>Three host paths and the container paths a bind mount turns them into. The pipeline JSON is read by a process that only ever sees the right-hand column, so any absolute host path written into it fails with a file-not-found that names a path the host really does have.</desc>
+  <rect x="0" y="0" width="720" height="240" fill="var(--dg-bg)" rx="10"/>
+  <defs><marker id="pt-arw" markerWidth="9" markerHeight="7" refX="9" refY="3.5" orient="auto"><path d="M0,0 L0,7 L9,3.5 z" fill="var(--dg-line)"/></marker></defs>
+  <text x="170" y="46" text-anchor="middle" font-size="11" fill="var(--dg-muted)">on the host</text>
+  <text x="520" y="46" text-anchor="middle" font-size="11" fill="var(--dg-muted)">inside the container</text>
+  <rect x="20" y="58" width="300" height="34" rx="5" fill="var(--dg-c-soft)" stroke="var(--dg-c)" stroke-width="1.2"/>
+  <text x="170" y="80" text-anchor="middle" font-size="11" fill="var(--dg-text)">/data/lidar/tiles</text>
+  <rect x="400" y="58" width="300" height="34" rx="5" fill="var(--dg-d-soft)" stroke="var(--dg-d)" stroke-width="1.2"/>
+  <text x="550" y="80" text-anchor="middle" font-size="11" fill="var(--dg-text)">/work/tiles</text>
+  <rect x="20" y="104" width="300" height="34" rx="5" fill="var(--dg-c-soft)" stroke="var(--dg-c)" stroke-width="1.2"/>
+  <text x="170" y="126" text-anchor="middle" font-size="11" fill="var(--dg-text)">/data/lidar/out</text>
+  <rect x="400" y="104" width="300" height="34" rx="5" fill="var(--dg-d-soft)" stroke="var(--dg-d)" stroke-width="1.2"/>
+  <text x="550" y="126" text-anchor="middle" font-size="11" fill="var(--dg-text)">/work/out</text>
+  <rect x="20" y="150" width="300" height="34" rx="5" fill="var(--dg-c-soft)" stroke="var(--dg-c)" stroke-width="1.2"/>
+  <text x="170" y="172" text-anchor="middle" font-size="11" fill="var(--dg-text)">./pipelines/dtm.json</text>
+  <rect x="400" y="150" width="300" height="34" rx="5" fill="var(--dg-d-soft)" stroke="var(--dg-d)" stroke-width="1.2"/>
+  <text x="550" y="172" text-anchor="middle" font-size="11" fill="var(--dg-text)">/work/pipelines/dtm.json</text>
+  <line x1="326" y1="75" x2="394" y2="75" stroke="var(--dg-line)" stroke-width="1.4" marker-end="url(#pt-arw)"/>
+  <line x1="326" y1="121" x2="394" y2="121" stroke="var(--dg-line)" stroke-width="1.4" marker-end="url(#pt-arw)"/>
+  <line x1="326" y1="167" x2="394" y2="167" stroke="var(--dg-line)" stroke-width="1.4" marker-end="url(#pt-arw)"/>
+  <text x="20" y="210" font-size="10.5" fill="var(--dg-muted)">write the JSON with container paths and pass the host paths only to -v, or keep the filenames in the pipeline as options and</text>
+  <text x="20" y="230" font-size="10.5" fill="var(--dg-muted)">supply them at run time with --readers.las.filename= — which is what makes one pipeline file reusable across every tile.</text>
+</svg>
 
 ## Gotchas and Edge Cases
 

@@ -97,6 +97,7 @@ The diagram below shows the five-stage cleaning chain, what each stage removes o
 <svg viewBox="0 0 760 190" role="img" aria-label="PDAL five-stage data-cleaning pipeline: readers.las, filters.range, filters.outlier, filters.assign, writers.las" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:760px;display:block;margin:1.5rem auto;">
   <title>PDAL data-cleaning stage flow</title>
   <desc>Five sequential PDAL stages from left to right: readers.las ingests raw LAS or LAZ with a CRS anchor; filters.range drops out-of-bounds points on Z and scan-angle limits; filters.outlier flags statistically isolated noise points with Classification 7; filters.assign updates classification codes using a WHERE expression; writers.las serialises compressed LAZ output. Arrows between boxes represent the shared in-memory PointView buffer passing through each stage without intermediate disk writes.</desc>
+  <rect x="0" y="0" width="760" height="190" fill="var(--dg-bg)" rx="10"/>
   <defs>
     <marker id="arr-clean" markerWidth="9" markerHeight="9" refX="7" refY="3.5" orient="auto">
       <path d="M0,0.5 L0,6.5 L8,3.5 z" fill="currentColor" opacity="0.6"/>
@@ -215,6 +216,28 @@ The `value` parameter is a PDAL expression string. The `WHERE` clause restricts 
 `extra_dims: all` forwards any non-standard dimensions (HAG, NDVI-derived bands, custom sensor fields) that earlier stages may have added, preventing data loss when chaining this pipeline into a larger workflow.
 
 ---
+
+<svg viewBox="0 0 720 250" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Points surviving each stage of a data-cleaning chain" style="width:100%;max-width:720px;display:block;margin:1.6rem auto">
+  <title>How many points each cleaning stage actually removes</title>
+  <desc>Bars showing the surviving point count after each stage of one cleaning chain. The reader delivers 18.4 million points. The outlier filter removes about 300 thousand, the elevation range filter another 200 thousand, sampling 700 thousand duplicates, and the final crop takes the tile down to 12.6 million. Most of the reduction comes from the last stage, which is the argument for running it earlier when the answer is the same.</desc>
+  <rect x="0" y="0" width="720" height="250" fill="var(--dg-bg)" rx="10"/>
+  <text x="180" y="32" font-size="10.5" fill="var(--dg-muted)">points surviving each stage, one 18.4 M point tile</text>
+  <rect x="180" y="48" width="500" height="30" rx="4" fill="var(--dg-a-soft)" stroke="var(--dg-a)" stroke-width="1.3"/>
+  <text x="170" y="68" text-anchor="end" font-size="11" fill="var(--dg-text)">readers.las</text>
+  <text x="688" y="68" font-size="10.5" fill="var(--dg-muted)">18.4 M</text>
+  <rect x="180" y="86" width="492" height="30" rx="4" fill="var(--dg-a-soft)" stroke="var(--dg-a)" stroke-width="1.3"/>
+  <text x="170" y="106" text-anchor="end" font-size="11" fill="var(--dg-text)">filters.outlier</text>
+  <text x="680" y="106" font-size="10.5" fill="var(--dg-muted)">18.1 M</text>
+  <rect x="180" y="124" width="486" height="30" rx="4" fill="var(--dg-a-soft)" stroke="var(--dg-a)" stroke-width="1.3"/>
+  <text x="170" y="144" text-anchor="end" font-size="11" fill="var(--dg-text)">filters.range Z</text>
+  <text x="674" y="144" font-size="10.5" fill="var(--dg-muted)">17.9 M</text>
+  <rect x="180" y="162" width="467" height="30" rx="4" fill="var(--dg-a-soft)" stroke="var(--dg-a)" stroke-width="1.3"/>
+  <text x="170" y="182" text-anchor="end" font-size="11" fill="var(--dg-text)">filters.sample</text>
+  <text x="655" y="182" font-size="10.5" fill="var(--dg-muted)">17.2 M</text>
+  <rect x="180" y="200" width="342" height="30" rx="4" fill="var(--dg-a-soft)" stroke="var(--dg-a)" stroke-width="1.3"/>
+  <text x="170" y="220" text-anchor="end" font-size="11" fill="var(--dg-text)">filters.crop</text>
+  <text x="530" y="220" font-size="10.5" fill="var(--dg-muted)">12.6 M</text>
+</svg>
 
 ## Complete Working Example
 
@@ -352,6 +375,41 @@ print(f"Output bounds: Z {bbox['minz']:.2f} – {bbox['maxz']:.2f} m")
 If `minz` equals your lower `filters.range` bound, you may have clipped valid ground returns — raise the lower Z limit and re-run. The [memory management](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/memory-management/) page explains how to verify buffer allocation and detect truncation from out-of-memory conditions during execution.
 
 ---
+
+<svg viewBox="0 0 720 254" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Four kinds of bad point in one scene, colour-coded to the filter that removes each" style="width:100%;max-width:720px;display:block;margin:1.6rem auto">
+  <title>Four kinds of bad point, four different filters</title>
+  <desc>A cross-section of a scene with terrain, a building and trees. High returns from birds and cloud sit far above everything, sparse specks float off the surfaces, a few points sit below true ground, and dense overlapping returns cluster where flight lines cross. Each is coloured to the filter that removes it, because no single filter handles all four.</desc>
+  <rect x="0" y="0" width="720" height="254" fill="var(--dg-bg)" rx="10"/>
+  <rect x="20" y="46" width="440" height="168" rx="8" fill="var(--dg-surface)" stroke="var(--dg-line-soft)" stroke-width="1.2"/>
+  <path d="M34 186 L140 182 L240 176 L340 180 L446 174" fill="none" stroke="var(--dg-line)" stroke-width="2"/>
+  <rect x="150" y="132" width="70" height="46" fill="var(--dg-surface-2)" stroke="var(--dg-line-soft)" stroke-width="1.2"/>
+  <ellipse cx="330" cy="148" rx="42" ry="22" fill="var(--dg-d-soft)" stroke="var(--dg-d)" stroke-width="1.2"/>
+  <circle cx="96" cy="66" r="4" fill="var(--dg-e)"/>
+  <circle cx="268" cy="60" r="4" fill="var(--dg-e)"/>
+  <circle cx="404" cy="72" r="4" fill="var(--dg-e)"/>
+  <circle cx="118" cy="120" r="3.6" fill="var(--dg-c)"/>
+  <circle cx="252" cy="106" r="3.6" fill="var(--dg-c)"/>
+  <circle cx="392" cy="118" r="3.6" fill="var(--dg-c)"/>
+  <circle cx="176" cy="200" r="3.6" fill="var(--dg-a)"/>
+  <circle cx="300" cy="204" r="3.6" fill="var(--dg-a)"/>
+  <circle cx="352" cy="188" r="3" fill="var(--dg-d)"/>
+  <circle cx="358" cy="190" r="3" fill="var(--dg-d)"/>
+  <circle cx="364" cy="187" r="3" fill="var(--dg-d)"/>
+  <circle cx="370" cy="190" r="3" fill="var(--dg-d)"/>
+  <rect x="492" y="62" width="14" height="14" rx="3" fill="var(--dg-e-soft)" stroke="var(--dg-e)" stroke-width="1.5"/>
+  <text x="514" y="74" font-size="11" fill="var(--dg-text)">filters.range — Z limits</text>
+  <text x="514" y="89" font-size="10" fill="var(--dg-muted)">high birds and cloud hits</text>
+  <rect x="492" y="102" width="14" height="14" rx="3" fill="var(--dg-c-soft)" stroke="var(--dg-c)" stroke-width="1.5"/>
+  <text x="514" y="114" font-size="11" fill="var(--dg-text)">filters.outlier — statistical</text>
+  <text x="514" y="129" font-size="10" fill="var(--dg-muted)">sparse specks off the surface</text>
+  <rect x="492" y="142" width="14" height="14" rx="3" fill="var(--dg-a-soft)" stroke="var(--dg-a)" stroke-width="1.5"/>
+  <text x="514" y="154" font-size="11" fill="var(--dg-text)">filters.elm — low noise</text>
+  <text x="514" y="169" font-size="10" fill="var(--dg-muted)">points below true ground</text>
+  <rect x="492" y="182" width="14" height="14" rx="3" fill="var(--dg-d-soft)" stroke="var(--dg-d)" stroke-width="1.5"/>
+  <text x="514" y="194" font-size="11" fill="var(--dg-text)">filters.sample — poisson</text>
+  <text x="514" y="209" font-size="10" fill="var(--dg-muted)">redundant overlapping returns</text>
+  <text x="20" y="234" font-size="10.5" fill="var(--dg-muted)">run them in this order — the elevation limits are cheapest and shrink the input every later filter has to search</text>
+</svg>
 
 ## Gotchas and Edge Cases
 

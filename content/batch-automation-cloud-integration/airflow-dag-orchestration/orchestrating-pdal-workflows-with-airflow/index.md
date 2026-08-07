@@ -76,6 +76,7 @@ The workload is deliberately narrow: given a prefix full of LAZ tiles in object 
 <svg viewBox="0 0 720 250" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="TaskFlow DAG expanding a single process_tile task into mapped per-tile instances" style="width:100%;max-width:720px;display:block;margin:1.5rem auto">
   <title>Dynamic task mapping expands one process_tile task over a discovered tile list</title>
   <desc>On the left a discover_tiles task returns a list of three tile keys via XCom. An arrow labelled expand points to three separate process_tile instances stacked vertically, each running an SMRF and writers.gdal pipeline, and each returning a DTM path. The three converge into a single summarise task on the right.</desc>
+  <rect x="0" y="0" width="720" height="250" fill="var(--dg-bg)" rx="10"/>
   <defs>
     <marker id="ot-arr" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto">
       <path d="M0,0 L0,6 L8,3 z" fill="currentColor" opacity="0.6"/>
@@ -196,6 +197,30 @@ def summarise(results: list[dict]) -> dict:
 
 Unpause the DAG in the UI (or `airflow dags trigger pdal_tile_walkthrough`), then open the grid view. Each mapped square is one tile; hover to see its state, click to read its log and XCom. A green `summarise` means the whole batch is done.
 
+<svg viewBox="0 0 720 250" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Three attempts at one tile task with exponential backoff between them" style="width:100%;max-width:720px;display:block;margin:1.6rem auto">
+  <title>Exponential backoff, drawn to scale</title>
+  <desc>One tile task attempted three times. The first fails on an S3 throttling response, the second fails after a two minute wait, and the third succeeds after a further four minutes. The delays double each time, which is what stops four hundred simultaneously-throttled tasks from retrying in lockstep and throttling themselves again.</desc>
+  <rect x="0" y="0" width="720" height="250" fill="var(--dg-bg)" rx="10"/>
+  <line x1="60" y1="130" x2="690" y2="130" stroke="var(--dg-line)" stroke-width="1.6"/>
+  <rect x="90" y="106" width="96" height="48" rx="7" fill="var(--dg-e-soft)" stroke="var(--dg-e)" stroke-width="1.4"/>
+  <text x="138" y="126" text-anchor="middle" font-size="11" font-weight="600" fill="var(--dg-text)">attempt 1</text>
+  <text x="138" y="144" text-anchor="middle" font-size="9.5" fill="var(--dg-muted)">S3 503 slow down</text>
+  <rect x="216" y="106" width="96" height="48" rx="7" fill="var(--dg-e-soft)" stroke="var(--dg-e)" stroke-width="1.4"/>
+  <text x="264" y="126" text-anchor="middle" font-size="11" font-weight="600" fill="var(--dg-text)">attempt 2</text>
+  <text x="264" y="144" text-anchor="middle" font-size="9.5" fill="var(--dg-muted)">S3 503 again</text>
+  <rect x="378" y="106" width="96" height="48" rx="7" fill="var(--dg-d-soft)" stroke="var(--dg-d)" stroke-width="1.4"/>
+  <text x="426" y="126" text-anchor="middle" font-size="11" font-weight="600" fill="var(--dg-text)">attempt 3</text>
+  <text x="426" y="144" text-anchor="middle" font-size="9.5" fill="var(--dg-muted)">succeeds</text>
+  <text x="163" y="94" text-anchor="middle" font-size="10.5" fill="var(--dg-c)">wait 2 min</text>
+  <text x="337" y="94" text-anchor="middle" font-size="10.5" fill="var(--dg-c)">wait 4 min</text>
+  <line x1="186" y1="130" x2="216" y2="130" stroke="var(--dg-c)" stroke-width="3"/>
+  <line x1="312" y1="130" x2="378" y2="130" stroke="var(--dg-c)" stroke-width="3"/>
+  <text x="60" y="60" font-size="10.5" fill="var(--dg-muted)">retries=3, retry_delay=2 min, retry_exponential_backoff=True</text>
+  <text x="60" y="196" font-size="10.5" fill="var(--dg-muted)">add jitter as well as backoff — without it every task in a mapped group retries at exactly the same second,</text>
+  <text x="60" y="216" font-size="10.5" fill="var(--dg-muted)">which is the same thundering herd that caused the throttling in the first place.</text>
+  <text x="60" y="238" font-size="10.5" fill="var(--dg-muted)">Set max_retry_delay so a long-lived DAG cannot back off to hours.</text>
+</svg>
+
 ## Complete Working Example
 
 Save as `dags/pdal_tile_walkthrough.py`. It is self-contained and runnable against any S3 prefix of LAZ tiles.
@@ -297,6 +322,29 @@ aws s3 ls s3://lidar-demo/survey-a/dtm/ | grep -c '\.tif$'
 ```
 
 Spot-check one raster's validity with `pdal info` on its source, or open it in QGIS and confirm the elevation range is sane for the terrain. A DTM whose values are all `-9999` means every cell was nodata — usually a sign the SMRF stage classified nothing, which the `count == 0` guard should already have caught as a task failure.
+
+<svg viewBox="0 0 720 252" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="What belongs in an XCom against what belongs in object storage" style="width:100%;max-width:720px;display:block;margin:1.6rem auto">
+  <title>XCom is a pointer, never a payload</title>
+  <desc>Two columns. Pass through XCom: an S3 key, a tile identifier, a point count, a status string — all small, all metadata. Keep in object storage and pass only the key: the point cloud itself, a raster, a manifest of ten thousand tiles, a log. Airflow stores XCom values in its metadata database, so a large one is written to Postgres on every task.</desc>
+  <rect x="0" y="0" width="720" height="252" fill="var(--dg-bg)" rx="10"/>
+  <defs><marker id="xc-arw" markerWidth="9" markerHeight="7" refX="9" refY="3.5" orient="auto"><path d="M0,0 L0,7 L9,3.5 z" fill="var(--dg-line)"/></marker></defs>
+  <text x="185" y="46" text-anchor="middle" font-size="12" font-weight="600" fill="var(--dg-d)">pass through XCom</text>
+  <text x="535" y="46" text-anchor="middle" font-size="12" font-weight="600" fill="var(--dg-e)">keep in S3, pass the key</text>
+  <rect x="20" y="58" width="330" height="146" rx="8" fill="var(--dg-d-soft)" stroke="var(--dg-d)" stroke-width="1.3"/>
+  <text x="40" y="86" font-size="11.5" fill="var(--dg-text)">s3://bucket/out/tile_0431.laz</text>
+  <text x="40" y="114" font-size="11.5" fill="var(--dg-text)">tile id, row and column</text>
+  <text x="40" y="142" font-size="11.5" fill="var(--dg-text)">point count after filtering</text>
+  <text x="40" y="170" font-size="11.5" fill="var(--dg-text)">status and duration</text>
+  <text x="40" y="194" font-size="10" fill="var(--dg-muted)">a few hundred bytes each</text>
+  <rect x="370" y="58" width="330" height="146" rx="8" fill="var(--dg-e-soft)" stroke="var(--dg-e)" stroke-width="1.3"/>
+  <text x="390" y="86" font-size="11.5" fill="var(--dg-text)">the point cloud itself</text>
+  <text x="390" y="114" font-size="11.5" fill="var(--dg-text)">the DTM GeoTIFF</text>
+  <text x="390" y="142" font-size="11.5" fill="var(--dg-text)">a 12,500-line tile manifest</text>
+  <text x="390" y="170" font-size="11.5" fill="var(--dg-text)">the PDAL log output</text>
+  <text x="390" y="194" font-size="10" fill="var(--dg-muted)">megabytes to gigabytes each</text>
+  <text x="20" y="228" font-size="10.5" fill="var(--dg-muted)">every XCom value is a row in the Airflow metadata database — a 12,500-entry manifest passed between two tasks is a 400 KB</text>
+  <text x="20" y="246" font-size="10.5" fill="var(--dg-muted)">database write per run, and the default backend refuses anything much larger.</text>
+</svg>
 
 ## Gotchas and Edge Cases
 

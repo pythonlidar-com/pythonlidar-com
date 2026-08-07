@@ -80,6 +80,7 @@ Forest breaks SMRF's most basic assumption — that each grid cell contains at l
 <svg viewBox="0 0 720 300" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Cross-section of forest canopy showing which laser returns SMRF should keep for ground classification" style="width:100%;max-width:720px;display:block;margin:1.5rem auto">
   <title>Forest Canopy Return Selection</title>
   <desc>A side-view cross section under a tree. First returns strike the canopy top, intermediate returns hit branches, and last or only returns reach the forest floor. A dashed line marks the reconstructed ground surface built only from the penetrating last and only returns, sitting on true terrain rather than floating in the understory.</desc>
+  <rect x="0" y="0" width="720" height="300" fill="var(--dg-bg)" rx="10"/>
   <defs>
     <marker id="frt-arr" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto">
       <path d="M0,0 L0,6 L8,3 z" fill="currentColor" opacity="0.6"/>
@@ -189,6 +190,30 @@ Birds, low blunders, and multipath artefacts under the canopy are especially dam
 ]
 ```
 
+<svg viewBox="0 0 720 240" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Share of pulses that reach the ground under five canopy conditions" style="width:100%;max-width:720px;display:block;margin:1.6rem auto">
+  <title>How many pulses actually reach the forest floor</title>
+  <desc>Ground-return share by canopy condition. Over open ground effectively every pulse reaches the surface. Under scattered trees three quarters do, under an open canopy about 40 percent, under closed canopy 12 percent, and under old-growth conifer only about 4 percent. Below roughly 10 percent no parameter set can rebuild a continuous terrain surface.</desc>
+  <rect x="0" y="0" width="720" height="240" fill="var(--dg-bg)" rx="10"/>
+  <rect x="200" y="52" width="459" height="26" rx="4" fill="var(--dg-d-soft)" stroke="var(--dg-d)" stroke-width="1.3"/>
+  <text x="190" y="70" text-anchor="end" font-size="11" fill="var(--dg-text)">open ground</text>
+  <text x="667" y="70" font-size="10.5" fill="var(--dg-muted)">100%</text>
+  <rect x="200" y="88" width="340" height="26" rx="4" fill="var(--dg-d-soft)" stroke="var(--dg-d)" stroke-width="1.3"/>
+  <text x="190" y="106" text-anchor="end" font-size="11" fill="var(--dg-text)">scattered trees</text>
+  <text x="548" y="106" font-size="10.5" fill="var(--dg-muted)">74%</text>
+  <rect x="200" y="124" width="188" height="26" rx="4" fill="var(--dg-c-soft)" stroke="var(--dg-c)" stroke-width="1.3"/>
+  <text x="190" y="142" text-anchor="end" font-size="11" fill="var(--dg-text)">open canopy</text>
+  <text x="396" y="142" font-size="10.5" fill="var(--dg-muted)">41%</text>
+  <rect x="200" y="160" width="55" height="26" rx="4" fill="var(--dg-e-soft)" stroke="var(--dg-e)" stroke-width="1.3"/>
+  <text x="190" y="178" text-anchor="end" font-size="11" fill="var(--dg-text)">closed canopy</text>
+  <text x="263" y="178" font-size="10.5" fill="var(--dg-muted)">12%</text>
+  <rect x="200" y="196" width="18" height="26" rx="4" fill="var(--dg-e-soft)" stroke="var(--dg-e)" stroke-width="1.3"/>
+  <text x="190" y="214" text-anchor="end" font-size="11" fill="var(--dg-text)">old-growth conifer</text>
+  <text x="226" y="214" font-size="10.5" fill="var(--dg-muted)">4%</text>
+  <line x1="246" y1="46" x2="246" y2="238" stroke="var(--dg-e)" stroke-width="1.6" stroke-dasharray="5 4"/>
+  <text x="254" y="38" font-size="10.5" fill="var(--dg-e)">below 10% of pulses reaching ground, tuning cannot save the surface</text>
+  <text x="200" y="232" font-size="10.5" fill="var(--dg-muted)">share of emitted pulses producing at least one bare-earth return, 8 pts/m² acquisition</text>
+</svg>
+
 ## Complete Working Example
 
 Save as `smrf_forest.py`. It classifies a forested tile, reports the ground fraction, and warns when density is too low for a reliable result.
@@ -292,6 +317,139 @@ if __name__ == "__main__":
 | `scalar` | 1.25 | 1.5 | Grant steep cells more vertical tolerance |
 | `threshold` | 0.5 m | 0.4–0.5 m | Keep close to the floor to reject understory |
 | `ignore` | — | `Classification[7:7]` | Skip sub-canopy noise flagged by `filters.outlier` |
+
+<svg viewBox="0 0 720 248" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Ground-return density per cell across an open and a canopied strip" style="width:100%;max-width:720px;display:block;margin:1.6rem auto">
+  <title>The voids that tuning cannot fill</title>
+  <desc>A grid of one-metre cells coloured by how many bare-earth returns landed in each. The open strips on either side have several returns per cell. The canopied strip through the middle has one return in some cells and none at all in others — and a cell with no return can only be filled at the raster stage, never by the classifier.</desc>
+  <rect x="0" y="0" width="720" height="248" fill="var(--dg-bg)" rx="10"/>
+  <rect x="40" y="56" width="32" height="26" fill="var(--dg-d)" fill-opacity="0.34" stroke="var(--dg-line-soft)" stroke-width="0.7"/>
+  <rect x="72" y="56" width="32" height="26" fill="var(--dg-d)" fill-opacity="0.34" stroke="var(--dg-line-soft)" stroke-width="0.7"/>
+  <rect x="104" y="56" width="32" height="26" fill="var(--dg-d)" fill-opacity="0.34" stroke="var(--dg-line-soft)" stroke-width="0.7"/>
+  <rect x="136" y="56" width="32" height="26" fill="var(--dg-d)" fill-opacity="0.34" stroke="var(--dg-line-soft)" stroke-width="0.7"/>
+  <rect x="168" y="56" width="32" height="26" fill="var(--dg-d)" fill-opacity="0.34" stroke="var(--dg-line-soft)" stroke-width="0.7"/>
+  <rect x="200" y="56" width="32" height="26" fill="var(--dg-d)" fill-opacity="0.34" stroke="var(--dg-line-soft)" stroke-width="0.7"/>
+  <rect x="232" y="56" width="32" height="26" fill="var(--dg-d)" fill-opacity="0.34" stroke="var(--dg-line-soft)" stroke-width="0.7"/>
+  <rect x="264" y="56" width="32" height="26" fill="var(--dg-c)" fill-opacity="0.30" stroke="var(--dg-line-soft)" stroke-width="0.7"/>
+  <rect x="296" y="56" width="32" height="26" fill="var(--dg-c)" fill-opacity="0.30" stroke="var(--dg-line-soft)" stroke-width="0.7"/>
+  <rect x="328" y="56" width="32" height="26" fill="var(--dg-e)" fill-opacity="0.34" stroke="var(--dg-line-soft)" stroke-width="0.7"/>
+  <rect x="360" y="56" width="32" height="26" fill="var(--dg-c)" fill-opacity="0.30" stroke="var(--dg-line-soft)" stroke-width="0.7"/>
+  <rect x="392" y="56" width="32" height="26" fill="var(--dg-c)" fill-opacity="0.30" stroke="var(--dg-line-soft)" stroke-width="0.7"/>
+  <rect x="424" y="56" width="32" height="26" fill="var(--dg-e)" fill-opacity="0.34" stroke="var(--dg-line-soft)" stroke-width="0.7"/>
+  <rect x="456" y="56" width="32" height="26" fill="var(--dg-c)" fill-opacity="0.30" stroke="var(--dg-line-soft)" stroke-width="0.7"/>
+  <rect x="488" y="56" width="32" height="26" fill="var(--dg-c)" fill-opacity="0.30" stroke="var(--dg-line-soft)" stroke-width="0.7"/>
+  <rect x="520" y="56" width="32" height="26" fill="var(--dg-e)" fill-opacity="0.34" stroke="var(--dg-line-soft)" stroke-width="0.7"/>
+  <rect x="552" y="56" width="32" height="26" fill="var(--dg-d)" fill-opacity="0.34" stroke="var(--dg-line-soft)" stroke-width="0.7"/>
+  <rect x="584" y="56" width="32" height="26" fill="var(--dg-d)" fill-opacity="0.34" stroke="var(--dg-line-soft)" stroke-width="0.7"/>
+  <rect x="616" y="56" width="32" height="26" fill="var(--dg-d)" fill-opacity="0.34" stroke="var(--dg-line-soft)" stroke-width="0.7"/>
+  <rect x="648" y="56" width="32" height="26" fill="var(--dg-d)" fill-opacity="0.34" stroke="var(--dg-line-soft)" stroke-width="0.7"/>
+  <rect x="40" y="82" width="32" height="26" fill="var(--dg-d)" fill-opacity="0.34" stroke="var(--dg-line-soft)" stroke-width="0.7"/>
+  <rect x="72" y="82" width="32" height="26" fill="var(--dg-d)" fill-opacity="0.34" stroke="var(--dg-line-soft)" stroke-width="0.7"/>
+  <rect x="104" y="82" width="32" height="26" fill="var(--dg-d)" fill-opacity="0.34" stroke="var(--dg-line-soft)" stroke-width="0.7"/>
+  <rect x="136" y="82" width="32" height="26" fill="var(--dg-d)" fill-opacity="0.34" stroke="var(--dg-line-soft)" stroke-width="0.7"/>
+  <rect x="168" y="82" width="32" height="26" fill="var(--dg-d)" fill-opacity="0.34" stroke="var(--dg-line-soft)" stroke-width="0.7"/>
+  <rect x="200" y="82" width="32" height="26" fill="var(--dg-d)" fill-opacity="0.34" stroke="var(--dg-line-soft)" stroke-width="0.7"/>
+  <rect x="232" y="82" width="32" height="26" fill="var(--dg-d)" fill-opacity="0.34" stroke="var(--dg-line-soft)" stroke-width="0.7"/>
+  <rect x="264" y="82" width="32" height="26" fill="var(--dg-c)" fill-opacity="0.30" stroke="var(--dg-line-soft)" stroke-width="0.7"/>
+  <rect x="296" y="82" width="32" height="26" fill="var(--dg-e)" fill-opacity="0.34" stroke="var(--dg-line-soft)" stroke-width="0.7"/>
+  <rect x="328" y="82" width="32" height="26" fill="var(--dg-c)" fill-opacity="0.30" stroke="var(--dg-line-soft)" stroke-width="0.7"/>
+  <rect x="360" y="82" width="32" height="26" fill="var(--dg-c)" fill-opacity="0.30" stroke="var(--dg-line-soft)" stroke-width="0.7"/>
+  <rect x="392" y="82" width="32" height="26" fill="var(--dg-e)" fill-opacity="0.34" stroke="var(--dg-line-soft)" stroke-width="0.7"/>
+  <rect x="424" y="82" width="32" height="26" fill="var(--dg-c)" fill-opacity="0.30" stroke="var(--dg-line-soft)" stroke-width="0.7"/>
+  <rect x="456" y="82" width="32" height="26" fill="var(--dg-c)" fill-opacity="0.30" stroke="var(--dg-line-soft)" stroke-width="0.7"/>
+  <rect x="488" y="82" width="32" height="26" fill="var(--dg-e)" fill-opacity="0.34" stroke="var(--dg-line-soft)" stroke-width="0.7"/>
+  <rect x="520" y="82" width="32" height="26" fill="var(--dg-c)" fill-opacity="0.30" stroke="var(--dg-line-soft)" stroke-width="0.7"/>
+  <rect x="552" y="82" width="32" height="26" fill="var(--dg-d)" fill-opacity="0.34" stroke="var(--dg-line-soft)" stroke-width="0.7"/>
+  <rect x="584" y="82" width="32" height="26" fill="var(--dg-d)" fill-opacity="0.34" stroke="var(--dg-line-soft)" stroke-width="0.7"/>
+  <rect x="616" y="82" width="32" height="26" fill="var(--dg-d)" fill-opacity="0.34" stroke="var(--dg-line-soft)" stroke-width="0.7"/>
+  <rect x="648" y="82" width="32" height="26" fill="var(--dg-d)" fill-opacity="0.34" stroke="var(--dg-line-soft)" stroke-width="0.7"/>
+  <rect x="40" y="108" width="32" height="26" fill="var(--dg-d)" fill-opacity="0.34" stroke="var(--dg-line-soft)" stroke-width="0.7"/>
+  <rect x="72" y="108" width="32" height="26" fill="var(--dg-d)" fill-opacity="0.34" stroke="var(--dg-line-soft)" stroke-width="0.7"/>
+  <rect x="104" y="108" width="32" height="26" fill="var(--dg-d)" fill-opacity="0.34" stroke="var(--dg-line-soft)" stroke-width="0.7"/>
+  <rect x="136" y="108" width="32" height="26" fill="var(--dg-d)" fill-opacity="0.34" stroke="var(--dg-line-soft)" stroke-width="0.7"/>
+  <rect x="168" y="108" width="32" height="26" fill="var(--dg-d)" fill-opacity="0.34" stroke="var(--dg-line-soft)" stroke-width="0.7"/>
+  <rect x="200" y="108" width="32" height="26" fill="var(--dg-d)" fill-opacity="0.34" stroke="var(--dg-line-soft)" stroke-width="0.7"/>
+  <rect x="232" y="108" width="32" height="26" fill="var(--dg-d)" fill-opacity="0.34" stroke="var(--dg-line-soft)" stroke-width="0.7"/>
+  <rect x="264" y="108" width="32" height="26" fill="var(--dg-e)" fill-opacity="0.34" stroke="var(--dg-line-soft)" stroke-width="0.7"/>
+  <rect x="296" y="108" width="32" height="26" fill="var(--dg-c)" fill-opacity="0.30" stroke="var(--dg-line-soft)" stroke-width="0.7"/>
+  <rect x="328" y="108" width="32" height="26" fill="var(--dg-c)" fill-opacity="0.30" stroke="var(--dg-line-soft)" stroke-width="0.7"/>
+  <rect x="360" y="108" width="32" height="26" fill="var(--dg-e)" fill-opacity="0.34" stroke="var(--dg-line-soft)" stroke-width="0.7"/>
+  <rect x="392" y="108" width="32" height="26" fill="var(--dg-c)" fill-opacity="0.30" stroke="var(--dg-line-soft)" stroke-width="0.7"/>
+  <rect x="424" y="108" width="32" height="26" fill="var(--dg-c)" fill-opacity="0.30" stroke="var(--dg-line-soft)" stroke-width="0.7"/>
+  <rect x="456" y="108" width="32" height="26" fill="var(--dg-e)" fill-opacity="0.34" stroke="var(--dg-line-soft)" stroke-width="0.7"/>
+  <rect x="488" y="108" width="32" height="26" fill="var(--dg-c)" fill-opacity="0.30" stroke="var(--dg-line-soft)" stroke-width="0.7"/>
+  <rect x="520" y="108" width="32" height="26" fill="var(--dg-c)" fill-opacity="0.30" stroke="var(--dg-line-soft)" stroke-width="0.7"/>
+  <rect x="552" y="108" width="32" height="26" fill="var(--dg-d)" fill-opacity="0.34" stroke="var(--dg-line-soft)" stroke-width="0.7"/>
+  <rect x="584" y="108" width="32" height="26" fill="var(--dg-d)" fill-opacity="0.34" stroke="var(--dg-line-soft)" stroke-width="0.7"/>
+  <rect x="616" y="108" width="32" height="26" fill="var(--dg-d)" fill-opacity="0.34" stroke="var(--dg-line-soft)" stroke-width="0.7"/>
+  <rect x="648" y="108" width="32" height="26" fill="var(--dg-d)" fill-opacity="0.34" stroke="var(--dg-line-soft)" stroke-width="0.7"/>
+  <rect x="40" y="134" width="32" height="26" fill="var(--dg-d)" fill-opacity="0.34" stroke="var(--dg-line-soft)" stroke-width="0.7"/>
+  <rect x="72" y="134" width="32" height="26" fill="var(--dg-d)" fill-opacity="0.34" stroke="var(--dg-line-soft)" stroke-width="0.7"/>
+  <rect x="104" y="134" width="32" height="26" fill="var(--dg-d)" fill-opacity="0.34" stroke="var(--dg-line-soft)" stroke-width="0.7"/>
+  <rect x="136" y="134" width="32" height="26" fill="var(--dg-d)" fill-opacity="0.34" stroke="var(--dg-line-soft)" stroke-width="0.7"/>
+  <rect x="168" y="134" width="32" height="26" fill="var(--dg-d)" fill-opacity="0.34" stroke="var(--dg-line-soft)" stroke-width="0.7"/>
+  <rect x="200" y="134" width="32" height="26" fill="var(--dg-d)" fill-opacity="0.34" stroke="var(--dg-line-soft)" stroke-width="0.7"/>
+  <rect x="232" y="134" width="32" height="26" fill="var(--dg-d)" fill-opacity="0.34" stroke="var(--dg-line-soft)" stroke-width="0.7"/>
+  <rect x="264" y="134" width="32" height="26" fill="var(--dg-c)" fill-opacity="0.30" stroke="var(--dg-line-soft)" stroke-width="0.7"/>
+  <rect x="296" y="134" width="32" height="26" fill="var(--dg-c)" fill-opacity="0.30" stroke="var(--dg-line-soft)" stroke-width="0.7"/>
+  <rect x="328" y="134" width="32" height="26" fill="var(--dg-e)" fill-opacity="0.34" stroke="var(--dg-line-soft)" stroke-width="0.7"/>
+  <rect x="360" y="134" width="32" height="26" fill="var(--dg-c)" fill-opacity="0.30" stroke="var(--dg-line-soft)" stroke-width="0.7"/>
+  <rect x="392" y="134" width="32" height="26" fill="var(--dg-c)" fill-opacity="0.30" stroke="var(--dg-line-soft)" stroke-width="0.7"/>
+  <rect x="424" y="134" width="32" height="26" fill="var(--dg-e)" fill-opacity="0.34" stroke="var(--dg-line-soft)" stroke-width="0.7"/>
+  <rect x="456" y="134" width="32" height="26" fill="var(--dg-c)" fill-opacity="0.30" stroke="var(--dg-line-soft)" stroke-width="0.7"/>
+  <rect x="488" y="134" width="32" height="26" fill="var(--dg-c)" fill-opacity="0.30" stroke="var(--dg-line-soft)" stroke-width="0.7"/>
+  <rect x="520" y="134" width="32" height="26" fill="var(--dg-e)" fill-opacity="0.34" stroke="var(--dg-line-soft)" stroke-width="0.7"/>
+  <rect x="552" y="134" width="32" height="26" fill="var(--dg-d)" fill-opacity="0.34" stroke="var(--dg-line-soft)" stroke-width="0.7"/>
+  <rect x="584" y="134" width="32" height="26" fill="var(--dg-d)" fill-opacity="0.34" stroke="var(--dg-line-soft)" stroke-width="0.7"/>
+  <rect x="616" y="134" width="32" height="26" fill="var(--dg-d)" fill-opacity="0.34" stroke="var(--dg-line-soft)" stroke-width="0.7"/>
+  <rect x="648" y="134" width="32" height="26" fill="var(--dg-d)" fill-opacity="0.34" stroke="var(--dg-line-soft)" stroke-width="0.7"/>
+  <rect x="40" y="160" width="32" height="26" fill="var(--dg-d)" fill-opacity="0.34" stroke="var(--dg-line-soft)" stroke-width="0.7"/>
+  <rect x="72" y="160" width="32" height="26" fill="var(--dg-d)" fill-opacity="0.34" stroke="var(--dg-line-soft)" stroke-width="0.7"/>
+  <rect x="104" y="160" width="32" height="26" fill="var(--dg-d)" fill-opacity="0.34" stroke="var(--dg-line-soft)" stroke-width="0.7"/>
+  <rect x="136" y="160" width="32" height="26" fill="var(--dg-d)" fill-opacity="0.34" stroke="var(--dg-line-soft)" stroke-width="0.7"/>
+  <rect x="168" y="160" width="32" height="26" fill="var(--dg-d)" fill-opacity="0.34" stroke="var(--dg-line-soft)" stroke-width="0.7"/>
+  <rect x="200" y="160" width="32" height="26" fill="var(--dg-d)" fill-opacity="0.34" stroke="var(--dg-line-soft)" stroke-width="0.7"/>
+  <rect x="232" y="160" width="32" height="26" fill="var(--dg-d)" fill-opacity="0.34" stroke="var(--dg-line-soft)" stroke-width="0.7"/>
+  <rect x="264" y="160" width="32" height="26" fill="var(--dg-c)" fill-opacity="0.30" stroke="var(--dg-line-soft)" stroke-width="0.7"/>
+  <rect x="296" y="160" width="32" height="26" fill="var(--dg-e)" fill-opacity="0.34" stroke="var(--dg-line-soft)" stroke-width="0.7"/>
+  <rect x="328" y="160" width="32" height="26" fill="var(--dg-c)" fill-opacity="0.30" stroke="var(--dg-line-soft)" stroke-width="0.7"/>
+  <rect x="360" y="160" width="32" height="26" fill="var(--dg-c)" fill-opacity="0.30" stroke="var(--dg-line-soft)" stroke-width="0.7"/>
+  <rect x="392" y="160" width="32" height="26" fill="var(--dg-e)" fill-opacity="0.34" stroke="var(--dg-line-soft)" stroke-width="0.7"/>
+  <rect x="424" y="160" width="32" height="26" fill="var(--dg-c)" fill-opacity="0.30" stroke="var(--dg-line-soft)" stroke-width="0.7"/>
+  <rect x="456" y="160" width="32" height="26" fill="var(--dg-c)" fill-opacity="0.30" stroke="var(--dg-line-soft)" stroke-width="0.7"/>
+  <rect x="488" y="160" width="32" height="26" fill="var(--dg-e)" fill-opacity="0.34" stroke="var(--dg-line-soft)" stroke-width="0.7"/>
+  <rect x="520" y="160" width="32" height="26" fill="var(--dg-c)" fill-opacity="0.30" stroke="var(--dg-line-soft)" stroke-width="0.7"/>
+  <rect x="552" y="160" width="32" height="26" fill="var(--dg-d)" fill-opacity="0.34" stroke="var(--dg-line-soft)" stroke-width="0.7"/>
+  <rect x="584" y="160" width="32" height="26" fill="var(--dg-d)" fill-opacity="0.34" stroke="var(--dg-line-soft)" stroke-width="0.7"/>
+  <rect x="616" y="160" width="32" height="26" fill="var(--dg-d)" fill-opacity="0.34" stroke="var(--dg-line-soft)" stroke-width="0.7"/>
+  <rect x="648" y="160" width="32" height="26" fill="var(--dg-d)" fill-opacity="0.34" stroke="var(--dg-line-soft)" stroke-width="0.7"/>
+  <rect x="40" y="186" width="32" height="26" fill="var(--dg-d)" fill-opacity="0.34" stroke="var(--dg-line-soft)" stroke-width="0.7"/>
+  <rect x="72" y="186" width="32" height="26" fill="var(--dg-d)" fill-opacity="0.34" stroke="var(--dg-line-soft)" stroke-width="0.7"/>
+  <rect x="104" y="186" width="32" height="26" fill="var(--dg-d)" fill-opacity="0.34" stroke="var(--dg-line-soft)" stroke-width="0.7"/>
+  <rect x="136" y="186" width="32" height="26" fill="var(--dg-d)" fill-opacity="0.34" stroke="var(--dg-line-soft)" stroke-width="0.7"/>
+  <rect x="168" y="186" width="32" height="26" fill="var(--dg-d)" fill-opacity="0.34" stroke="var(--dg-line-soft)" stroke-width="0.7"/>
+  <rect x="200" y="186" width="32" height="26" fill="var(--dg-d)" fill-opacity="0.34" stroke="var(--dg-line-soft)" stroke-width="0.7"/>
+  <rect x="232" y="186" width="32" height="26" fill="var(--dg-d)" fill-opacity="0.34" stroke="var(--dg-line-soft)" stroke-width="0.7"/>
+  <rect x="264" y="186" width="32" height="26" fill="var(--dg-e)" fill-opacity="0.34" stroke="var(--dg-line-soft)" stroke-width="0.7"/>
+  <rect x="296" y="186" width="32" height="26" fill="var(--dg-c)" fill-opacity="0.30" stroke="var(--dg-line-soft)" stroke-width="0.7"/>
+  <rect x="328" y="186" width="32" height="26" fill="var(--dg-c)" fill-opacity="0.30" stroke="var(--dg-line-soft)" stroke-width="0.7"/>
+  <rect x="360" y="186" width="32" height="26" fill="var(--dg-e)" fill-opacity="0.34" stroke="var(--dg-line-soft)" stroke-width="0.7"/>
+  <rect x="392" y="186" width="32" height="26" fill="var(--dg-c)" fill-opacity="0.30" stroke="var(--dg-line-soft)" stroke-width="0.7"/>
+  <rect x="424" y="186" width="32" height="26" fill="var(--dg-c)" fill-opacity="0.30" stroke="var(--dg-line-soft)" stroke-width="0.7"/>
+  <rect x="456" y="186" width="32" height="26" fill="var(--dg-e)" fill-opacity="0.34" stroke="var(--dg-line-soft)" stroke-width="0.7"/>
+  <rect x="488" y="186" width="32" height="26" fill="var(--dg-c)" fill-opacity="0.30" stroke="var(--dg-line-soft)" stroke-width="0.7"/>
+  <rect x="520" y="186" width="32" height="26" fill="var(--dg-c)" fill-opacity="0.30" stroke="var(--dg-line-soft)" stroke-width="0.7"/>
+  <rect x="552" y="186" width="32" height="26" fill="var(--dg-d)" fill-opacity="0.34" stroke="var(--dg-line-soft)" stroke-width="0.7"/>
+  <rect x="584" y="186" width="32" height="26" fill="var(--dg-d)" fill-opacity="0.34" stroke="var(--dg-line-soft)" stroke-width="0.7"/>
+  <rect x="616" y="186" width="32" height="26" fill="var(--dg-d)" fill-opacity="0.34" stroke="var(--dg-line-soft)" stroke-width="0.7"/>
+  <rect x="648" y="186" width="32" height="26" fill="var(--dg-d)" fill-opacity="0.34" stroke="var(--dg-line-soft)" stroke-width="0.7"/>
+  <text x="40" y="42" font-size="10.5" fill="var(--dg-muted)">bare-earth returns per 1 m cell after SMRF with returns: "last, only"</text>
+  <rect x="40" y="224" width="13" height="13" rx="2" fill="var(--dg-d)" fill-opacity="0.34" stroke="var(--dg-line-soft)" stroke-width="0.7"/>
+  <text x="60" y="235" font-size="10.5" fill="var(--dg-muted)">3 or more</text>
+  <rect x="150" y="224" width="13" height="13" rx="2" fill="var(--dg-c)" fill-opacity="0.30" stroke="var(--dg-line-soft)" stroke-width="0.7"/>
+  <text x="170" y="235" font-size="10.5" fill="var(--dg-muted)">exactly one — usable, noisy</text>
+  <rect x="360" y="224" width="13" height="13" rx="2" fill="var(--dg-e)" fill-opacity="0.34" stroke="var(--dg-line-soft)" stroke-width="0.7"/>
+  <text x="380" y="235" font-size="10.5" fill="var(--dg-muted)">none — a void the DTM stage has to interpolate</text>
+</svg>
 
 ## Verification
 

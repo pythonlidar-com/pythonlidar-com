@@ -82,6 +82,7 @@ The mechanics are handled by GDAL's `gdaldem` tool, reached from Python through 
 <svg viewBox="0 0 640 250" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Sun azimuth and altitude geometry over a terrain profile" style="width:100%;max-width:640px;display:block;margin:1.5rem auto">
   <title>Hillshade illumination geometry</title>
   <desc>A terrain cross-section with a sun symbol in the upper left. One arrow shows the light ray descending at a 45 degree altitude onto a slope; a compass rose marks the 315 degree azimuth. Slopes facing the light are labelled bright and slopes facing away are labelled dark.</desc>
+  <rect x="0" y="0" width="640" height="250" fill="var(--dg-bg)" rx="10"/>
   <!-- ground profile -->
   <path d="M40,200 L150,150 L240,180 L330,120 L430,170 L540,130 L600,160" fill="none" stroke="currentColor" stroke-width="1.6"/>
   <!-- sun -->
@@ -179,6 +180,37 @@ gdal.DEMProcessing(
     format="GTiff",
 )
 ```
+
+<svg viewBox="0 0 720 238" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="The same ridge hillshaded from four light azimuths" style="width:100%;max-width:720px;display:block;margin:1.6rem auto">
+  <title>Why hillshade azimuth is not a free choice</title>
+  <desc>The same ridge shaded from four light directions, with the sun position marked in each panel. Lit from the north-west at 315 degrees the ridge reads as a ridge. Lit from the south-east the shading inverts and readers see a valley instead — the pseudoscopic illusion that makes 315 degrees the near-universal default.</desc>
+  <rect x="0" y="0" width="720" height="238" fill="var(--dg-bg)" rx="10"/>
+  <rect x="30" y="50" width="150" height="130" rx="8" fill="var(--dg-surface)" stroke="var(--dg-line-soft)" stroke-width="1.2"/>
+  <path d="M46 168 L105 78 L105 168 Z" fill="var(--dg-line)" fill-opacity="0.12"/>
+  <path d="M105 78 L164 168 L105 168 Z" fill="var(--dg-line)" fill-opacity="0.55"/>
+  <circle cx="54" cy="70" r="7" fill="var(--dg-c-soft)" stroke="var(--dg-c)" stroke-width="1.6"/>
+  <text x="105" y="200" text-anchor="middle" font-size="10.5" font-weight="600" fill="var(--dg-text)">az 315° — the default</text>
+  <text x="105" y="218" text-anchor="middle" font-size="10.5" fill="var(--dg-muted)">relief reads correctly</text>
+  <rect x="200" y="50" width="150" height="130" rx="8" fill="var(--dg-surface)" stroke="var(--dg-line-soft)" stroke-width="1.2"/>
+  <path d="M216 168 L275 78 L275 168 Z" fill="var(--dg-line)" fill-opacity="0.55"/>
+  <path d="M275 78 L334 168 L275 168 Z" fill="var(--dg-line)" fill-opacity="0.12"/>
+  <circle cx="326" cy="70" r="7" fill="var(--dg-c-soft)" stroke="var(--dg-c)" stroke-width="1.6"/>
+  <text x="275" y="200" text-anchor="middle" font-size="10.5" font-weight="600" fill="var(--dg-text)">az 45°</text>
+  <text x="275" y="218" text-anchor="middle" font-size="10.5" fill="var(--dg-muted)">relief inverts</text>
+  <rect x="370" y="50" width="150" height="130" rx="8" fill="var(--dg-surface)" stroke="var(--dg-line-soft)" stroke-width="1.2"/>
+  <path d="M386 168 L445 78 L445 168 Z" fill="var(--dg-line)" fill-opacity="0.55"/>
+  <path d="M445 78 L504 168 L445 168 Z" fill="var(--dg-line)" fill-opacity="0.12"/>
+  <circle cx="496" cy="156" r="7" fill="var(--dg-c-soft)" stroke="var(--dg-c)" stroke-width="1.6"/>
+  <text x="445" y="200" text-anchor="middle" font-size="10.5" font-weight="600" fill="var(--dg-text)">az 135°</text>
+  <text x="445" y="218" text-anchor="middle" font-size="10.5" fill="var(--dg-muted)">relief inverts</text>
+  <rect x="540" y="50" width="150" height="130" rx="8" fill="var(--dg-surface)" stroke="var(--dg-line-soft)" stroke-width="1.2"/>
+  <path d="M556 168 L615 78 L615 168 Z" fill="var(--dg-line)" fill-opacity="0.12"/>
+  <path d="M615 78 L674 168 L615 168 Z" fill="var(--dg-line)" fill-opacity="0.55"/>
+  <circle cx="564" cy="156" r="7" fill="var(--dg-c-soft)" stroke="var(--dg-c)" stroke-width="1.6"/>
+  <text x="615" y="200" text-anchor="middle" font-size="10.5" font-weight="600" fill="var(--dg-text)">az 225°</text>
+  <text x="615" y="218" text-anchor="middle" font-size="10.5" fill="var(--dg-muted)">usable, unfamiliar</text>
+  <text x="30" y="36" font-size="10.5" fill="var(--dg-muted)">one ridge, four values of -az; the marked circle is where the light comes from</text>
+</svg>
 
 ## Complete Working Example
 
@@ -297,6 +329,23 @@ with rasterio.open("hillshade_utm13n.tif") as src:
 **Contrast.** If the minimum and maximum are only a few values apart, the image is washed out — usually an altitude that is too high or a degree-based CRS. A healthy shade spans most of the 0–255 range.
 
 **Alignment.** The output inherits the DTM's geotransform and CRS, so it should overlay the source pixel-for-pixel. Drop both into QGIS; the shade must register exactly on the elevation grid with no offset or rotation.
+
+<svg viewBox="0 0 720 232" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="A profile at the correct z-factor beside the same profile exaggerated by a unit mismatch" style="width:100%;max-width:720px;display:block;margin:1.6rem auto">
+  <title>A z-factor of 1.0 on a DTM in feet</title>
+  <desc>Two cross-sections of the same hillside. With elevations and cell size both in metres, a z-factor of one gives slopes that match the ground. With elevations in US survey feet and the cell size in metres, the same z-factor exaggerates every height by a factor of 3.28, so gentle terrain renders as cliffs and slope values are meaningless.</desc>
+  <rect x="0" y="0" width="720" height="232" fill="var(--dg-bg)" rx="10"/>
+  <text x="185" y="34" text-anchor="middle" font-size="12" font-weight="600" fill="var(--dg-text)">metres over metres, -z 1.0</text>
+  <text x="535" y="34" text-anchor="middle" font-size="12" font-weight="600" fill="var(--dg-text)">feet over metres, -z 1.0</text>
+  <rect x="20" y="44" width="330" height="130" rx="8" fill="var(--dg-surface)" stroke="var(--dg-line-soft)" stroke-width="1.2"/>
+  <path d="M34 156 L100 148 L160 132 L220 124 L280 118 L336 114" fill="none" stroke="var(--dg-d)" stroke-width="2.4"/>
+  <line x1="34" y1="160" x2="336" y2="160" stroke="var(--dg-line-soft)" stroke-width="1.2"/>
+  <text x="185" y="192" text-anchor="middle" font-size="10.5" fill="var(--dg-d)">slope 4.6° — matches the survey</text>
+  <rect x="370" y="44" width="330" height="130" rx="8" fill="var(--dg-surface)" stroke="var(--dg-line-soft)" stroke-width="1.2"/>
+  <path d="M384 156 L450 130 L510 78 L570 62 L630 58 L686 56" fill="none" stroke="var(--dg-e)" stroke-width="2.4"/>
+  <line x1="384" y1="160" x2="686" y2="160" stroke="var(--dg-line-soft)" stroke-width="1.2"/>
+  <text x="535" y="192" text-anchor="middle" font-size="10.5" fill="var(--dg-e)">slope 14.9° — 3.28× too steep</text>
+  <text x="20" y="216" font-size="10.5" fill="var(--dg-muted)">the fix is -z 0.3048 on a DTM in US survey feet, or better, rasterize in a projected CRS whose vertical unit matches the horizontal one</text>
+</svg>
 
 ## Gotchas and Edge Cases
 

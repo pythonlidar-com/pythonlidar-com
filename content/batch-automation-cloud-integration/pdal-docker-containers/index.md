@@ -73,6 +73,7 @@ Reproducibility is the hardest guarantee to make in a LiDAR processing stack. A 
 <svg viewBox="0 0 760 300" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="PDAL Docker image layer and volume mount architecture" style="width:100%;max-width:760px;display:block;margin:1.5rem auto">
   <title>PDAL Docker image layers and host bind mounts</title>
   <desc>A layered diagram: the official pdal base image at the bottom carrying PDAL, GDAL, and PROJ, a middle layer adding Python dependencies laspy, rasterio, and boto3, and a top layer holding the entrypoint script. To the right, a host machine mounts a tiles directory and an output directory into the running container via docker run minus v.</desc>
+  <rect x="0" y="0" width="760" height="300" fill="var(--dg-bg)" rx="10"/>
   <defs>
     <marker id="dk-arr" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto">
       <path d="M0,0 L0,6 L8,3 z" fill="currentColor" opacity="0.6"/>
@@ -100,7 +101,9 @@ Reproducibility is the hardest guarantee to make in a LiDAR processing stack. A 
   <!-- mount arrows -->
   <line x1="468" y1="89" x2="332" y2="89" stroke="currentColor" stroke-width="1.3" opacity="0.6" marker-end="url(#dk-arr)" stroke-dasharray="5 3"/>
   <line x1="332" y1="230" x2="468" y2="230" stroke="currentColor" stroke-width="1.3" opacity="0.6" marker-end="url(#dk-arr)" stroke-dasharray="5 3"/>
-  <text x="400" y="150" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.5">-v bind mounts cross the boundary</text>
+  <text x="400" y="146" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.75">-v bind mount</text>
+  <text x="400" y="160" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.75">crosses the</text>
+  <text x="400" y="174" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.75">boundary</text>
 </svg>
 
 ## Prerequisites
@@ -288,6 +291,38 @@ A representative `pipelines/dtm.json` referencing container paths:
 }
 ```
 
+<svg viewBox="0 0 720 312" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Which Docker layers survive a rebuild after editing the entrypoint" style="width:100%;max-width:720px;display:block;margin:1.6rem auto">
+  <title>Layer order decides how long a rebuild takes</title>
+  <desc>Six layers of a PDAL image after a one-line edit to the entrypoint. The base image, the apt install, the requirements copy and the pip install are all reused from cache. The entrypoint copy is invalidated, and so is everything below it. Putting the dependency install above the source copy is what keeps a rebuild at three seconds instead of ninety.</desc>
+  <rect x="0" y="0" width="720" height="312" fill="var(--dg-bg)" rx="10"/>
+  <rect x="20" y="48" width="340" height="30" rx="5" fill="var(--dg-surface)" stroke="var(--dg-line-soft)" stroke-width="1"/>
+  <text x="34" y="68" font-size="11" fill="var(--dg-text)">FROM ghcr.io/pdal/pdal:2.6</text>
+  <rect x="380" y="48" width="310" height="30" rx="5" fill="var(--dg-d-soft)" stroke="var(--dg-d)" stroke-width="1.1"/>
+  <text x="535" y="68" text-anchor="middle" font-size="11" fill="var(--dg-text)">cached — pinned by digest</text>
+  <rect x="20" y="86" width="340" height="30" rx="5" fill="var(--dg-surface)" stroke="var(--dg-line-soft)" stroke-width="1"/>
+  <text x="34" y="106" font-size="11" fill="var(--dg-text)">RUN apt-get install …</text>
+  <rect x="380" y="86" width="310" height="30" rx="5" fill="var(--dg-d-soft)" stroke="var(--dg-d)" stroke-width="1.1"/>
+  <text x="535" y="106" text-anchor="middle" font-size="11" fill="var(--dg-text)">cached — unchanged</text>
+  <rect x="20" y="124" width="340" height="30" rx="5" fill="var(--dg-surface)" stroke="var(--dg-line-soft)" stroke-width="1"/>
+  <text x="34" y="144" font-size="11" fill="var(--dg-text)">COPY requirements.txt</text>
+  <rect x="380" y="124" width="310" height="30" rx="5" fill="var(--dg-d-soft)" stroke="var(--dg-d)" stroke-width="1.1"/>
+  <text x="535" y="144" text-anchor="middle" font-size="11" fill="var(--dg-text)">cached — file unchanged</text>
+  <rect x="20" y="162" width="340" height="30" rx="5" fill="var(--dg-surface)" stroke="var(--dg-line-soft)" stroke-width="1"/>
+  <text x="34" y="182" font-size="11" fill="var(--dg-text)">RUN pip install -r requirements.txt</text>
+  <rect x="380" y="162" width="310" height="30" rx="5" fill="var(--dg-d-soft)" stroke="var(--dg-d)" stroke-width="1.1"/>
+  <text x="535" y="182" text-anchor="middle" font-size="11" fill="var(--dg-text)">cached — 90 s saved</text>
+  <rect x="20" y="200" width="340" height="30" rx="5" fill="var(--dg-surface)" stroke="var(--dg-line-soft)" stroke-width="1"/>
+  <text x="34" y="220" font-size="11" fill="var(--dg-text)">COPY entrypoint.py</text>
+  <rect x="380" y="200" width="310" height="30" rx="5" fill="var(--dg-e-soft)" stroke="var(--dg-e)" stroke-width="1.1"/>
+  <text x="535" y="220" text-anchor="middle" font-size="11" fill="var(--dg-text)">invalidated — you edited it</text>
+  <rect x="20" y="238" width="340" height="30" rx="5" fill="var(--dg-surface)" stroke="var(--dg-line-soft)" stroke-width="1"/>
+  <text x="34" y="258" font-size="11" fill="var(--dg-text)">everything after it</text>
+  <rect x="380" y="238" width="310" height="30" rx="5" fill="var(--dg-e-soft)" stroke="var(--dg-e)" stroke-width="1.1"/>
+  <text x="535" y="258" text-anchor="middle" font-size="11" fill="var(--dg-text)">rebuilt, whether it changed or not</text>
+  <text x="20" y="36" font-size="10.5" fill="var(--dg-muted)">after editing one line of entrypoint.py</text>
+  <text x="20" y="296" font-size="10.5" fill="var(--dg-muted)">the rule is invariant: order the Dockerfile from least to most frequently changed</text>
+</svg>
+
 ## Code Breakdown
 
 **The pinned base line (`FROM ghcr.io/pdal/pdal:2.6`).** This single line is the reproducibility anchor. It fixes not just PDAL but the whole native geospatial stack and the PROJ grids that datum transforms depend on. Because both build and runtime stages reference the identical tag, they share layers and the base is only pulled once.
@@ -339,6 +374,26 @@ docker run --rm --entrypoint python pythonlidar/pdal:2.6-app -c \
 ```
 
 After a real run, check the output on the host: the GeoTIFF should exist, be owned by your user (not root), and open cleanly. A quick `gdalinfo data/out/tile_0042_dtm.tif` on the host confirms the raster has a valid CRS and sensible extent, closing the loop from container to deliverable.
+
+<svg viewBox="0 0 720 238" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Final image size for four build strategies" style="width:100%;max-width:720px;display:block;margin:1.6rem auto">
+  <title>Four builds of the same toolchain</title>
+  <desc>Final image sizes for the same PDAL toolchain. Installing a broad conda environment yields 3.1 gigabytes. Pip on the official base image gives 1.55. Cleaning the pip cache inside the same RUN instruction saves another 270 megabytes because the cache never becomes a layer. A multi-stage build that copies only the runtime gets to 940 megabytes.</desc>
+  <rect x="0" y="0" width="720" height="238" fill="var(--dg-bg)" rx="10"/>
+  <rect x="300" y="54" width="360" height="30" rx="4" fill="var(--dg-e-soft)" stroke="var(--dg-e)" stroke-width="1.2"/>
+  <text x="290" y="74" text-anchor="end" font-size="11" fill="var(--dg-text)">conda env from environment.yml</text>
+  <text x="668" y="74" font-size="10.5" fill="var(--dg-muted)">3.10 GB</text>
+  <rect x="300" y="96" width="180" height="30" rx="4" fill="var(--dg-c-soft)" stroke="var(--dg-c)" stroke-width="1.2"/>
+  <text x="290" y="116" text-anchor="end" font-size="11" fill="var(--dg-text)">pip on the official base</text>
+  <text x="488" y="116" font-size="10.5" fill="var(--dg-muted)">1.55 GB</text>
+  <rect x="300" y="138" width="148" height="30" rx="4" fill="var(--dg-d-soft)" stroke="var(--dg-d)" stroke-width="1.2"/>
+  <text x="290" y="158" text-anchor="end" font-size="11" fill="var(--dg-text)">pip + cache cleaned in one RUN</text>
+  <text x="456" y="158" font-size="10.5" fill="var(--dg-muted)">1.28 GB</text>
+  <rect x="300" y="180" width="109" height="30" rx="4" fill="var(--dg-d-soft)" stroke="var(--dg-d)" stroke-width="1.2"/>
+  <text x="290" y="200" text-anchor="end" font-size="11" fill="var(--dg-text)">multi-stage, runtime only</text>
+  <text x="417" y="200" font-size="10.5" fill="var(--dg-muted)">0.94 GB</text>
+  <text x="300" y="40" font-size="10.5" fill="var(--dg-muted)">compressed image size, same PDAL 2.6 toolchain</text>
+  <text x="60" y="230" font-size="10.5" fill="var(--dg-muted)">image size is pulled once per worker per scale-out event — on a 400-instance fan-out, 2 GB of difference is 800 GB of transfer</text>
+</svg>
 
 ## Performance Tuning
 

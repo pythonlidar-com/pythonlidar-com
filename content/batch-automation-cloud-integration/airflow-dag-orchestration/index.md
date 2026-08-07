@@ -70,9 +70,10 @@ dateModified: "2026-07-12"
 
 A regional LiDAR delivery is not one job — it is thousands of small jobs that must run in a dependable order, recover from transient failures, and report their status without a human watching the terminal. When you process a county-scale acquisition tile by tile, you need something to decide which tiles are ready, launch classification and rasterization for each of them, wait for every result, and only then declare the batch complete. Apache Airflow is the scheduler that owns those decisions. This guide shows how to express a PDAL LiDAR workflow as an Airflow directed acyclic graph, so that discovery, ground classification, DTM rasterization, and quality control become named tasks with explicit dependencies rather than a fragile shell script. It sits under [Batch Automation and Cloud Integration for PDAL](https://www.pythonlidar.com/batch-automation-cloud-integration/), the broader guide to running point cloud pipelines beyond a single workstation.
 
-<svg viewBox="0 0 780 300" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Airflow DAG for a per-tile PDAL LiDAR workflow with dynamic task mapping" style="width:100%;max-width:780px;display:block;margin:1.5rem auto">
+<svg viewBox="-10 38 752 220" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Airflow DAG for a per-tile PDAL LiDAR workflow with dynamic task mapping" style="width:100%;max-width:780px;display:block;margin:1.5rem auto">
   <title>PDAL LiDAR workflow modelled as an Airflow DAG</title>
   <desc>A left-to-right DAG. A single discover_tiles task returns a list of tiles. That fans out into a mapped classify_ground task and then a mapped rasterize_dtm task, each drawn as a stack of three instances to indicate dynamic task mapping. The mapped branch reduces into a single validate task, which connects to a final publish task. Labels note that XCom carries the tile list and that mapped instances run in parallel.</desc>
+  <rect x="-10" y="38" width="752" height="220" fill="var(--dg-bg)" rx="10"/>
   <defs>
     <marker id="af-arr" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto">
       <path d="M0,0 L0,6 L8,3 z" fill="currentColor" opacity="0.6"/>
@@ -271,6 +272,31 @@ def pdal_tile_dtm():
 dag = pdal_tile_dtm()
 ```
 
+<svg viewBox="0 0 720 258" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="What the Airflow scheduler does against what a worker does" style="width:100%;max-width:720px;display:block;margin:1.6rem auto">
+  <title>The scheduler must never open a point cloud</title>
+  <desc>Two columns. The scheduler parses the DAG file, decides what is runnable, enqueues task instances and never touches data. The worker pulls a task, runs the PDAL pipeline, reads and writes S3 and reports state back. Work that leaks into the scheduler — a file listing at module scope, for instance — runs on every parse, which is every thirty seconds.</desc>
+  <rect x="0" y="0" width="720" height="258" fill="var(--dg-bg)" rx="10"/>
+  <text x="185" y="46" text-anchor="middle" font-size="12" font-weight="600" fill="var(--dg-text)">scheduler</text>
+  <text x="535" y="46" text-anchor="middle" font-size="12" font-weight="600" fill="var(--dg-text)">worker</text>
+  <rect x="20" y="60" width="330" height="36" rx="5" fill="var(--dg-c-soft)" stroke="var(--dg-c)" stroke-width="1.2"/>
+  <text x="185" y="82" text-anchor="middle" font-size="11" fill="var(--dg-text)">parses the DAG file</text>
+  <rect x="20" y="104" width="330" height="36" rx="5" fill="var(--dg-c-soft)" stroke="var(--dg-c)" stroke-width="1.2"/>
+  <text x="185" y="126" text-anchor="middle" font-size="11" fill="var(--dg-text)">decides what is runnable</text>
+  <rect x="20" y="148" width="330" height="36" rx="5" fill="var(--dg-c-soft)" stroke="var(--dg-c)" stroke-width="1.2"/>
+  <text x="185" y="170" text-anchor="middle" font-size="11" fill="var(--dg-text)">enqueues task instances</text>
+  <rect x="20" y="192" width="330" height="36" rx="5" fill="var(--dg-c-soft)" stroke="var(--dg-c)" stroke-width="1.2"/>
+  <text x="185" y="214" text-anchor="middle" font-size="11" fill="var(--dg-text)">never touches a LAZ file</text>
+  <rect x="370" y="60" width="330" height="36" rx="5" fill="var(--dg-d-soft)" stroke="var(--dg-d)" stroke-width="1.2"/>
+  <text x="535" y="82" text-anchor="middle" font-size="11" fill="var(--dg-text)">pulls a task from the queue</text>
+  <rect x="370" y="104" width="330" height="36" rx="5" fill="var(--dg-d-soft)" stroke="var(--dg-d)" stroke-width="1.2"/>
+  <text x="535" y="126" text-anchor="middle" font-size="11" fill="var(--dg-text)">runs the PDAL pipeline</text>
+  <rect x="370" y="148" width="330" height="36" rx="5" fill="var(--dg-d-soft)" stroke="var(--dg-d)" stroke-width="1.2"/>
+  <text x="535" y="170" text-anchor="middle" font-size="11" fill="var(--dg-text)">reads and writes S3</text>
+  <rect x="370" y="192" width="330" height="36" rx="5" fill="var(--dg-d-soft)" stroke="var(--dg-d)" stroke-width="1.2"/>
+  <text x="535" y="214" text-anchor="middle" font-size="11" fill="var(--dg-text)">reports state back</text>
+  <text x="20" y="252" font-size="10.5" fill="var(--dg-muted)">anything at the top level of a DAG file is scheduler work — put the S3 listing inside a task, not beside the import statements</text>
+</svg>
+
 ## Code Breakdown
 
 ### Discovery and the fan-out source
@@ -334,6 +360,26 @@ if np.ptp(z) < 0.01:
 ```
 
 The `validate` reduce task is where cross-tile invariants belong: assert that the number of output rasters equals the number of discovered tiles, that no raster reported zero points, and that the summed ground count is within a sane band for the acquisition. Failing the run here — rather than publishing — is what stops a partial batch from being mistaken for a complete one.
+
+<svg viewBox="0 0 720 256" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Queued against running task instances as a pool limit throttles a mapped task" style="width:100%;max-width:720px;display:block;margin:1.6rem auto">
+  <title>What a pool limit does to a 400-way mapped task</title>
+  <desc>Four hundred mapped tile tasks against a pool of sixteen slots. Sixteen run at a time and the rest queue; the running line is flat at the pool limit for almost the whole window while the queued line drains linearly. Raising the pool beyond the number of workers changes nothing except how much memory the queue holds.</desc>
+  <rect x="0" y="0" width="720" height="256" fill="var(--dg-bg)" rx="10"/>
+  <line x1="80" y1="40" x2="80" y2="196" stroke="var(--dg-line)" stroke-width="1.5"/>
+  <line x1="80" y1="196" x2="690" y2="196" stroke="var(--dg-line)" stroke-width="1.5"/>
+  <polyline points="80,44 170,72 260,100 350,128 440,156 530,180 610,192 690,196" fill="none" stroke="var(--dg-c)" stroke-width="2.4"/>
+  <polyline points="80,164 130,164 260,164 440,164 610,164 660,178 690,196" fill="none" stroke="var(--dg-d)" stroke-width="2.4"/>
+  <line x1="80" y1="164" x2="690" y2="164" stroke="var(--dg-line-soft)" stroke-width="1.2" stroke-dasharray="5 4"/>
+  <text x="688" y="158" text-anchor="end" font-size="10.5" fill="var(--dg-muted)">pool limit — 16 slots</text>
+  <line x1="300" y1="62" x2="330" y2="62" stroke="var(--dg-c)" stroke-width="2.4"/>
+  <text x="338" y="66" font-size="11" fill="var(--dg-text)">queued task instances</text>
+  <line x1="300" y1="86" x2="330" y2="86" stroke="var(--dg-d)" stroke-width="2.4"/>
+  <text x="338" y="90" font-size="11" fill="var(--dg-text)">running — pinned at the pool limit</text>
+  <text x="72" y="200" text-anchor="end" font-size="10.5" fill="var(--dg-muted)">0</text>
+  <text x="72" y="48" text-anchor="end" font-size="10.5" fill="var(--dg-muted)">400</text>
+  <text x="385" y="218" text-anchor="middle" font-size="11.5" fill="var(--dg-text)">elapsed time</text>
+  <text x="60" y="244" font-size="10.5" fill="var(--dg-muted)">size the pool to the workers you actually have — a queue is free to grow and expensive to be wrong about</text>
+</svg>
 
 ## Performance Tuning
 

@@ -70,9 +70,10 @@ dateModified: "2026-07-12"
 
 Moving LiDAR into the cloud changes the shape of every pipeline: the point cloud no longer lives on a local disk that PDAL can `open()` at will, it lives as an object behind an authenticated HTTP API. PDAL bridges that gap through GDAL's virtual file system layer — a family of path prefixes such as `/vsis3/`, `/vsicurl/`, and `/vsizip/` that make a remote object look, to a reader or writer stage, exactly like a filename. Get the prefix, the region, and the credential wiring right and a `readers.las` stage will pull a tile out of `s3://usgs-lidar-tiles/co_2019/tile_0421.laz` and a `writers.gdal` stage will push a finished terrain raster back to `s3://survey-deliverables/dtm/tile_0421.tif`, all without a single explicit download or upload call in your Python. This guide is part of [Batch Automation and Cloud Integration for PDAL](https://www.pythonlidar.com/batch-automation-cloud-integration/), and it focuses on the storage-access layer that every cloud workflow sits on.
 
-<svg viewBox="0 0 760 250" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="PDAL reading and writing S3 objects through GDAL virtual file systems" style="width:100%;max-width:760px;display:block;margin:1.5rem auto">
+<svg viewBox="-2 38 764 226" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="PDAL reading and writing S3 objects through GDAL virtual file systems" style="width:100%;max-width:760px;display:block;margin:1.5rem auto">
   <title>PDAL S3 I/O through the GDAL virtual file system layer</title>
   <desc>A PDAL pipeline in the centre reads through the GDAL VSI layer, which signs SigV4 requests against an S3 bucket for input LAZ objects using /vsis3/, and writes a Cloud-Optimized GeoTIFF back to the bucket. Environment variables for region and credentials feed the VSI layer.</desc>
+  <rect x="-2" y="38" width="764" height="226" fill="var(--dg-bg)" rx="10"/>
   <defs>
     <marker id="s3-arr" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto">
       <path d="M0,0 L0,6 L8,3 z" fill="currentColor" opacity="0.6"/>
@@ -232,6 +233,28 @@ if __name__ == "__main__":
     verify_object("survey-deliverables", "dtm/tile_0421.tif")
 ```
 
+<svg viewBox="0 0 720 252" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Bytes transferred by a whole-object download against ranged reads of the same query" style="width:100%;max-width:720px;display:block;margin:1.6rem auto">
+  <title>A ranged read is the whole point of cloud storage</title>
+  <desc>The same spatial query answered two ways against a 1.4 gigabyte LAZ object. Downloading the object transfers all 1.4 gigabytes and then discards 96 percent of it. Ranged GET requests fetch the header, the chunk table and two chunks — about 54 megabytes — and answer the same question, provided the reader knows how to ask.</desc>
+  <rect x="0" y="0" width="720" height="252" fill="var(--dg-bg)" rx="10"/>
+  <text x="20" y="44" font-size="11.5" font-weight="600" fill="var(--dg-e)">download, then read</text>
+  <rect x="220" y="28" width="460" height="30" rx="4" fill="var(--dg-e-soft)" stroke="var(--dg-e)" stroke-width="1.2"/>
+  <text x="450" y="48" text-anchor="middle" font-size="11" fill="var(--dg-text)">1.4 GB transferred · 1 GET · 46 s</text>
+  <text x="20" y="104" font-size="11.5" font-weight="600" fill="var(--dg-d)">ranged reads</text>
+  <rect x="220" y="88" width="24" height="30" rx="4" fill="var(--dg-d-soft)" stroke="var(--dg-d)" stroke-width="1.2"/>
+  <text x="232" y="132" text-anchor="middle" font-size="9.5" fill="var(--dg-muted)">header</text>
+  <rect x="252" y="88" width="30" height="30" rx="4" fill="var(--dg-d-soft)" stroke="var(--dg-d)" stroke-width="1.2"/>
+  <text x="267" y="146" text-anchor="middle" font-size="9.5" fill="var(--dg-muted)">chunk table</text>
+  <rect x="290" y="88" width="60" height="30" rx="4" fill="var(--dg-d-soft)" stroke="var(--dg-d)" stroke-width="1.2"/>
+  <text x="320" y="132" text-anchor="middle" font-size="9.5" fill="var(--dg-muted)">chunk 5</text>
+  <rect x="358" y="88" width="60" height="30" rx="4" fill="var(--dg-d-soft)" stroke="var(--dg-d)" stroke-width="1.2"/>
+  <text x="388" y="132" text-anchor="middle" font-size="9.5" fill="var(--dg-muted)">chunk 6</text>
+  <text x="450" y="108" font-size="11" fill="var(--dg-text)">54 MB transferred · 4 GETs · 1.8 s</text>
+  <text x="20" y="176" font-size="10.5" fill="var(--dg-muted)">this only works when the object is laid out for it — a plain LAZ supports chunk-level reads, COPC adds a spatial index</text>
+  <text x="20" y="196" font-size="10.5" fill="var(--dg-muted)">so the reader can find the right chunks without scanning, and an uncompressed LAS supports byte ranges but no index at all.</text>
+  <text x="20" y="222" font-size="10.5" fill="var(--dg-muted)">Egress is charged per byte, so the difference is on the bill as well as the clock.</text>
+</svg>
+
 ## Code Breakdown
 
 ### The virtual file system prefix
@@ -296,6 +319,39 @@ print(f"Source object streamed {n:,} points")
 ```bash
 AWS_REGION=us-west-2 gdalinfo /vsis3/survey-deliverables/dtm/tile_0421.tif | grep -iE "size|epsg|block"
 ```
+
+<svg viewBox="0 0 720 272" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Five GDAL environment variables that decide how vsis3 reads behave" style="width:100%;max-width:720px;display:block;margin:1.6rem auto">
+  <title>Five variables that decide what an S3 read costs</title>
+  <desc>Five GDAL settings with the value to use and what each one changes. Disabling directory reads on open removes a LIST request per file, which dominates when opening thousands of tiles. The curl chunk size sets how many bytes each range request pulls. The cache size and VSI_CACHE control what is kept between reads, and the requester-pays flag is simply required on some buckets.</desc>
+  <rect x="0" y="0" width="720" height="272" fill="var(--dg-bg)" rx="10"/>
+  <rect x="20" y="50" width="290" height="32" rx="5" fill="var(--dg-a-soft)" stroke="var(--dg-a)" stroke-width="1.2"/>
+  <text x="34" y="71" font-size="10.5" fill="var(--dg-text)">GDAL_DISABLE_READDIR_ON_OPEN</text>
+  <rect x="322" y="50" width="130" height="32" rx="5" fill="var(--dg-c-soft)" stroke="var(--dg-c)" stroke-width="1.2"/>
+  <text x="387" y="71" text-anchor="middle" font-size="10.5" fill="var(--dg-text)">EMPTY_DIR</text>
+  <text x="466" y="71" font-size="10.5" fill="var(--dg-muted)">stops a LIST on every open</text>
+  <rect x="20" y="90" width="290" height="32" rx="5" fill="var(--dg-a-soft)" stroke="var(--dg-a)" stroke-width="1.2"/>
+  <text x="34" y="111" font-size="10.5" fill="var(--dg-text)">CPL_VSIL_CURL_CHUNK_SIZE</text>
+  <rect x="322" y="90" width="130" height="32" rx="5" fill="var(--dg-c-soft)" stroke="var(--dg-c)" stroke-width="1.2"/>
+  <text x="387" y="111" text-anchor="middle" font-size="10.5" fill="var(--dg-text)">1048576</text>
+  <text x="466" y="111" font-size="10.5" fill="var(--dg-muted)">bytes fetched per range request</text>
+  <rect x="20" y="130" width="290" height="32" rx="5" fill="var(--dg-a-soft)" stroke="var(--dg-a)" stroke-width="1.2"/>
+  <text x="34" y="151" font-size="10.5" fill="var(--dg-text)">CPL_VSIL_CURL_CACHE_SIZE</text>
+  <rect x="322" y="130" width="130" height="32" rx="5" fill="var(--dg-c-soft)" stroke="var(--dg-c)" stroke-width="1.2"/>
+  <text x="387" y="151" text-anchor="middle" font-size="10.5" fill="var(--dg-text)">200000000</text>
+  <text x="466" y="151" font-size="10.5" fill="var(--dg-muted)">in-process cache for repeat reads</text>
+  <rect x="20" y="170" width="290" height="32" rx="5" fill="var(--dg-a-soft)" stroke="var(--dg-a)" stroke-width="1.2"/>
+  <text x="34" y="191" font-size="10.5" fill="var(--dg-text)">AWS_REQUEST_PAYER</text>
+  <rect x="322" y="170" width="130" height="32" rx="5" fill="var(--dg-c-soft)" stroke="var(--dg-c)" stroke-width="1.2"/>
+  <text x="387" y="191" text-anchor="middle" font-size="10.5" fill="var(--dg-text)">requester</text>
+  <text x="466" y="191" font-size="10.5" fill="var(--dg-muted)">required for requester-pays buckets</text>
+  <rect x="20" y="210" width="290" height="32" rx="5" fill="var(--dg-a-soft)" stroke="var(--dg-a)" stroke-width="1.2"/>
+  <text x="34" y="231" font-size="10.5" fill="var(--dg-text)">VSI_CACHE</text>
+  <rect x="322" y="210" width="130" height="32" rx="5" fill="var(--dg-c-soft)" stroke="var(--dg-c)" stroke-width="1.2"/>
+  <text x="387" y="231" text-anchor="middle" font-size="10.5" fill="var(--dg-text)">TRUE</text>
+  <text x="466" y="231" font-size="10.5" fill="var(--dg-muted)">caches whole ranges, not just headers</text>
+  <text x="20" y="36" font-size="10.5" fill="var(--dg-muted)">set these in the container environment, not in Python — GDAL reads them once, at first use</text>
+  <text x="20" y="264" font-size="10.5" fill="var(--dg-muted)">the first row alone is often worth a factor of three on a fan-out that opens ten thousand objects</text>
+</svg>
 
 ## Performance Tuning
 

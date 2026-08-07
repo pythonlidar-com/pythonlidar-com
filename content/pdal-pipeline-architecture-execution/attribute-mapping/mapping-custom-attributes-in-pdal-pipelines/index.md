@@ -84,6 +84,7 @@ Production LiDAR workflows routinely need dimensions beyond the LAS standard: no
 <svg viewBox="0 0 700 260" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Dimension lifecycle: declaration in reader, computation in filters.assign, persistence in writer" style="width:100%;max-width:700px;display:block;margin:1.5rem auto;">
   <title>Custom Dimension Lifecycle in a PDAL Pipeline</title>
   <desc>Four boxes arranged left to right — readers.las, filters.assign (may repeat), writers.las — with arrows showing how a custom dimension must be declared in the reader, computed by the filter, and re-declared in the writer. A danger marker below shows where silent drops occur.</desc>
+  <rect x="0" y="0" width="700" height="260" fill="var(--dg-bg)" rx="10"/>
   <defs>
     <marker id="arr" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
       <polygon points="0 0,8 3,0 6" fill="currentColor" opacity="0.55"/>
@@ -220,6 +221,41 @@ The `where` clause restricts the assignment to matching points. Points outside t
 }
 ```
 
+<svg viewBox="0 0 720 250" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Three dimension mappings and the filter that performs each" style="width:100%;max-width:720px;display:block;margin:1.6rem auto">
+  <title>Ferry copies a dimension, assign overwrites one</title>
+  <desc>Three mappings. Ferrying Amplitude into Intensity leaves both dimensions in the view. Ferrying Deviation into PulseWidth renames it for the writer. Assign writes into Classification in place, driven by an expression rather than by another dimension. Ferry is additive, assign is destructive, and mixing them up silently loses data.</desc>
+  <rect x="0" y="0" width="720" height="250" fill="var(--dg-bg)" rx="10"/>
+  <defs><marker id="fer-arw" markerWidth="9" markerHeight="7" refX="9" refY="3.5" orient="auto"><path d="M0,0 L0,7 L9,3.5 z" fill="var(--dg-line)"/></marker></defs>
+  <rect x="24" y="62" width="180" height="40" rx="7" fill="var(--dg-b-soft)" stroke="var(--dg-b)" stroke-width="1.3"/>
+  <text x="114" y="87" text-anchor="middle" font-size="11" fill="var(--dg-text)">Amplitude</text>
+  <rect x="266" y="62" width="170" height="40" rx="7" fill="var(--dg-a-soft)" stroke="var(--dg-a)" stroke-width="1.3"/>
+  <text x="351" y="87" text-anchor="middle" font-size="11" fill="var(--dg-text)">filters.ferry</text>
+  <rect x="498" y="62" width="180" height="40" rx="7" fill="var(--dg-d-soft)" stroke="var(--dg-d)" stroke-width="1.3"/>
+  <text x="588" y="87" text-anchor="middle" font-size="11" fill="var(--dg-text)">Intensity</text>
+  <line x1="204" y1="82" x2="260" y2="82" stroke="var(--dg-line)" stroke-width="1.5" marker-end="url(#fer-arw)"/>
+  <line x1="436" y1="82" x2="492" y2="82" stroke="var(--dg-line)" stroke-width="1.5" marker-end="url(#fer-arw)"/>
+  <text x="351" y="116" text-anchor="middle" font-size="10" fill="var(--dg-muted)">copy, keep both</text>
+  <rect x="24" y="118" width="180" height="40" rx="7" fill="var(--dg-b-soft)" stroke="var(--dg-b)" stroke-width="1.3"/>
+  <text x="114" y="143" text-anchor="middle" font-size="11" fill="var(--dg-text)">Deviation</text>
+  <rect x="266" y="118" width="170" height="40" rx="7" fill="var(--dg-a-soft)" stroke="var(--dg-a)" stroke-width="1.3"/>
+  <text x="351" y="143" text-anchor="middle" font-size="11" fill="var(--dg-text)">filters.ferry</text>
+  <rect x="498" y="118" width="180" height="40" rx="7" fill="var(--dg-d-soft)" stroke="var(--dg-d)" stroke-width="1.3"/>
+  <text x="588" y="143" text-anchor="middle" font-size="11" fill="var(--dg-text)">PulseWidth</text>
+  <line x1="204" y1="138" x2="260" y2="138" stroke="var(--dg-line)" stroke-width="1.5" marker-end="url(#fer-arw)"/>
+  <line x1="436" y1="138" x2="492" y2="138" stroke="var(--dg-line)" stroke-width="1.5" marker-end="url(#fer-arw)"/>
+  <text x="351" y="172" text-anchor="middle" font-size="10" fill="var(--dg-muted)">rename on the way out</text>
+  <rect x="24" y="174" width="180" height="40" rx="7" fill="var(--dg-b-soft)" stroke="var(--dg-b)" stroke-width="1.3"/>
+  <text x="114" y="199" text-anchor="middle" font-size="11" fill="var(--dg-text)">Classification</text>
+  <rect x="266" y="174" width="170" height="40" rx="7" fill="var(--dg-a-soft)" stroke="var(--dg-a)" stroke-width="1.3"/>
+  <text x="351" y="199" text-anchor="middle" font-size="11" fill="var(--dg-text)">filters.assign</text>
+  <rect x="498" y="174" width="180" height="40" rx="7" fill="var(--dg-d-soft)" stroke="var(--dg-d)" stroke-width="1.3"/>
+  <text x="588" y="199" text-anchor="middle" font-size="11" fill="var(--dg-text)">Classification</text>
+  <line x1="204" y1="194" x2="260" y2="194" stroke="var(--dg-line)" stroke-width="1.5" marker-end="url(#fer-arw)"/>
+  <line x1="436" y1="194" x2="492" y2="194" stroke="var(--dg-line)" stroke-width="1.5" marker-end="url(#fer-arw)"/>
+  <text x="351" y="228" text-anchor="middle" font-size="10" fill="var(--dg-muted)">overwrite by expression</text>
+  <text x="24" y="42" font-size="10.5" fill="var(--dg-muted)">source dimension · the stage that moves it · what the writer sees</text>
+</svg>
+
 ## Complete Working Example
 
 The following pipeline is self-contained. Save it as `mapping_pipeline.json` and run it against any LAZ file that has standard `Intensity`, `ReturnNumber`, and `NumberOfReturns` dimensions. It maps two custom attributes and writes LAS 1.4 with verified Extra Bytes:
@@ -354,6 +390,45 @@ assert set(arr["survey_confidence"].tolist()).issubset({0, 128}), "unexpected co
 ```
 
 For [pipeline validation](https://www.pythonlidar.com/pdal-pipeline-architecture-execution/pipeline-validation/) before running against large production datasets, add a point-count parity check: compare `pdal info --summary input.laz` against `pdal info --summary output_mapped.laz`. `filters.assign` does not drop or duplicate points; any count mismatch indicates an upstream filter is also active in the pipeline.
+
+<svg viewBox="0 0 720 286" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="What LAS 1.2 can carry against LAS 1.4" style="width:100%;max-width:720px;display:block;margin:1.6rem auto">
+  <title>The version in the header decides what survives the write</title>
+  <desc>Five capabilities compared. LAS 1.2 offers point formats zero to three, classification codes to 31, five returns per pulse, no standard mechanism for extra bytes, and a 32-bit point count. LAS 1.4 raises all five, and a custom dimension written to a 1.2 file is discarded without an error.</desc>
+  <rect x="0" y="0" width="720" height="286" fill="var(--dg-bg)" rx="10"/>
+  <text x="300" y="52" text-anchor="middle" font-size="11.5" font-weight="600" fill="var(--dg-text)">LAS 1.2</text>
+  <text x="520" y="52" text-anchor="middle" font-size="11.5" font-weight="600" fill="var(--dg-text)">LAS 1.4</text>
+  <rect x="20" y="62" width="180" height="30" rx="5" fill="var(--dg-surface)" stroke="var(--dg-line-soft)" stroke-width="1"/>
+  <text x="32" y="82" font-size="11" fill="var(--dg-text)">point formats</text>
+  <rect x="220" y="62" width="160" height="30" rx="5" fill="var(--dg-c-soft)" stroke="var(--dg-c)" stroke-width="1.1"/>
+  <text x="300" y="82" text-anchor="middle" font-size="11" fill="var(--dg-text)">0–3</text>
+  <rect x="440" y="62" width="160" height="30" rx="5" fill="var(--dg-d-soft)" stroke="var(--dg-d)" stroke-width="1.1"/>
+  <text x="520" y="82" text-anchor="middle" font-size="11" fill="var(--dg-text)">0–10</text>
+  <rect x="20" y="100" width="180" height="30" rx="5" fill="var(--dg-surface)" stroke="var(--dg-line-soft)" stroke-width="1"/>
+  <text x="32" y="120" font-size="11" fill="var(--dg-text)">classification codes</text>
+  <rect x="220" y="100" width="160" height="30" rx="5" fill="var(--dg-c-soft)" stroke="var(--dg-c)" stroke-width="1.1"/>
+  <text x="300" y="120" text-anchor="middle" font-size="11" fill="var(--dg-text)">0–31</text>
+  <rect x="440" y="100" width="160" height="30" rx="5" fill="var(--dg-d-soft)" stroke="var(--dg-d)" stroke-width="1.1"/>
+  <text x="520" y="120" text-anchor="middle" font-size="11" fill="var(--dg-text)">0–255</text>
+  <rect x="20" y="138" width="180" height="30" rx="5" fill="var(--dg-surface)" stroke="var(--dg-line-soft)" stroke-width="1"/>
+  <text x="32" y="158" font-size="11" fill="var(--dg-text)">returns per pulse</text>
+  <rect x="220" y="138" width="160" height="30" rx="5" fill="var(--dg-c-soft)" stroke="var(--dg-c)" stroke-width="1.1"/>
+  <text x="300" y="158" text-anchor="middle" font-size="11" fill="var(--dg-text)">5</text>
+  <rect x="440" y="138" width="160" height="30" rx="5" fill="var(--dg-d-soft)" stroke="var(--dg-d)" stroke-width="1.1"/>
+  <text x="520" y="158" text-anchor="middle" font-size="11" fill="var(--dg-text)">15</text>
+  <rect x="20" y="176" width="180" height="30" rx="5" fill="var(--dg-surface)" stroke="var(--dg-line-soft)" stroke-width="1"/>
+  <text x="32" y="196" font-size="11" fill="var(--dg-text)">extra bytes VLR</text>
+  <rect x="220" y="176" width="160" height="30" rx="5" fill="var(--dg-c-soft)" stroke="var(--dg-c)" stroke-width="1.1"/>
+  <text x="300" y="196" text-anchor="middle" font-size="11" fill="var(--dg-text)">unofficial</text>
+  <rect x="440" y="176" width="160" height="30" rx="5" fill="var(--dg-d-soft)" stroke="var(--dg-d)" stroke-width="1.1"/>
+  <text x="520" y="196" text-anchor="middle" font-size="11" fill="var(--dg-text)">standard</text>
+  <rect x="20" y="214" width="180" height="30" rx="5" fill="var(--dg-surface)" stroke="var(--dg-line-soft)" stroke-width="1"/>
+  <text x="32" y="234" font-size="11" fill="var(--dg-text)">point count field</text>
+  <rect x="220" y="214" width="160" height="30" rx="5" fill="var(--dg-c-soft)" stroke="var(--dg-c)" stroke-width="1.1"/>
+  <text x="300" y="234" text-anchor="middle" font-size="11" fill="var(--dg-text)">32-bit</text>
+  <rect x="440" y="214" width="160" height="30" rx="5" fill="var(--dg-d-soft)" stroke="var(--dg-d)" stroke-width="1.1"/>
+  <text x="520" y="234" text-anchor="middle" font-size="11" fill="var(--dg-text)">64-bit</text>
+  <text x="20" y="272" font-size="10.5" fill="var(--dg-muted)">set "minor_version": 4 and "dataformat_id": 6 on the writer before relying on any of the right-hand column</text>
+</svg>
 
 ## Gotchas and Edge Cases
 
