@@ -153,7 +153,7 @@ Robust LAS/LAZ ingestion follows a five-phase execution lifecycle. Each phase ha
   <text class="wf-sub"   x="672" y="111" text-anchor="middle">fail → quarantine</text>
   <!-- Quarantine feedback arrow -->
   <path d="M752,120 Q752,200 400,220 Q50,240 50,120" fill="none" stroke="var(--dg-e)" stroke-width="1" stroke-dasharray="5,4" marker-end="url(#wf-arr)" opacity="0.55"/>
-  <text class="wf-sub" x="400" y="242" text-anchor="middle" fill="var(--dg-e)" opacity="0.75">quarantine path — log error, skip tile, do not propagate</text>
+  <text class="wf-sub" x="400" y="242" text-anchor="middle" style="fill:var(--dg-e);opacity:1">quarantine path — log error, skip tile, do not propagate</text>
 </svg>
 
 **Phase 1 — File Open and Signature Check.** Open the file with `laspy.open()` (never `laspy.read()`), read the first 4 bytes, and confirm they equal `b'LASF'`. Read the version fields to determine PHB size: 227 bytes for 1.0–1.2, 235 for 1.3, 375 for 1.4.

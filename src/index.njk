@@ -20,17 +20,18 @@ eleventyExcludeFromCollections: true
           standards-compliant data handling, and production-grade QC.
         </p>
         <p class="hero__lede">
-          Four focused tracks: <strong>PDAL Pipelines</strong> for execution architecture,
-          <strong>Point Cloud Standards</strong> for binary, classification, and CRS fundamentals,
-          <strong>Ground &amp; Terrain Models</strong> for SMRF/PMF filtering and DTM/DSM rasters, and
-          <strong>Batch &amp; Cloud Automation</strong> for containerised, S3-backed, orchestrated pipelines.
+          Five focused tracks: <strong>PDAL Pipelines</strong> for execution architecture,
+          <strong>Point Cloud Standards</strong> for binary, classification, accuracy and CRS fundamentals,
+          <strong>Ground &amp; Terrain Models</strong> for SMRF, PMF and CSF filtering and DTM/DSM rasters,
+          <strong>Batch &amp; Cloud Automation</strong> for containerised, S3-backed, orchestrated pipelines, and
+          <strong>Classification &amp; Features</strong> for extracting buildings, trees, power lines and water.
         </p>
         <p class="hero__lede">
-          Newest here: <a href="{{ site.url }}/pdal-pipeline-architecture-execution/streaming-mode-execution/">streaming-mode execution</a>
-          for tiles larger than the machine, <a href="{{ site.url }}/pdal-pipeline-architecture-execution/programmable-python-filters/">programmable Python filters</a>
-          when no stage does what you need, <a href="{{ site.url }}/point-cloud-data-standards-fundamentals/copc-and-cloud-native-formats/">COPC and cloud-native formats</a>,
-          <a href="{{ site.url }}/ground-filtering-dtm-dsm-generation/canopy-height-models/">canopy height models</a>, and
-          <a href="{{ site.url }}/batch-automation-cloud-integration/tile-indexing-and-merging/">tile indexing, buffering and merging</a>.
+          Newest here: <a href="{{ site.url }}/lidar-classification-feature-extraction/">classification and feature extraction</a>
+          for buildings, power lines and individual trees, <a href="{{ site.url }}/point-cloud-data-standards-fundamentals/vertical-accuracy-assessment/">vertical accuracy assessment</a>
+          against survey checkpoints, <a href="{{ site.url }}/ground-filtering-dtm-dsm-generation/csf-cloth-simulation-filter/">cloth simulation ground filtering</a>,
+          <a href="{{ site.url }}/pdal-pipeline-architecture-execution/pipeline-templating-parameterization/">parameterised pipeline templates</a>, and
+          <a href="{{ site.url }}/batch-automation-cloud-integration/dask-distributed-processing/">Dask distributed tile processing</a>.
         </p>
         <div class="hero__cta">
           <a class="cta cta--primary" href="{{ site.url }}/pdal-pipeline-architecture-execution/">
@@ -44,6 +45,10 @@ eleventyExcludeFromCollections: true
           <a class="cta" href="{{ site.url }}/batch-automation-cloud-integration/">
             <span class="cta__icon">{% sectionIcon "batch-automation-cloud-integration", 20 %}</span>
             Batch &amp; cloud automation
+          </a>
+          <a class="cta" href="{{ site.url }}/lidar-classification-feature-extraction/">
+            <span class="cta__icon">{% sectionIcon "lidar-classification-feature-extraction", 20 %}</span>
+            Classification &amp; features
           </a>
           <a class="cta" href="#start-here">
             <span class="cta__icon">{% icon "book", 20 %}</span>
@@ -63,6 +68,9 @@ eleventyExcludeFromCollections: true
           <li>COPC &amp; cloud formats</li>
           <li>Tile indexing</li>
           <li>Batch automation</li>
+          <li>Building &amp; tree extraction</li>
+          <li>Vertical accuracy</li>
+          <li>Dask &amp; Airflow fan-out</li>
           <li>Pipeline validation</li>
           <li>QC &amp; metadata</li>
         </ul>
@@ -150,6 +158,30 @@ eleventyExcludeFromCollections: true
         <p class="card__blurb">Read the tile plus its neighbours, process the buffered extent, write only the nominal one — the pattern behind every seamless tiled LiDAR product.</p>
         <div class="card__chips"><span class="chip">tiling</span><span class="chip">seams</span></div>
       </a>
+      <a class="card" href="{{ site.url }}/lidar-classification-feature-extraction/building-extraction/extracting-building-footprints-from-lidar/">
+        <span class="card__icon">{% sectionIcon "lidar-classification-feature-extraction", 24 %}</span>
+        <h3 class="card__title">Extracting Building Footprints from LiDAR</h3>
+        <p class="card__blurb">Turn class-6 roof points into clean building polygons: rasterise a mask, polygonise, close gaps, regularise the outline and attach heights.</p>
+        <div class="card__chips"><span class="chip">buildings</span><span class="chip">footprints</span></div>
+      </a>
+      <a class="card" href="{{ site.url }}/lidar-classification-feature-extraction/individual-tree-segmentation/segmenting-trees-with-a-watershed-on-a-chm/">
+        <span class="card__icon">{% sectionIcon "lidar-classification-feature-extraction", 24 %}</span>
+        <h3 class="card__title">Segmenting Trees with a Watershed on a CHM</h3>
+        <p class="card__blurb">Find treetops with a variable window, grow crowns with a marker-controlled watershed on a canopy height model, and polygonise them with attributes.</p>
+        <div class="card__chips"><span class="chip">trees</span><span class="chip">watershed</span></div>
+      </a>
+      <a class="card" href="{{ site.url }}/point-cloud-data-standards-fundamentals/vertical-accuracy-assessment/computing-rmsez-against-survey-checkpoints/">
+        <span class="card__icon">{% sectionIcon "point-cloud-data-standards-fundamentals", 24 %}</span>
+        <h3 class="card__title">Computing RMSEz Against Survey Checkpoints</h3>
+        <p class="card__blurb">Fix the sign convention, compute RMSEz, mean error and standard deviation, bootstrap a confidence interval and report accuracy per land-cover group.</p>
+        <div class="card__chips"><span class="chip">accuracy</span><span class="chip">RMSEz</span></div>
+      </a>
+      <a class="card" href="{{ site.url }}/batch-automation-cloud-integration/dask-distributed-processing/processing-lidar-tiles-with-dask-distributed/">
+        <span class="card__icon">{% sectionIcon "batch-automation-cloud-integration", 24 %}</span>
+        <h3 class="card__title">Processing LiDAR Tiles with Dask Distributed</h3>
+        <p class="card__blurb">Run one PDAL image as scheduler and workers, submit a task per tile from the client, and collect small per-tile results instead of point arrays.</p>
+        <div class="card__chips"><span class="chip">Dask</span><span class="chip">distributed</span></div>
+      </a>
     </div>
   </div>
 </section>
@@ -158,7 +190,7 @@ eleventyExcludeFromCollections: true
   <div class="container">
     <div class="section__head">
       <h2>What you'll find here</h2>
-      <p>Four tracks of practical, code-first material aimed at production teams working with airborne, terrestrial, and mobile LiDAR.</p>
+      <p>Five tracks of practical, code-first material aimed at production teams working with airborne, terrestrial, and mobile LiDAR.</p>
     </div>
 
     <div class="cards">

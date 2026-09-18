@@ -528,6 +528,7 @@ pre {
   width: 100%;
   min-width: 480px;
   border-collapse: collapse;
+  font-variant-numeric: tabular-nums;
 }
 .table-scroll th, .table-scroll td {
   text-align: left;

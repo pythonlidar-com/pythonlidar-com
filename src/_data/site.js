@@ -35,5 +35,12 @@ module.exports = {
       blurb:
         "Containerised PDAL, AWS Batch tile fan-out, streaming LAZ and COG I/O against S3, and Airflow DAG orchestration for production point cloud pipelines.",
     },
+    {
+      slug: "lidar-classification-feature-extraction",
+      label: "Classification & Features",
+      iconName: "grid",
+      blurb:
+        "Buildings, power lines, individual trees, water and bridges: segmenting point clouds and training classifiers to extract features from LiDAR.",
+    },
   ],
 };

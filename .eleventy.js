@@ -358,6 +358,15 @@ function renderSectionIcon(slug, size) {
         <rect x="13.5" y="24" width="5" height="4" rx="1" fill="#2bb673"/>
         <rect x="21" y="24" width="5" height="4" rx="1" fill="#18b6c4"/>
       </svg>`,
+    "lidar-classification-feature-extraction": `
+      <svg width="${s}" height="${s}" viewBox="0 0 32 32" fill="none" aria-hidden="true">
+        <defs><linearGradient id="g-class" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#2bb673"/><stop offset="100%" stop-color="#5b3df5"/></linearGradient></defs>
+        <path d="M4 27 H28" stroke="#f59e0b" stroke-width="1.6"/>
+        <rect x="16" y="13" width="10" height="14" rx="1" fill="url(#g-class)"/>
+        <path d="M15 13 L21 7 L27 13 Z" fill="#5b3df5"/>
+        <circle cx="9" cy="16" r="5" fill="#2bb673"/>
+        <path d="M9 21 V27" stroke="#0e9aa6" stroke-width="1.8"/>
+      </svg>`,
   };
   return icons[slug] || `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="8" stroke="#5b3df5" stroke-width="2"/></svg>`;
 }
